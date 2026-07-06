@@ -5,8 +5,13 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type FormEvent,
   type KeyboardEvent,
+  type ReactNode,
+  type Ref,
 } from "react";
+import * as ContextMenu from "@radix-ui/react-context-menu";
+import * as Dialog from "@radix-ui/react-dialog";
 import {
   closestCenter,
   DndContext,
@@ -65,6 +70,12 @@ type MergeState = "idle" | "ready";
 type DropIntent =
   | { type: "none" }
   | { type: "merge" | "sort"; targetId: string };
+type BookmarkEditTarget = {
+  folderId?: string;
+  bookmark: BookmarkItem;
+};
+
+const DIALOG_ANIMATION_MS = 160;
 
 const DEMO_BOOKMARKS: BookmarkNode[] = [
   {
@@ -382,6 +393,21 @@ function reorderBookmarkInFolder(
   });
 }
 
+function resolveFolderChildrenAfterDelete(
+  folder: BookmarkFolder,
+  children: BookmarkItem[],
+): BookmarkNode[] {
+  if (children.length === 0) {
+    return [];
+  }
+
+  if (children.length === 1) {
+    return [children[0]];
+  }
+
+  return [{ ...folder, children }];
+}
+
 function getDropIntent(
   activeId: UniqueIdentifier,
   targetId: UniqueIdentifier,
@@ -499,16 +525,186 @@ function DesktopItemPreview({
   );
 }
 
+function BookmarkContextMenu({
+  children,
+  onEdit,
+  onDelete,
+}: {
+  children: ReactNode;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <ContextMenu.Root>
+      <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>
+      <ContextMenu.Portal>
+        <ContextMenu.Content className="z-[70] min-w-36 rounded-2xl border border-white/35 bg-white/85 p-1 text-sm font-semibold text-slate-800 shadow-xl outline-none backdrop-blur-md">
+          <ContextMenu.Item
+            className="cursor-default select-none rounded-xl px-3 py-2 outline-none data-[highlighted]:bg-slate-900 data-[highlighted]:text-white"
+            onSelect={onEdit}
+          >
+            编辑
+          </ContextMenu.Item>
+          <ContextMenu.Item
+            className="cursor-default select-none rounded-xl px-3 py-2 text-red-600 outline-none data-[highlighted]:bg-red-600 data-[highlighted]:text-white"
+            onSelect={onDelete}
+          >
+            删除
+          </ContextMenu.Item>
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu.Root>
+  );
+}
+
+function AppDialog({
+  children,
+  className = "",
+  contentRef,
+  onClose,
+  onInteractOutside,
+}: {
+  children: ReactNode;
+  className?: string;
+  contentRef?: Ref<HTMLDivElement>;
+  onClose: () => void;
+  onInteractOutside?: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(true);
+  const closeTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(
+    null,
+  );
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
+
+  function handleOpenChange(open: boolean) {
+    setIsOpen(open);
+
+    if (!open) {
+      if (closeTimerRef.current) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+
+      closeTimerRef.current = window.setTimeout(onClose, DIALOG_ANIMATION_MS);
+    }
+  }
+
+  return (
+    <Dialog.Root open={isOpen} onOpenChange={handleOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay
+          className={
+            "fixed inset-0 z-[60] bg-slate-950/40 backdrop-blur-md data-[state=closed]:animate-dialog-overlay-out data-[state=open]:animate-dialog-overlay-in"
+          }
+        />
+        <Dialog.Content
+          ref={contentRef}
+          className={[
+            "fixed left-1/2 top-1/2 z-[60] w-[calc(100vw-3rem)] -translate-x-1/2 -translate-y-1/2 border border-white/45 bg-white/30 text-white shadow-2xl outline-none backdrop-blur-xl data-[state=closed]:animate-dialog-content-out data-[state=open]:animate-dialog-content-in",
+            className,
+          ].join(" ")}
+          onInteractOutside={onInteractOutside}
+        >
+          {children}
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
+function BookmarkEditDialog({
+  bookmark,
+  onClose,
+  onSave,
+}: {
+  bookmark: BookmarkItem;
+  onClose: () => void;
+  onSave: (title: string, url: string) => void;
+}) {
+  const [draftTitle, setDraftTitle] = useState(bookmark.title);
+  const [draftUrl, setDraftUrl] = useState(bookmark.url);
+
+  useEffect(() => {
+    setDraftTitle(bookmark.title);
+    setDraftUrl(bookmark.url);
+  }, [bookmark]);
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const nextTitle = draftTitle.trim();
+    const nextUrl = draftUrl.trim();
+    if (!nextTitle || !nextUrl) {
+      return;
+    }
+
+    onSave(nextTitle, nextUrl);
+  }
+
+  return (
+    <AppDialog className="max-w-sm rounded-[28px] p-5" onClose={onClose}>
+      <Dialog.Title className="mb-4 text-lg font-bold drop-shadow-sm">
+        编辑书签
+      </Dialog.Title>
+      <form onSubmit={handleSubmit}>
+        <label className="mb-3 block text-sm font-semibold text-white/85">
+          标题
+          <input
+            className="mt-1 w-full rounded-xl bg-white/20 px-3 py-2 text-base text-white outline-none ring-1 ring-white/40 placeholder:text-white/60 focus:ring-2 focus:ring-white/70"
+            value={draftTitle}
+            onChange={(event) => setDraftTitle(event.target.value)}
+            autoFocus
+          />
+        </label>
+        <label className="block text-sm font-semibold text-white/85">
+          URL
+          <input
+            className="mt-1 w-full rounded-xl bg-white/20 px-3 py-2 text-base text-white outline-none ring-1 ring-white/40 placeholder:text-white/60 focus:ring-2 focus:ring-white/70"
+            value={draftUrl}
+            onChange={(event) => setDraftUrl(event.target.value)}
+          />
+        </label>
+        <div className="mt-5 flex justify-end gap-2">
+          <Dialog.Close asChild>
+            <button
+              className="rounded-xl bg-white/15 px-4 py-2 text-sm font-semibold outline-none transition hover:bg-white/25 focus-visible:ring-4 focus-visible:ring-white/70"
+              type="button"
+            >
+              取消
+            </button>
+          </Dialog.Close>
+          <button
+            className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-slate-800 outline-none transition hover:bg-white/90 focus-visible:ring-4 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-50"
+            type="submit"
+            disabled={!draftTitle.trim() || !draftUrl.trim()}
+          >
+            保存
+          </button>
+        </div>
+      </form>
+    </AppDialog>
+  );
+}
+
 function SortableDesktopItem({
   item,
   mergeState,
   isClickBlocked,
   onOpenFolder,
+  onEditBookmark,
+  onDeleteBookmark,
 }: {
   item: BookmarkNode;
   mergeState: MergeState;
   isClickBlocked: () => boolean;
   onOpenFolder: (folderId: string) => void;
+  onEditBookmark: (bookmark: BookmarkItem) => void;
+  onDeleteBookmark: (bookmark: BookmarkItem) => void;
 }) {
   const {
     attributes,
@@ -553,23 +749,28 @@ function SortableDesktopItem({
       className={isDragging ? "opacity-30" : ""}
       style={style}
     >
-      <a
-        className="flex w-full touch-none select-none justify-center rounded-[30px] px-1 py-2 outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
-        href={item.url}
-        onClick={(event) => {
-          if (isClickBlocked()) {
-            event.preventDefault();
-          }
-        }}
-        {...attributes}
-        {...listeners}
+      <BookmarkContextMenu
+        onEdit={() => onEditBookmark(item)}
+        onDelete={() => onDeleteBookmark(item)}
       >
-        <DesktopItemPreview
-          item={item}
-          mergeState={mergeState}
-          hideTitle={isDragging}
-        />
-      </a>
+        <a
+          className="flex w-full touch-none select-none justify-center rounded-[30px] px-1 py-2 outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
+          href={item.url}
+          onClick={(event) => {
+            if (isClickBlocked()) {
+              event.preventDefault();
+            }
+          }}
+          {...attributes}
+          {...listeners}
+        >
+          <DesktopItemPreview
+            item={item}
+            mergeState={mergeState}
+            hideTitle={isDragging}
+          />
+        </a>
+      </BookmarkContextMenu>
     </li>
   );
 }
@@ -578,10 +779,14 @@ function FolderChildItem({
   folderId,
   bookmark,
   isClickBlocked,
+  onEditBookmark,
+  onDeleteBookmark,
 }: {
   folderId: string;
   bookmark: BookmarkItem;
   isClickBlocked: () => boolean;
+  onEditBookmark: (folderId: string, bookmark: BookmarkItem) => void;
+  onDeleteBookmark: (folderId: string, bookmark: BookmarkItem) => void;
 }) {
   const {
     attributes,
@@ -609,27 +814,32 @@ function FolderChildItem({
       className={isDragging ? "opacity-30" : ""}
       style={style}
     >
-      <a
-        className="flex touch-none select-none flex-col items-center gap-2 rounded-3xl p-2 text-center outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
-        href={bookmark.url}
-        onClick={(event) => {
-          if (isClickBlocked()) {
-            event.preventDefault();
-          }
-        }}
-        {...attributes}
-        {...listeners}
+      <BookmarkContextMenu
+        onEdit={() => onEditBookmark(folderId, bookmark)}
+        onDelete={() => onDeleteBookmark(folderId, bookmark)}
       >
-        <BookmarkGlyph bookmark={bookmark} />
-        <span
-          className={[
-            "line-clamp-2 min-h-10 w-full text-sm font-semibold leading-5 drop-shadow-sm",
-            isDragging ? "invisible" : "",
-          ].join(" ")}
+        <a
+          className="flex touch-none select-none flex-col items-center gap-2 rounded-3xl p-2 text-center outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
+          href={bookmark.url}
+          onClick={(event) => {
+            if (isClickBlocked()) {
+              event.preventDefault();
+            }
+          }}
+          {...attributes}
+          {...listeners}
         >
-          {bookmark.title}
-        </span>
-      </a>
+          <BookmarkGlyph bookmark={bookmark} />
+          <span
+            className={[
+              "line-clamp-2 min-h-10 w-full text-sm font-semibold leading-5 drop-shadow-sm",
+              isDragging ? "invisible" : "",
+            ].join(" ")}
+          >
+            {bookmark.title}
+          </span>
+        </a>
+      </BookmarkContextMenu>
     </li>
   );
 }
@@ -639,11 +849,15 @@ function FolderDialog({
   onClose,
   onRenameFolder,
   isClickBlocked,
+  onEditBookmark,
+  onDeleteBookmark,
 }: {
   folder: BookmarkFolder;
   onClose: () => void;
   onRenameFolder: (folderId: string, title: string) => void;
   isClickBlocked: () => boolean;
+  onEditBookmark: (folderId: string, bookmark: BookmarkItem) => void;
+  onDeleteBookmark: (folderId: string, bookmark: BookmarkItem) => void;
 }) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [draftTitle, setDraftTitle] = useState(folder.title);
@@ -707,7 +921,7 @@ function FolderDialog({
     setDraftTitle(event.target.value);
   }
 
-  function handleBackdropMouseDown() {
+  function handleClose() {
     if (isEditingTitle) {
       commitTitleEdit();
     }
@@ -716,64 +930,59 @@ function FolderDialog({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-6 backdrop-blur-md"
-      onMouseDown={handleBackdropMouseDown}
+    <AppDialog
+      className="max-w-md rounded-[32px] p-6"
+      contentRef={setNodeRef}
+      onClose={handleClose}
+      onInteractOutside={() => {
+        if (isEditingTitle) {
+          commitTitleEdit();
+        }
+      }}
     >
-      <section
-        ref={setNodeRef}
-        className="w-full max-w-md rounded-[32px] border border-white/45 bg-white/30 p-6 text-white shadow-2xl backdrop-blur-xl"
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <div className="mb-5 flex items-center justify-between gap-4">
-          {isEditingTitle ? (
-            <input
-              ref={titleInputRef}
-              className="min-w-0 flex-1 rounded-xl bg-white/20 px-2 py-1 text-2xl font-bold text-white outline-none ring-2 ring-white/70 placeholder:text-white/60"
-              value={draftTitle}
-              onBlur={commitTitleEdit}
-              onChange={handleTitleChange}
-              onKeyDown={handleTitleKeyDown}
-              aria-label="文件夹标题"
-            />
-          ) : (
-            <button
-              className="min-w-0 truncate rounded-xl px-2 py-1 text-left text-2xl font-bold drop-shadow-sm outline-none transition hover:bg-white/15 focus-visible:ring-4 focus-visible:ring-white/70"
-              type="button"
-              onClick={startTitleEdit}
-              aria-label="编辑文件夹标题"
-            >
-              {folder.title}
-            </button>
-          )}
+      <div className="mb-5 flex min-w-0 items-center">
+        <Dialog.Title className="sr-only">{folder.title}</Dialog.Title>
+        {isEditingTitle ? (
+          <input
+            ref={titleInputRef}
+            className="min-w-0 flex-1 rounded-xl bg-white/20 px-2 py-1 text-2xl font-bold text-white outline-none ring-2 ring-white/70 placeholder:text-white/60"
+            value={draftTitle}
+            onBlur={commitTitleEdit}
+            onChange={handleTitleChange}
+            onKeyDown={handleTitleKeyDown}
+            aria-label="文件夹标题"
+          />
+        ) : (
           <button
-            className="grid size-10 shrink-0 place-items-center rounded-full bg-white/25 text-xl font-semibold outline-none transition hover:bg-white/35 focus-visible:ring-4 focus-visible:ring-white/70"
+            className="min-w-0 truncate rounded-xl px-2 py-1 text-left text-2xl font-bold drop-shadow-sm outline-none transition hover:bg-white/15 focus-visible:ring-4 focus-visible:ring-white/70"
             type="button"
-            onClick={onClose}
-            aria-label="关闭文件夹"
+            onClick={startTitleEdit}
+            aria-label="编辑文件夹标题"
           >
-            ×
+            {folder.title}
           </button>
-        </div>
-        <SortableContext
-          items={folder.children.map((bookmark) =>
-            getFolderChildDragId(folder.id, bookmark.id),
-          )}
-          strategy={rectSortingStrategy}
-        >
-          <ul className="grid grid-cols-3 gap-x-4 gap-y-6">
-            {folder.children.map((bookmark) => (
-              <FolderChildItem
-                key={bookmark.id}
-                bookmark={bookmark}
-                folderId={folder.id}
-                isClickBlocked={isClickBlocked}
-              />
-            ))}
-          </ul>
-        </SortableContext>
-      </section>
-    </div>
+        )}
+      </div>
+      <SortableContext
+        items={folder.children.map((bookmark) =>
+          getFolderChildDragId(folder.id, bookmark.id),
+        )}
+        strategy={rectSortingStrategy}
+      >
+        <ul className="grid grid-cols-3 gap-x-4 gap-y-6">
+          {folder.children.map((bookmark) => (
+            <FolderChildItem
+              key={bookmark.id}
+              bookmark={bookmark}
+              folderId={folder.id}
+              isClickBlocked={isClickBlocked}
+              onEditBookmark={onEditBookmark}
+              onDeleteBookmark={onDeleteBookmark}
+            />
+          ))}
+        </ul>
+      </SortableContext>
+    </AppDialog>
   );
 }
 
@@ -785,6 +994,8 @@ export function Launcher() {
     useState<FolderChildDragData | null>(null);
   const [mergeTargetId, setMergeTargetId] = useState<string | null>(null);
   const [openFolderId, setOpenFolderId] = useState<string | null>(null);
+  const [editingBookmark, setEditingBookmark] =
+    useState<BookmarkEditTarget | null>(null);
   const recentlyDraggedRef = useRef(false);
   const mergeTargetRef = useRef<string | null>(null);
   const mergeCandidateRef = useRef<string | null>(null);
@@ -837,6 +1048,80 @@ export function Launcher() {
     },
     [bookmarks, saveBookmarks],
   );
+
+  const editBookmark = useCallback(
+    (target: BookmarkEditTarget, title: string, url: string) => {
+      saveBookmarks(
+        bookmarks.map((bookmark) => {
+          if (target.folderId) {
+            return bookmark.type === "folder" && bookmark.id === target.folderId
+              ? {
+                  ...bookmark,
+                  children: bookmark.children.map((child) =>
+                    child.id === target.bookmark.id
+                      ? { ...child, title, url }
+                      : child,
+                  ),
+                }
+              : bookmark;
+          }
+
+          return bookmark.type === "bookmark" &&
+            bookmark.id === target.bookmark.id
+            ? { ...bookmark, title, url }
+            : bookmark;
+        }),
+      );
+    },
+    [bookmarks, saveBookmarks],
+  );
+
+  const deleteBookmark = useCallback(
+    (target: BookmarkEditTarget) => {
+      saveBookmarks(
+        bookmarks.flatMap((bookmark): BookmarkNode[] => {
+          if (target.folderId) {
+            if (bookmark.type !== "folder" || bookmark.id !== target.folderId) {
+              return [bookmark];
+            }
+
+            return resolveFolderChildrenAfterDelete(
+              bookmark,
+              bookmark.children.filter(
+                (child) => child.id !== target.bookmark.id,
+              ),
+            );
+          }
+
+          if (
+            bookmark.type === "bookmark" &&
+            bookmark.id === target.bookmark.id
+          ) {
+            return [];
+          }
+
+          return [bookmark];
+        }),
+      );
+    },
+    [bookmarks, saveBookmarks],
+  );
+
+  function startTopLevelBookmarkEdit(bookmark: BookmarkItem) {
+    setEditingBookmark({ bookmark });
+  }
+
+  function startFolderBookmarkEdit(folderId: string, bookmark: BookmarkItem) {
+    setEditingBookmark({ folderId, bookmark });
+  }
+
+  function deleteTopLevelBookmark(bookmark: BookmarkItem) {
+    deleteBookmark({ bookmark });
+  }
+
+  function deleteFolderBookmark(folderId: string, bookmark: BookmarkItem) {
+    deleteBookmark({ folderId, bookmark });
+  }
 
   const isClickBlocked = useCallback(() => recentlyDraggedRef.current, []);
 
@@ -1107,6 +1392,8 @@ export function Launcher() {
                       mergeTargetId === bookmark.id ? "ready" : "idle"
                     }
                     onOpenFolder={setOpenFolderId}
+                    onEditBookmark={startTopLevelBookmarkEdit}
+                    onDeleteBookmark={deleteTopLevelBookmark}
                   />
                 ))}
               </ul>
@@ -1120,6 +1407,18 @@ export function Launcher() {
             isClickBlocked={isClickBlocked}
             onClose={() => setOpenFolderId(null)}
             onRenameFolder={renameFolder}
+            onEditBookmark={startFolderBookmarkEdit}
+            onDeleteBookmark={deleteFolderBookmark}
+          />
+        ) : null}
+        {editingBookmark ? (
+          <BookmarkEditDialog
+            bookmark={editingBookmark.bookmark}
+            onClose={() => setEditingBookmark(null)}
+            onSave={(title, url) => {
+              editBookmark(editingBookmark, title, url);
+              setEditingBookmark(null);
+            }}
           />
         ) : null}
         <DragOverlay dropAnimation={null}>
