@@ -60,6 +60,9 @@ const ICON_GRADIENTS = [
 const MERGE_INTENT_DELAY_MS = 650;
 const FOLDER_DROP_ID_PREFIX = "folder-drop:";
 const FOLDER_CHILD_DRAG_ID_PREFIX = "folder-child:";
+const ICON_IMAGE_URL_TEMPLATE =
+  import.meta.env.VITE_ICON_IMAGE_URL_TEMPLATE?.trim();
+const loadedIconImageUrls = new Set<string>();
 
 type FolderChildDragData = {
   type: "folder-child";
@@ -182,6 +185,21 @@ function getHostLabel(url: string) {
     return new URL(url).hostname.replace(/^www\./, "");
   } catch {
     return url;
+  }
+}
+
+function getBookmarkIconImageUrl(url: string) {
+  if (!ICON_IMAGE_URL_TEMPLATE) {
+    return null;
+  }
+
+  try {
+    const domain = new URL(url).hostname;
+    return ICON_IMAGE_URL_TEMPLATE.split("{domain}").join(
+      encodeURIComponent(domain),
+    );
+  } catch {
+    return null;
   }
 }
 
@@ -460,17 +478,43 @@ function BookmarkGlyph({
   size?: "normal" | "small";
 }) {
   const isSmall = size === "small";
+  const imageUrl = getBookmarkIconImageUrl(bookmark.url);
+  const [isImageLoaded, setIsImageLoaded] = useState(() =>
+    Boolean(imageUrl && loadedIconImageUrls.has(imageUrl)),
+  );
+
+  useEffect(() => {
+    setIsImageLoaded(Boolean(imageUrl && loadedIconImageUrls.has(imageUrl)));
+  }, [imageUrl]);
 
   return (
     <span
       className={
         isSmall
-          ? "grid size-8 place-items-center rounded-xl text-xs font-bold text-white shadow-sm"
-          : "grid size-24 place-items-center rounded-[26px] text-4xl font-bold text-white shadow-[0_18px_35px_rgba(15,23,42,0.22)]"
+          ? "relative grid size-8 place-items-center overflow-hidden rounded-xl text-xs font-bold text-white shadow-sm"
+          : "relative grid size-24 place-items-center overflow-hidden rounded-[26px] text-4xl font-bold text-white shadow-[0_18px_35px_rgba(15,23,42,0.22)]"
       }
       style={{ background: ICON_GRADIENTS[getSeedIndex(bookmark.id)] }}
     >
       {getIconText(bookmark)}
+      {imageUrl ? (
+        <img
+          alt=""
+          className={clsx(
+            "absolute inset-0 size-full object-cover",
+            isImageLoaded ? "opacity-100" : "opacity-0",
+          )}
+          src={imageUrl}
+          onLoad={() => {
+            loadedIconImageUrls.add(imageUrl);
+            setIsImageLoaded(true);
+          }}
+          onError={() => {
+            loadedIconImageUrls.delete(imageUrl);
+            setIsImageLoaded(false);
+          }}
+        />
+      ) : null}
     </span>
   );
 }
