@@ -37,6 +37,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import clsx from "clsx";
 import {
   BOOKMARKS_STORAGE_KEY,
   type BookmarkFolder,
@@ -500,12 +501,11 @@ function DesktopItemPreview({
   return (
     <div className="flex w-28 flex-col items-center gap-3 text-center">
       <span
-        className={[
+        className={clsx(
           "relative grid size-24 place-items-center rounded-[30px] transition duration-150",
-          mergeState === "ready"
-            ? "scale-110 shadow-[0_0_0_12px_rgba(255,255,255,0.2),0_24px_45px_rgba(15,23,42,0.28)]"
-            : "",
-        ].join(" ")}
+          mergeState === "ready" &&
+            "scale-110 shadow-[0_0_0_12px_rgba(255,255,255,0.2),0_24px_45px_rgba(15,23,42,0.28)]",
+        )}
       >
         {item.type === "bookmark" ? (
           <BookmarkGlyph bookmark={item} />
@@ -514,10 +514,10 @@ function DesktopItemPreview({
         )}
       </span>
       <span
-        className={[
+        className={clsx(
           "line-clamp-2 min-h-10 w-full text-balance text-sm font-semibold leading-5 text-white drop-shadow-[0_1px_2px_rgba(15,23,42,0.45)]",
-          hideTitle ? "invisible" : "",
-        ].join(" ")}
+          hideTitle && "invisible",
+        )}
       >
         {item.title}
       </span>
@@ -605,10 +605,10 @@ function AppDialog({
         />
         <Dialog.Content
           ref={contentRef}
-          className={[
+          className={clsx(
             "fixed left-1/2 top-1/2 z-[60] w-[calc(100vw-3rem)] -translate-x-1/2 -translate-y-1/2 border border-white/45 bg-white/30 text-white shadow-2xl outline-none backdrop-blur-xl data-[state=closed]:animate-dialog-content-out data-[state=open]:animate-dialog-content-in",
             className,
-          ].join(" ")}
+          )}
           onInteractOutside={onInteractOutside}
         >
           {children}
@@ -723,7 +723,7 @@ function SortableDesktopItem({
     return (
       <li
         ref={setNodeRef}
-        className={isDragging ? "opacity-30" : ""}
+        className={clsx(isDragging && "opacity-30")}
         style={style}
       >
         <button
@@ -746,7 +746,7 @@ function SortableDesktopItem({
   return (
     <li
       ref={setNodeRef}
-      className={isDragging ? "opacity-30" : ""}
+      className={clsx(isDragging && "opacity-30")}
       style={style}
     >
       <BookmarkContextMenu
@@ -811,7 +811,7 @@ function FolderChildItem({
   return (
     <li
       ref={setNodeRef}
-      className={isDragging ? "opacity-30" : ""}
+      className={clsx(isDragging && "opacity-30")}
       style={style}
     >
       <BookmarkContextMenu
@@ -831,10 +831,10 @@ function FolderChildItem({
         >
           <BookmarkGlyph bookmark={bookmark} />
           <span
-            className={[
+            className={clsx(
               "line-clamp-2 min-h-10 w-full text-sm font-semibold leading-5 drop-shadow-sm",
-              isDragging ? "invisible" : "",
-            ].join(" ")}
+              isDragging && "invisible",
+            )}
           >
             {bookmark.title}
           </span>
