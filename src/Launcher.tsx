@@ -457,9 +457,11 @@ function FolderGlyph({ folder }: { folder: BookmarkFolder }) {
 function DesktopItemPreview({
   item,
   mergeState = "idle",
+  hideTitle = false,
 }: {
   item: BookmarkNode;
   mergeState?: MergeState;
+  hideTitle?: boolean;
 }) {
   return (
     <div className="flex w-28 flex-col items-center gap-3 text-center">
@@ -477,7 +479,12 @@ function DesktopItemPreview({
           <FolderGlyph folder={item} />
         )}
       </span>
-      <span className="line-clamp-2 min-h-10 w-full text-balance text-sm font-semibold leading-5 text-white drop-shadow-[0_1px_2px_rgba(15,23,42,0.45)]">
+      <span
+        className={[
+          "line-clamp-2 min-h-10 w-full text-balance text-sm font-semibold leading-5 text-white drop-shadow-[0_1px_2px_rgba(15,23,42,0.45)]",
+          hideTitle ? "invisible" : "",
+        ].join(" ")}
+      >
         {item.title}
       </span>
     </div>
@@ -549,7 +556,11 @@ function SortableDesktopItem({
         {...attributes}
         {...listeners}
       >
-        <DesktopItemPreview item={item} mergeState={mergeState} />
+        <DesktopItemPreview
+          item={item}
+          mergeState={mergeState}
+          hideTitle={isDragging}
+        />
       </a>
     </li>
   );
@@ -602,7 +613,12 @@ function FolderChildItem({
         {...listeners}
       >
         <BookmarkGlyph bookmark={bookmark} />
-        <span className="line-clamp-2 min-h-10 w-full text-sm font-semibold leading-5 drop-shadow-sm">
+        <span
+          className={[
+            "line-clamp-2 min-h-10 w-full text-sm font-semibold leading-5 drop-shadow-sm",
+            isDragging ? "invisible" : "",
+          ].join(" ")}
+        >
           {bookmark.title}
         </span>
       </a>
@@ -999,9 +1015,12 @@ export function Launcher() {
             onClose={() => setOpenFolderId(null)}
           />
         ) : null}
-        <DragOverlay>
+        <DragOverlay dropAnimation={null}>
           {activeOverlayItem ? (
-            <DesktopItemPreview item={activeOverlayItem} />
+            <DesktopItemPreview
+              item={activeOverlayItem}
+              hideTitle={activeOverlayItem.type === "bookmark"}
+            />
           ) : null}
         </DragOverlay>
       </main>
