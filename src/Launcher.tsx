@@ -602,7 +602,7 @@ function FolderChildItem({
       style={style}
     >
       <a
-        className="flex touch-none select-none flex-col items-center gap-2 rounded-3xl p-2 text-center outline-none transition hover:bg-white/15 focus-visible:ring-4 focus-visible:ring-white/70"
+        className="flex touch-none select-none flex-col items-center gap-2 rounded-3xl p-2 text-center outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
         href={bookmark.url}
         onClick={(event) => {
           if (isClickBlocked()) {
