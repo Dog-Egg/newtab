@@ -204,10 +204,6 @@ function canUseChromeStorage() {
   );
 }
 
-function getBookmarksFromNode(node: BookmarkNode): BookmarkItem[] {
-  return node.type === "bookmark" ? [node] : node.children;
-}
-
 function dedupeBookmarks(bookmarks: BookmarkItem[]) {
   const seen = new Set<string>();
 
@@ -226,6 +222,16 @@ function createFolderId() {
   return `folder-${Date.now()}`;
 }
 
+function canMergeBookmarkNodes(
+  activeNode: BookmarkNode,
+  targetNode: BookmarkNode,
+): activeNode is BookmarkItem {
+  return (
+    activeNode.type === "bookmark" &&
+    (targetNode.type === "bookmark" || targetNode.type === "folder")
+  );
+}
+
 function mergeBookmarkNodes(
   bookmarks: BookmarkNode[],
   activeId: string,
@@ -238,7 +244,9 @@ function mergeBookmarkNodes(
     return bookmarks;
   }
 
-  const activeBookmarks = getBookmarksFromNode(activeNode);
+  if (!canMergeBookmarkNodes(activeNode, targetNode)) {
+    return bookmarks;
+  }
 
   if (targetNode.type === "folder") {
     return bookmarks
@@ -247,10 +255,7 @@ function mergeBookmarkNodes(
         item.id === targetId && item.type === "folder"
           ? {
               ...item,
-              children: dedupeBookmarks([
-                ...targetNode.children,
-                ...activeBookmarks,
-              ]),
+              children: dedupeBookmarks([...targetNode.children, activeNode]),
             }
           : item,
       );
@@ -261,7 +266,7 @@ function mergeBookmarkNodes(
     id: createFolderId(),
     title: "文件夹",
     createdAt: Date.now(),
-    children: dedupeBookmarks([targetNode, ...activeBookmarks]),
+    children: dedupeBookmarks([targetNode, activeNode]),
   };
 
   return bookmarks.flatMap((item) => {
@@ -338,7 +343,7 @@ function getDropIntent(
   targetId: UniqueIdentifier,
   pointerCoordinates: { x: number; y: number } | null,
   targetRect: { left: number; width: number } | undefined,
-  orderedIds: string[],
+  bookmarks: BookmarkNode[],
 ): DropIntent {
   if (
     !pointerCoordinates ||
@@ -349,16 +354,26 @@ function getDropIntent(
     return { type: "none" };
   }
 
-  const activeIndex = orderedIds.indexOf(String(activeId));
-  const targetIndex = orderedIds.indexOf(String(targetId));
+  const activeIndex = bookmarks.findIndex(
+    (bookmark) => bookmark.id === String(activeId),
+  );
+  const targetIndex = bookmarks.findIndex(
+    (bookmark) => bookmark.id === String(targetId),
+  );
   if (activeIndex < 0 || targetIndex < 0) {
     return { type: "none" };
   }
 
+  const activeNode = bookmarks[activeIndex];
+  const targetNode = bookmarks[targetIndex];
   const isTargetLeftHalf =
     pointerCoordinates.x < targetRect.left + targetRect.width / 2;
   const isMovingForward = activeIndex < targetIndex;
   const isMergeHalf = isMovingForward ? isTargetLeftHalf : !isTargetLeftHalf;
+
+  if (isMergeHalf && !canMergeBookmarkNodes(activeNode, targetNode)) {
+    return { type: "none" };
+  }
 
   return {
     type: isMergeHalf ? "merge" : "sort",
@@ -668,18 +683,23 @@ export function App() {
         return pointerCollisions;
       }
 
+      if (isFolderChildDragData(args.active.data.current)) {
+        dropIntentRef.current = { type: "none" };
+        return pointerCollisions;
+      }
+
       const intent = getDropIntent(
         args.active.id,
         firstCollision.id,
         args.pointerCoordinates,
         args.droppableRects.get(firstCollision.id),
-        bookmarkIds,
+        bookmarks,
       );
 
       dropIntentRef.current = intent;
-      return intent.type === "merge" ? [] : pointerCollisions;
+      return intent.type === "sort" ? pointerCollisions : [];
     },
-    [bookmarkIds],
+    [bookmarks],
   );
 
   const clearMergeIntent = useCallback(() => {
