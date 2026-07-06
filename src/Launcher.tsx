@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type KeyboardEvent,
+} from "react";
 import {
   closestCenter,
   DndContext,
@@ -629,20 +637,88 @@ function FolderChildItem({
 function FolderDialog({
   folder,
   onClose,
+  onRenameFolder,
   isClickBlocked,
 }: {
   folder: BookmarkFolder;
   onClose: () => void;
+  onRenameFolder: (folderId: string, title: string) => void;
   isClickBlocked: () => boolean;
 }) {
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [draftTitle, setDraftTitle] = useState(folder.title);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const didFinishTitleEditRef = useRef(false);
   const { setNodeRef } = useDroppable({
     id: getFolderDropId(folder.id),
   });
 
+  useEffect(() => {
+    if (!isEditingTitle) {
+      setDraftTitle(folder.title);
+    }
+  }, [folder.title, isEditingTitle]);
+
+  useEffect(() => {
+    if (isEditingTitle) {
+      titleInputRef.current?.focus();
+      titleInputRef.current?.select();
+    }
+  }, [isEditingTitle]);
+
+  function startTitleEdit() {
+    didFinishTitleEditRef.current = false;
+    setDraftTitle(folder.title);
+    setIsEditingTitle(true);
+  }
+
+  function commitTitleEdit() {
+    if (didFinishTitleEditRef.current) {
+      return;
+    }
+
+    didFinishTitleEditRef.current = true;
+    const nextTitle = draftTitle.trim();
+    setIsEditingTitle(false);
+    if (nextTitle && nextTitle !== folder.title) {
+      onRenameFolder(folder.id, nextTitle);
+    }
+  }
+
+  function cancelTitleEdit() {
+    didFinishTitleEditRef.current = true;
+    setDraftTitle(folder.title);
+    setIsEditingTitle(false);
+  }
+
+  function handleTitleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      commitTitleEdit();
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      cancelTitleEdit();
+    }
+  }
+
+  function handleTitleChange(event: ChangeEvent<HTMLInputElement>) {
+    setDraftTitle(event.target.value);
+  }
+
+  function handleBackdropMouseDown() {
+    if (isEditingTitle) {
+      commitTitleEdit();
+    }
+
+    onClose();
+  }
+
   return (
     <div
       className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-6 backdrop-blur-md"
-      onMouseDown={onClose}
+      onMouseDown={handleBackdropMouseDown}
     >
       <section
         ref={setNodeRef}
@@ -650,9 +726,26 @@ function FolderDialog({
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="mb-5 flex items-center justify-between gap-4">
-          <h2 className="truncate text-2xl font-bold drop-shadow-sm">
-            {folder.title}
-          </h2>
+          {isEditingTitle ? (
+            <input
+              ref={titleInputRef}
+              className="min-w-0 flex-1 rounded-xl bg-white/20 px-2 py-1 text-2xl font-bold text-white outline-none ring-2 ring-white/70 placeholder:text-white/60"
+              value={draftTitle}
+              onBlur={commitTitleEdit}
+              onChange={handleTitleChange}
+              onKeyDown={handleTitleKeyDown}
+              aria-label="文件夹标题"
+            />
+          ) : (
+            <button
+              className="min-w-0 truncate rounded-xl px-2 py-1 text-left text-2xl font-bold drop-shadow-sm outline-none transition hover:bg-white/15 focus-visible:ring-4 focus-visible:ring-white/70"
+              type="button"
+              onClick={startTitleEdit}
+              aria-label="编辑文件夹标题"
+            >
+              {folder.title}
+            </button>
+          )}
           <button
             className="grid size-10 shrink-0 place-items-center rounded-full bg-white/25 text-xl font-semibold outline-none transition hover:bg-white/35 focus-visible:ring-4 focus-visible:ring-white/70"
             type="button"
@@ -731,6 +824,19 @@ export function Launcher() {
       chrome.storage.local.set({ [BOOKMARKS_STORAGE_KEY]: nextBookmarks });
     }
   }, []);
+
+  const renameFolder = useCallback(
+    (folderId: string, title: string) => {
+      saveBookmarks(
+        bookmarks.map((bookmark) =>
+          bookmark.type === "folder" && bookmark.id === folderId
+            ? { ...bookmark, title }
+            : bookmark,
+        ),
+      );
+    },
+    [bookmarks, saveBookmarks],
+  );
 
   const isClickBlocked = useCallback(() => recentlyDraggedRef.current, []);
 
@@ -1013,6 +1119,7 @@ export function Launcher() {
             folder={openFolder}
             isClickBlocked={isClickBlocked}
             onClose={() => setOpenFolderId(null)}
+            onRenameFolder={renameFolder}
           />
         ) : null}
         <DragOverlay dropAnimation={null}>
