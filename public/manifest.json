@@ -3,6 +3,11 @@
   "name": "Browser Tab",
   "version": "0.1.0",
   "description": "A simple React new tab replacement.",
+  "permissions": ["contextMenus", "storage"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
   "chrome_url_overrides": {
     "newtab": "index.html"
   }
