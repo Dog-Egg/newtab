@@ -1,4 +1,4 @@
-import { BOOKMARKS_STORAGE_KEY, type Bookmark, normalizeBookmarks } from './bookmarks';
+import { BOOKMARKS_STORAGE_KEY, type Bookmark, type BookmarkNode, normalizeBookmarks } from './bookmarks';
 
 const MENU_ID = 'save-to-browser-tab';
 
@@ -13,14 +13,14 @@ function createContextMenu() {
 }
 
 function getBookmarks() {
-  return new Promise<Bookmark[]>((resolve) => {
+  return new Promise<BookmarkNode[]>((resolve) => {
     chrome.storage.local.get(BOOKMARKS_STORAGE_KEY, (items) => {
       resolve(normalizeBookmarks(items[BOOKMARKS_STORAGE_KEY]));
     });
   });
 }
 
-function setBookmarks(bookmarks: Bookmark[]) {
+function setBookmarks(bookmarks: BookmarkNode[]) {
   return new Promise<void>((resolve) => {
     chrome.storage.local.set({ [BOOKMARKS_STORAGE_KEY]: bookmarks }, resolve);
   });
@@ -38,16 +38,32 @@ function getFallbackTitle(url: string) {
   }
 }
 
+function removeBookmarkUrl(bookmarks: BookmarkNode[], url: string): BookmarkNode[] {
+  return bookmarks.flatMap((item): BookmarkNode[] => {
+    if (item.type === 'bookmark') {
+      return item.url === url ? [] : [item];
+    }
+
+    return [
+      {
+        ...item,
+        children: item.children.filter((child) => child.url !== url),
+      },
+    ];
+  });
+}
+
 async function saveBookmark(url: string, title?: string) {
   const bookmarks = await getBookmarks();
   const bookmark: Bookmark = {
+    type: 'bookmark',
     id: url,
     title: title?.trim() || getFallbackTitle(url),
     url,
     createdAt: Date.now(),
   };
 
-  await setBookmarks([bookmark, ...bookmarks.filter((item) => item.url !== url)]);
+  await setBookmarks([bookmark, ...removeBookmarkUrl(bookmarks, url)]);
 }
 
 chrome.runtime.onInstalled.addListener(createContextMenu);
