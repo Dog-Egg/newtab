@@ -12,7 +12,6 @@ import {
   type DragOverEvent,
   type DragStartEvent,
   type UniqueIdentifier,
-  useDraggable,
   useDroppable,
   useSensor,
   useSensors,
@@ -183,6 +182,10 @@ function isFolderDropId(id: UniqueIdentifier | undefined | null) {
   return typeof id === "string" && id.startsWith(FOLDER_DROP_ID_PREFIX);
 }
 
+function isFolderChildDragId(id: UniqueIdentifier | undefined | null) {
+  return typeof id === "string" && id.startsWith(FOLDER_CHILD_DRAG_ID_PREFIX);
+}
+
 function isFolderChildDragData(value: unknown): value is FolderChildDragData {
   if (!value || typeof value !== "object") {
     return false;
@@ -336,6 +339,39 @@ function moveBookmarkOutOfFolder(
     movedBookmark,
     ...nextBookmarks.slice(targetIndex),
   ];
+}
+
+function reorderBookmarkInFolder(
+  bookmarks: BookmarkNode[],
+  folderId: string,
+  activeBookmarkId: string,
+  overBookmarkId: string,
+): BookmarkNode[] {
+  if (activeBookmarkId === overBookmarkId) {
+    return bookmarks;
+  }
+
+  return bookmarks.map((item) => {
+    if (item.type !== "folder" || item.id !== folderId) {
+      return item;
+    }
+
+    const activeIndex = item.children.findIndex(
+      (bookmark) => bookmark.id === activeBookmarkId,
+    );
+    const overIndex = item.children.findIndex(
+      (bookmark) => bookmark.id === overBookmarkId,
+    );
+
+    if (activeIndex < 0 || overIndex < 0) {
+      return item;
+    }
+
+    return {
+      ...item,
+      children: arrayMove(item.children, activeIndex, overIndex),
+    };
+  });
 }
 
 function getDropIntent(
@@ -528,17 +564,24 @@ function FolderChildItem({
   bookmark: BookmarkItem;
   isClickBlocked: () => boolean;
 }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({
-      id: getFolderChildDragId(folderId, bookmark.id),
-      data: {
-        type: "folder-child",
-        folderId,
-        bookmark,
-      } satisfies FolderChildDragData,
-    });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: getFolderChildDragId(folderId, bookmark.id),
+    data: {
+      type: "folder-child",
+      folderId,
+      bookmark,
+    } satisfies FolderChildDragData,
+  });
   const style = {
-    transform: CSS.Translate.toString(transform),
+    transform: CSS.Transform.toString(transform),
+    transition,
   };
 
   return (
@@ -603,16 +646,23 @@ function FolderDialog({
             ×
           </button>
         </div>
-        <ul className="grid grid-cols-3 gap-x-4 gap-y-6">
-          {folder.children.map((bookmark) => (
-            <FolderChildItem
-              key={bookmark.id}
-              bookmark={bookmark}
-              folderId={folder.id}
-              isClickBlocked={isClickBlocked}
-            />
-          ))}
-        </ul>
+        <SortableContext
+          items={folder.children.map((bookmark) =>
+            getFolderChildDragId(folder.id, bookmark.id),
+          )}
+          strategy={rectSortingStrategy}
+        >
+          <ul className="grid grid-cols-3 gap-x-4 gap-y-6">
+            {folder.children.map((bookmark) => (
+              <FolderChildItem
+                key={bookmark.id}
+                bookmark={bookmark}
+                folderId={folder.id}
+                isClickBlocked={isClickBlocked}
+              />
+            ))}
+          </ul>
+        </SortableContext>
       </section>
     </div>
   );
@@ -685,7 +735,11 @@ export function App() {
 
       if (isFolderChildDragData(args.active.data.current)) {
         dropIntentRef.current = { type: "none" };
-        return pointerCollisions;
+        return [...pointerCollisions].sort(
+          (first, second) =>
+            Number(!isFolderChildDragId(first.id)) -
+            Number(!isFolderChildDragId(second.id)),
+        );
       }
 
       const intent = getDropIntent(
@@ -824,12 +878,34 @@ export function App() {
     }, 180);
 
     if (isFolderChildDragData(activeData)) {
+      const overData = over?.data.current;
+      if (
+        isFolderChildDragData(overData) &&
+        overData.folderId === activeData.folderId
+      ) {
+        if (overData.bookmark.id === activeData.bookmark.id) {
+          return;
+        }
+
+        saveBookmarks(
+          reorderBookmarkInFolder(
+            bookmarks,
+            activeData.folderId,
+            activeData.bookmark.id,
+            overData.bookmark.id,
+          ),
+        );
+        return;
+      }
+
       if (isFolderDropId(over?.id)) {
         return;
       }
 
       const targetId =
-        over && !isFolderDropId(over.id) ? String(over.id) : null;
+        over && !isFolderDropId(over.id) && !isFolderChildDragData(overData)
+          ? String(over.id)
+          : null;
       saveBookmarks(
         moveBookmarkOutOfFolder(
           bookmarks,
