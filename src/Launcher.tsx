@@ -1,12 +1,13 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type ChangeEvent,
   type FormEvent,
   type KeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type Ref,
 } from "react";
@@ -57,12 +58,22 @@ const ICON_GRADIENTS = [
   "linear-gradient(145deg, #db2777, #7c3aed)",
 ];
 
+// 悬停超过该时长后才确认"合并"或"移出文件夹"意图，避免误触
 const MERGE_INTENT_DELAY_MS = 650;
+const FOLDER_MOVE_OUT_INTENT_DELAY_MS = MERGE_INTENT_DELAY_MS;
+const CLICK_DRAG_SUPPRESSION_DISTANCE_PX = 4;
+const RECENT_DRAG_CLICK_BLOCK_MS = 300;
 const FOLDER_DROP_ID_PREFIX = "folder-drop:";
 const FOLDER_CHILD_DRAG_ID_PREFIX = "folder-child:";
 const ICON_IMAGE_URL_TEMPLATE =
   import.meta.env.VITE_ICON_IMAGE_URL_TEMPLATE?.trim();
 const loadedIconImageUrls = new Set<string>();
+
+// 三种 drag data 通过 type 字段区分，分别表示：桌面顶层项、文件夹内子项、文件夹本身作为放置目标
+type TopLevelDragData = {
+  type: "top-level";
+  node: BookmarkNode;
+};
 
 type FolderChildDragData = {
   type: "folder-child";
@@ -70,7 +81,22 @@ type FolderChildDragData = {
   bookmark: BookmarkItem;
 };
 
-type MergeState = "idle" | "ready";
+type FolderDropData = {
+  type: "folder-drop";
+  folderId: string;
+};
+
+// pending = 悬停计时中（仅视觉提示）；ready = 计时已过，松手即执行
+type FolderMoveOutState = {
+  status: "pending" | "ready";
+  folderId: string;
+  bookmarkId: string;
+  title: string;
+};
+
+// idle = 无目标；pending = 悬停中待确认；ready = 已确认，松手即合并
+type MergeState = "idle" | "pending" | "ready";
+// 每次 dragMove 计算出的当前意图：不操作 / 合并到目标 / 在目标位置排序
 type DropIntent =
   | { type: "none" }
   | { type: "merge" | "sort"; targetId: string };
@@ -212,16 +238,21 @@ function getFolderDropId(folderId: string) {
   return `${FOLDER_DROP_ID_PREFIX}${folderId}`;
 }
 
-function getFolderChildDragId(folderId: string, bookmarkId: string) {
-  return `${FOLDER_CHILD_DRAG_ID_PREFIX}${folderId}:${bookmarkId}`;
+function getFolderChildDragId(folderId: string, bookmark: BookmarkItem) {
+  return `${FOLDER_CHILD_DRAG_ID_PREFIX}${folderId}:${bookmark.id}:${bookmark.createdAt}`;
 }
 
 function isFolderDropId(id: UniqueIdentifier | undefined | null) {
   return typeof id === "string" && id.startsWith(FOLDER_DROP_ID_PREFIX);
 }
 
-function isFolderChildDragId(id: UniqueIdentifier | undefined | null) {
-  return typeof id === "string" && id.startsWith(FOLDER_CHILD_DRAG_ID_PREFIX);
+function isTopLevelDragData(value: unknown): value is TopLevelDragData {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const data = value as Partial<TopLevelDragData>;
+  return data.type === "top-level" && Boolean(data.node);
 }
 
 function isFolderChildDragData(value: unknown): value is FolderChildDragData {
@@ -234,6 +265,28 @@ function isFolderChildDragData(value: unknown): value is FolderChildDragData {
     data.type === "folder-child" &&
     typeof data.folderId === "string" &&
     Boolean(data.bookmark)
+  );
+}
+
+function isFolderDropData(value: unknown): value is FolderDropData {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const data = value as Partial<FolderDropData>;
+  return data.type === "folder-drop" && typeof data.folderId === "string";
+}
+
+function isSameFolderCollision(
+  collision: {
+    data?: { droppableContainer?: { data?: { current?: unknown } } };
+  },
+  folderId: string,
+) {
+  const data = collision.data?.droppableContainer?.data?.current;
+  return (
+    (isFolderChildDragData(data) && data.folderId === folderId) ||
+    (isFolderDropData(data) && data.folderId === folderId)
   );
 }
 
@@ -263,6 +316,7 @@ function createFolderId() {
   return `folder-${Date.now()}`;
 }
 
+// 仅"书签"可作为被合并方；目标可以是书签（凑成新文件夹）或已有文件夹（直接塞入）
 function canMergeBookmarkNodes(
   activeNode: BookmarkNode,
   targetNode: BookmarkNode,
@@ -273,6 +327,7 @@ function canMergeBookmarkNodes(
   );
 }
 
+// 把 active 合并到 target：目标为文件夹则追加，目标为书签则新建文件夹包裹二者
 function mergeBookmarkNodes(
   bookmarks: BookmarkNode[],
   activeId: string,
@@ -323,6 +378,7 @@ function mergeBookmarkNodes(
   });
 }
 
+// 把书签从文件夹中"分离"到顶层：移除后若文件夹空则删除，仅剩一个则降级为书签，否则保留文件夹
 function moveBookmarkOutOfFolder(
   bookmarks: BookmarkNode[],
   folderId: string,
@@ -365,6 +421,7 @@ function moveBookmarkOutOfFolder(
     return bookmarks;
   }
 
+  // targetId 给出落点：未命中则追加到末尾，命中则插到该位置之前
   const targetIndex = targetId
     ? nextBookmarks.findIndex((bookmark) => bookmark.id === targetId)
     : -1;
@@ -427,6 +484,7 @@ function resolveFolderChildrenAfterDelete(
   return [{ ...folder, children }];
 }
 
+// 根据指针在目标矩形上的位置判断意图：靠"近 active 一侧的半区"为合并，另一半区为排序插入
 function getDropIntent(
   activeId: UniqueIdentifier,
   targetId: UniqueIdentifier,
@@ -458,6 +516,7 @@ function getDropIntent(
   const isTargetLeftHalf =
     pointerCoordinates.x < targetRect.left + targetRect.width / 2;
   const isMovingForward = activeIndex < targetIndex;
+  // 合并半区随拖动方向翻转：向前拖取左半，向后拖取右半，让合并区始终背向 active 的来向
   const isMergeHalf = isMovingForward ? isTargetLeftHalf : !isTargetLeftHalf;
 
   if (isMergeHalf && !canMergeBookmarkNodes(activeNode, targetNode)) {
@@ -601,23 +660,155 @@ function BookmarkContextMenu({
   );
 }
 
+function useDragSafeBookmarkLink(isClickBlocked: () => boolean) {
+  const pointerStartRef = useRef<{
+    pointerId: number;
+    x: number;
+    y: number;
+  } | null>(null);
+  const didPointerMoveRef = useRef(false);
+  const clearPointerMoveTimerRef = useRef<ReturnType<
+    typeof window.setTimeout
+  > | null>(null);
+
+  const clearPointerMoveState = useCallback(() => {
+    pointerStartRef.current = null;
+    didPointerMoveRef.current = false;
+
+    if (clearPointerMoveTimerRef.current) {
+      window.clearTimeout(clearPointerMoveTimerRef.current);
+      clearPointerMoveTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => clearPointerMoveState, [clearPointerMoveState]);
+
+  const handlePointerDownCapture = useCallback(
+    (event: ReactPointerEvent<HTMLAnchorElement>) => {
+      if (event.button !== 0) {
+        return;
+      }
+
+      if (clearPointerMoveTimerRef.current) {
+        window.clearTimeout(clearPointerMoveTimerRef.current);
+        clearPointerMoveTimerRef.current = null;
+      }
+
+      pointerStartRef.current = {
+        pointerId: event.pointerId,
+        x: event.clientX,
+        y: event.clientY,
+      };
+      didPointerMoveRef.current = false;
+    },
+    [],
+  );
+
+  const handlePointerMoveCapture = useCallback(
+    (event: ReactPointerEvent<HTMLAnchorElement>) => {
+      const pointerStart = pointerStartRef.current;
+      if (!pointerStart || pointerStart.pointerId !== event.pointerId) {
+        return;
+      }
+
+      const distance = Math.hypot(
+        event.clientX - pointerStart.x,
+        event.clientY - pointerStart.y,
+      );
+      if (distance >= CLICK_DRAG_SUPPRESSION_DISTANCE_PX) {
+        didPointerMoveRef.current = true;
+      }
+    },
+    [],
+  );
+
+  const handlePointerUpCapture = useCallback(
+    (event: ReactPointerEvent<HTMLAnchorElement>) => {
+      const pointerStart = pointerStartRef.current;
+      if (!pointerStart || pointerStart.pointerId !== event.pointerId) {
+        return;
+      }
+
+      pointerStartRef.current = null;
+      if (didPointerMoveRef.current) {
+        if (clearPointerMoveTimerRef.current) {
+          window.clearTimeout(clearPointerMoveTimerRef.current);
+        }
+
+        // click 在 pointerup 之后合成，延迟清理可覆盖未真正激活 dnd 的轻微拖动。
+        clearPointerMoveTimerRef.current = window.setTimeout(() => {
+          didPointerMoveRef.current = false;
+          clearPointerMoveTimerRef.current = null;
+        }, RECENT_DRAG_CLICK_BLOCK_MS);
+      }
+    },
+    [],
+  );
+
+  const handlePointerOutCapture = useCallback(
+    (event: ReactPointerEvent<HTMLAnchorElement>) => {
+      const pointerStart = pointerStartRef.current;
+      if (pointerStart?.pointerId === event.pointerId) {
+        const nextTarget = event.relatedTarget;
+        if (
+          nextTarget instanceof Node &&
+          event.currentTarget.contains(nextTarget)
+        ) {
+          return;
+        }
+
+        didPointerMoveRef.current = true;
+      }
+    },
+    [],
+  );
+
+  const handleClick = useCallback(
+    (event: ReactMouseEvent<HTMLAnchorElement>) => {
+      if (isClickBlocked() || didPointerMoveRef.current) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      clearPointerMoveState();
+    },
+    [clearPointerMoveState, isClickBlocked],
+  );
+
+  return {
+    onClick: handleClick,
+    onPointerCancelCapture: clearPointerMoveState,
+    onPointerDownCapture: handlePointerDownCapture,
+    onPointerMoveCapture: handlePointerMoveCapture,
+    onPointerOutCapture: handlePointerOutCapture,
+    onPointerUpCapture: handlePointerUpCapture,
+  };
+}
+
 function AppDialog({
   children,
   className = "",
   contentRef,
+  isClosing = false,
   onClose,
   onInteractOutside,
 }: {
   children: ReactNode;
   className?: string;
   contentRef?: Ref<HTMLDivElement>;
+  isClosing?: boolean;
   onClose: () => void;
   onInteractOutside?: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(true);
+  const onCloseRef = useRef(onClose);
   const closeTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(
     null,
   );
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     return () => {
@@ -627,6 +818,35 @@ function AppDialog({
     };
   }, []);
 
+  useEffect(() => {
+    if (!isClosing) {
+      if (closeTimerRef.current) {
+        window.clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+
+      setIsOpen(true);
+      return;
+    }
+
+    setIsOpen(false);
+    if (closeTimerRef.current) {
+      window.clearTimeout(closeTimerRef.current);
+    }
+
+    closeTimerRef.current = window.setTimeout(
+      () => onCloseRef.current(),
+      DIALOG_ANIMATION_MS,
+    );
+
+    return () => {
+      if (closeTimerRef.current) {
+        window.clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+    };
+  }, [isClosing]);
+
   function handleOpenChange(open: boolean) {
     setIsOpen(open);
 
@@ -635,7 +855,10 @@ function AppDialog({
         window.clearTimeout(closeTimerRef.current);
       }
 
-      closeTimerRef.current = window.setTimeout(onClose, DIALOG_ANIMATION_MS);
+      closeTimerRef.current = window.setTimeout(
+        () => onCloseRef.current(),
+        DIALOG_ANIMATION_MS,
+      );
     }
   }
 
@@ -737,6 +960,7 @@ function BookmarkEditDialog({
 
 function SortableDesktopItem({
   item,
+  sortableId,
   mergeState,
   isClickBlocked,
   onOpenFolder,
@@ -744,6 +968,7 @@ function SortableDesktopItem({
   onDeleteBookmark,
 }: {
   item: BookmarkNode;
+  sortableId: UniqueIdentifier;
   mergeState: MergeState;
   isClickBlocked: () => boolean;
   onOpenFolder: (folderId: string) => void;
@@ -757,17 +982,24 @@ function SortableDesktopItem({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: item.id });
+  } = useSortable({
+    id: sortableId,
+    data: {
+      type: "top-level",
+      node: item,
+    } satisfies TopLevelDragData,
+  });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
+  const bookmarkLinkHandlers = useDragSafeBookmarkLink(isClickBlocked);
 
   if (item.type === "folder") {
     return (
       <li
         ref={setNodeRef}
-        className={clsx(isDragging && "opacity-30")}
+        className={clsx("will-change-transform", isDragging && "opacity-30")}
         style={style}
       >
         <button
@@ -790,7 +1022,7 @@ function SortableDesktopItem({
   return (
     <li
       ref={setNodeRef}
-      className={clsx(isDragging && "opacity-30")}
+      className={clsx("will-change-transform", isDragging && "opacity-30")}
       style={style}
     >
       <BookmarkContextMenu
@@ -800,11 +1032,7 @@ function SortableDesktopItem({
         <a
           className="flex w-full touch-none select-none justify-center rounded-[30px] px-1 py-2 outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
           href={item.url}
-          onClick={(event) => {
-            if (isClickBlocked()) {
-              event.preventDefault();
-            }
-          }}
+          {...bookmarkLinkHandlers}
           {...attributes}
           {...listeners}
         >
@@ -840,7 +1068,7 @@ function FolderChildItem({
     transition,
     isDragging,
   } = useSortable({
-    id: getFolderChildDragId(folderId, bookmark.id),
+    id: getFolderChildDragId(folderId, bookmark),
     data: {
       type: "folder-child",
       folderId,
@@ -851,11 +1079,12 @@ function FolderChildItem({
     transform: CSS.Transform.toString(transform),
     transition,
   };
+  const bookmarkLinkHandlers = useDragSafeBookmarkLink(isClickBlocked);
 
   return (
     <li
       ref={setNodeRef}
-      className={clsx(isDragging && "opacity-30")}
+      className={clsx("will-change-transform", isDragging && "opacity-30")}
       style={style}
     >
       <BookmarkContextMenu
@@ -865,11 +1094,7 @@ function FolderChildItem({
         <a
           className="flex touch-none select-none flex-col items-center gap-2 rounded-3xl p-2 text-center outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
           href={bookmark.url}
-          onClick={(event) => {
-            if (isClickBlocked()) {
-              event.preventDefault();
-            }
-          }}
+          {...bookmarkLinkHandlers}
           {...attributes}
           {...listeners}
         >
@@ -890,6 +1115,9 @@ function FolderChildItem({
 
 function FolderDialog({
   folder,
+  isClosing = false,
+  isMoveOutArmed = false,
+  onDialogElementChange,
   onClose,
   onRenameFolder,
   isClickBlocked,
@@ -897,6 +1125,9 @@ function FolderDialog({
   onDeleteBookmark,
 }: {
   folder: BookmarkFolder;
+  isClosing?: boolean;
+  isMoveOutArmed?: boolean;
+  onDialogElementChange?: (element: HTMLDivElement | null) => void;
   onClose: () => void;
   onRenameFolder: (folderId: string, title: string) => void;
   isClickBlocked: () => boolean;
@@ -907,9 +1138,21 @@ function FolderDialog({
   const [draftTitle, setDraftTitle] = useState(folder.title);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const didFinishTitleEditRef = useRef(false);
+  // 整个对话框作为放置区：文件夹子项拖到此处表示"留在文件夹内"，不触发移出
   const { setNodeRef } = useDroppable({
     id: getFolderDropId(folder.id),
+    data: {
+      type: "folder-drop",
+      folderId: folder.id,
+    } satisfies FolderDropData,
   });
+  const setContentRef = useCallback(
+    (element: HTMLDivElement | null) => {
+      setNodeRef(element);
+      onDialogElementChange?.(element);
+    },
+    [onDialogElementChange, setNodeRef],
+  );
 
   useEffect(() => {
     if (!isEditingTitle) {
@@ -975,8 +1218,13 @@ function FolderDialog({
 
   return (
     <AppDialog
-      className="max-w-md rounded-[32px] p-6"
-      contentRef={setNodeRef}
+      className={clsx(
+        "max-w-md rounded-[32px] p-6 transition duration-200 ease-out",
+        isMoveOutArmed &&
+          "scale-[0.97] border-white/70 bg-white/24 shadow-[0_0_0_8px_rgba(255,255,255,0.08),0_30px_70px_rgba(15,23,42,0.28)]",
+      )}
+      contentRef={setContentRef}
+      isClosing={isClosing}
       onClose={handleClose}
       onInteractOutside={() => {
         if (isEditingTitle) {
@@ -1009,14 +1257,14 @@ function FolderDialog({
       </div>
       <SortableContext
         items={folder.children.map((bookmark) =>
-          getFolderChildDragId(folder.id, bookmark.id),
+          getFolderChildDragId(folder.id, bookmark),
         )}
         strategy={rectSortingStrategy}
       >
         <ul className="grid grid-cols-3 gap-x-4 gap-y-6">
           {folder.children.map((bookmark) => (
             <FolderChildItem
-              key={bookmark.id}
+              key={getFolderChildDragId(folder.id, bookmark)}
               bookmark={bookmark}
               folderId={folder.id}
               isClickBlocked={isClickBlocked}
@@ -1036,18 +1284,51 @@ export function Launcher() {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [activeFolderChild, setActiveFolderChild] =
     useState<FolderChildDragData | null>(null);
+  const [mergeCandidateId, setMergeCandidateId] = useState<string | null>(null);
   const [mergeTargetId, setMergeTargetId] = useState<string | null>(null);
   const [openFolderId, setOpenFolderId] = useState<string | null>(null);
+  // 触发关闭动画的文件夹 id；动画结束后才真正卸载对话框
+  const [closingFolderId, setClosingFolderId] = useState<string | null>(null);
+  // 关闭动画期间继续渲染的文件夹快照，避免 bookmarks 变化导致 Dialog 直接卸载
+  const [closingFolderSnapshot, setClosingFolderSnapshot] =
+    useState<BookmarkFolder | null>(null);
+  // 文件夹子项"拖出"意图的视觉反馈状态（pending 计时中 / ready 已执行）
+  const [folderMoveOutState, setFolderMoveOutState] =
+    useState<FolderMoveOutState | null>(null);
   const [editingBookmark, setEditingBookmark] =
     useState<BookmarkEditTarget | null>(null);
-  const recentlyDraggedRef = useRef(false);
+  // 同步读取最新书签，避免回调闭包捕获旧 state
+  const bookmarksRef = useRef<BookmarkNode[]>([]);
+  // 拖拽起点快照：cancel 时若已发生"分离"需据此回滚
+  const dragStartBookmarksRef = useRef<BookmarkNode[] | null>(null);
+  // 拖拽刚结束的短窗口内屏蔽链接点击，防止松手误触发跳转
+  const recentDragClickBlockUntilRef = useRef(0);
+  const recentDragClickTimerRef = useRef<ReturnType<
+    typeof window.setTimeout
+  > | null>(null);
+  // 合并意图三件套：候选目标 / 候选开始时间 / 已确认目标
   const mergeTargetRef = useRef<string | null>(null);
   const mergeCandidateRef = useRef<string | null>(null);
   const mergeCandidateStartedAtRef = useRef<number | null>(null);
   const mergeIntentTimerRef = useRef<ReturnType<
     typeof window.setTimeout
   > | null>(null);
+  // 文件夹移出意图三件套：候选 id / 计时器 / 拟落点目标
+  const folderMoveOutCandidateRef = useRef<string | null>(null);
+  const folderMoveOutTimerRef = useRef<ReturnType<
+    typeof window.setTimeout
+  > | null>(null);
+  const folderMoveOutTargetRef = useRef<string | null>(null);
+  // 已被"提起"到顶层的文件夹子项标记，防止同一拖拽内重复触发分离
+  const liftedFolderChildRef = useRef<{
+    folderId: string;
+    bookmarkId: string;
+  } | null>(null);
+  // 最近一次 collisionDetection 计算出的意图，供 dragEnd 读取
   const dropIntentRef = useRef<DropIntent>({ type: "none" });
+  const folderDialogElementRef = useRef<HTMLDivElement | null>(null);
+  // 拖拽项是否仍与所属 FolderDialog 相交：以对话框边界判定移出
+  const itemInsideFolderDialogRef = useRef<boolean>(true);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -1059,10 +1340,20 @@ export function Launcher() {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
-  const bookmarkIds = useMemo(
-    () => bookmarks.map((bookmark) => bookmark.id),
-    [bookmarks],
-  );
+  function getTopLevelSortableId(bookmark: BookmarkNode) {
+    const liftedChild = liftedFolderChildRef.current;
+    if (
+      liftedChild &&
+      bookmark.type === "bookmark" &&
+      bookmark.id === liftedChild.bookmarkId
+    ) {
+      return getFolderChildDragId(liftedChild.folderId, bookmark);
+    }
+
+    return bookmark.id;
+  }
+
+  const topLevelSortableIds = bookmarks.map(getTopLevelSortableId);
   const activeItem = activeId
     ? bookmarks.find((bookmark) => bookmark.id === activeId)
     : undefined;
@@ -1071,8 +1362,33 @@ export function Launcher() {
     (bookmark): bookmark is BookmarkFolder =>
       bookmark.type === "folder" && bookmark.id === openFolderId,
   );
+  const visibleFolder =
+    closingFolderId && closingFolderSnapshot?.id === closingFolderId
+      ? closingFolderSnapshot
+      : openFolder;
+
+  useEffect(() => {
+    bookmarksRef.current = bookmarks;
+  }, [bookmarks]);
+
+  useEffect(() => {
+    return () => {
+      if (mergeIntentTimerRef.current) {
+        window.clearTimeout(mergeIntentTimerRef.current);
+      }
+
+      if (folderMoveOutTimerRef.current) {
+        window.clearTimeout(folderMoveOutTimerRef.current);
+      }
+
+      if (recentDragClickTimerRef.current) {
+        window.clearTimeout(recentDragClickTimerRef.current);
+      }
+    };
+  }, []);
 
   const saveBookmarks = useCallback((nextBookmarks: BookmarkNode[]) => {
+    bookmarksRef.current = nextBookmarks;
     setBookmarks(nextBookmarks);
 
     if (canUseChromeStorage()) {
@@ -1167,11 +1483,134 @@ export function Launcher() {
     deleteBookmark({ folderId, bookmark });
   }
 
-  const isClickBlocked = useCallback(() => recentlyDraggedRef.current, []);
+  const clearRecentDragClickBlock = useCallback(() => {
+    recentDragClickBlockUntilRef.current = 0;
 
+    if (recentDragClickTimerRef.current) {
+      window.clearTimeout(recentDragClickTimerRef.current);
+      recentDragClickTimerRef.current = null;
+    }
+  }, []);
+
+  const blockClicksAfterDrag = useCallback(() => {
+    recentDragClickBlockUntilRef.current =
+      Date.now() + RECENT_DRAG_CLICK_BLOCK_MS;
+
+    if (recentDragClickTimerRef.current) {
+      window.clearTimeout(recentDragClickTimerRef.current);
+    }
+
+    recentDragClickTimerRef.current = window.setTimeout(() => {
+      if (Date.now() >= recentDragClickBlockUntilRef.current) {
+        recentDragClickBlockUntilRef.current = 0;
+      }
+
+      recentDragClickTimerRef.current = null;
+    }, RECENT_DRAG_CLICK_BLOCK_MS);
+  }, []);
+
+  const isClickBlocked = useCallback(
+    () => Date.now() < recentDragClickBlockUntilRef.current,
+    [],
+  );
+
+  const isLiftedFolderChild = useCallback((data: FolderChildDragData) => {
+    const liftedChild = liftedFolderChildRef.current;
+    return (
+      liftedChild?.folderId === data.folderId &&
+      liftedChild.bookmarkId === data.bookmark.id
+    );
+  }, []);
+  const setFolderDialogElement = useCallback(
+    (element: HTMLDivElement | null) => {
+      folderDialogElementRef.current = element;
+    },
+    [],
+  );
+
+  const closeFolderDialogWithAnimation = useCallback((folderId: string) => {
+    const folder = bookmarksRef.current.find(
+      (bookmark): bookmark is BookmarkFolder =>
+        bookmark.type === "folder" && bookmark.id === folderId,
+    );
+
+    if (folder) {
+      setClosingFolderSnapshot(folder);
+    }
+
+    setClosingFolderId(folderId);
+  }, []);
+
+  // 把 over 解析为"顶层落点 id"：落在文件夹子项或文件夹放置区上时返回 null（不属于顶层排序目标）
+  function getTopLevelOverId(over: DragMoveEvent["over"]) {
+    if (!over) {
+      return null;
+    }
+
+    const data = over.data.current;
+    if (isFolderChildDragData(data) || isFolderDropData(data)) {
+      return null;
+    }
+
+    if (isTopLevelDragData(data)) {
+      return data.node.id;
+    }
+
+    return !data ? String(over.id) : null;
+  }
+
+  // 自定义碰撞检测：分两条路径——文件夹子项拖拽 vs 顶层项拖拽
   const collisionDetection = useCallback<CollisionDetection>(
     (args) => {
       const pointerCollisions = pointerWithin(args);
+      const activeData = args.active.data.current;
+
+      // 路径 A：拖动的是文件夹内子项
+      if (isFolderChildDragData(activeData)) {
+        dropIntentRef.current = { type: "none" };
+
+        // 只要 dragged item 的 rect 仍与 FolderDialog rect 相交，就视作仍在文件夹内；
+        // 完全拖出 FolderDialog 边界后才开始判定为需要移出。
+        if (
+          openFolderId === activeData.folderId &&
+          !isLiftedFolderChild(activeData)
+        ) {
+          const folderDialogRect =
+            folderDialogElementRef.current?.getBoundingClientRect();
+          const collisionRect = args.collisionRect;
+          // rect 不可得时保守视作"在内"，避免误触发移出
+          itemInsideFolderDialogRef.current =
+            !folderDialogRect || !collisionRect
+              ? true
+              : collisionRect.right > folderDialogRect.left &&
+                collisionRect.left < folderDialogRect.right &&
+                collisionRect.bottom > folderDialogRect.top &&
+                collisionRect.top < folderDialogRect.bottom;
+        }
+
+        // 已被提起为顶层项后，按顶层规则参与碰撞
+        if (isLiftedFolderChild(activeData)) {
+          return pointerCollisions.length > 0
+            ? pointerCollisions
+            : closestCenter(args);
+        }
+
+        // 指针未落在任何可放置区上：若当前文件夹仍开着则不返回碰撞（避免误移出），否则按最近邻兜底
+        if (pointerCollisions.length === 0) {
+          return openFolderId === activeData.folderId
+            ? []
+            : closestCenter(args);
+        }
+
+        // 优先返回"同文件夹内"的碰撞，保证子项排序优先于移出
+        return [...pointerCollisions].sort(
+          (first, second) =>
+            Number(!isSameFolderCollision(first, activeData.folderId)) -
+            Number(!isSameFolderCollision(second, activeData.folderId)),
+        );
+      }
+
+      // 路径 B：拖动的是顶层项
       if (pointerCollisions.length === 0) {
         dropIntentRef.current = { type: "none" };
         return closestCenter(args);
@@ -1184,15 +1623,7 @@ export function Launcher() {
         return pointerCollisions;
       }
 
-      if (isFolderChildDragData(args.active.data.current)) {
-        dropIntentRef.current = { type: "none" };
-        return [...pointerCollisions].sort(
-          (first, second) =>
-            Number(!isFolderChildDragId(first.id)) -
-            Number(!isFolderChildDragId(second.id)),
-        );
-      }
-
+      // 由指针位置判定合并 or 排序；合并时返回空碰撞，阻止 dnd-kit 触发默认排序
       const intent = getDropIntent(
         args.active.id,
         firstCollision.id,
@@ -1204,7 +1635,7 @@ export function Launcher() {
       dropIntentRef.current = intent;
       return intent.type === "sort" ? pointerCollisions : [];
     },
-    [bookmarks],
+    [bookmarks, isLiftedFolderChild, openFolderId],
   );
 
   const clearMergeIntent = useCallback(() => {
@@ -1216,9 +1647,11 @@ export function Launcher() {
     mergeCandidateRef.current = null;
     mergeCandidateStartedAtRef.current = null;
     mergeTargetRef.current = null;
+    setMergeCandidateId(null);
     setMergeTargetId(null);
   }, []);
 
+  // 合并意图状态机：候选 → pending（脉冲）→ 计时到期置 ready；候选变更或离开则清空重来
   const updateMergeIntent = useCallback(() => {
     const candidateId =
       dropIntentRef.current.type === "merge"
@@ -1230,6 +1663,7 @@ export function Launcher() {
       return;
     }
 
+    // 候选未变或已确认，无需重复触发
     if (
       candidateId === mergeCandidateRef.current ||
       candidateId === mergeTargetRef.current
@@ -1240,13 +1674,132 @@ export function Launcher() {
     clearMergeIntent();
     mergeCandidateRef.current = candidateId;
     mergeCandidateStartedAtRef.current = Date.now();
+    setMergeCandidateId(candidateId);
+    // 计时到点才"确认"：避免快速划过时误触发合并
     mergeIntentTimerRef.current = window.setTimeout(() => {
       if (mergeCandidateRef.current === candidateId) {
         mergeTargetRef.current = candidateId;
+        setMergeCandidateId(null);
         setMergeTargetId(candidateId);
       }
     }, MERGE_INTENT_DELAY_MS);
   }, [clearMergeIntent]);
+
+  const clearFolderMoveOutTimer = useCallback(() => {
+    if (folderMoveOutTimerRef.current) {
+      window.clearTimeout(folderMoveOutTimerRef.current);
+      folderMoveOutTimerRef.current = null;
+    }
+
+    folderMoveOutCandidateRef.current = null;
+    folderMoveOutTargetRef.current = null;
+  }, []);
+
+  const resetFolderMoveOutFeedback = useCallback(() => {
+    clearFolderMoveOutTimer();
+    setFolderMoveOutState(null);
+  }, [clearFolderMoveOutTimer]);
+
+  const clearPendingFolderMoveOutIntent = useCallback(() => {
+    clearFolderMoveOutTimer();
+    setFolderMoveOutState((currentState) =>
+      currentState?.status === "ready" ? currentState : null,
+    );
+  }, [clearFolderMoveOutTimer]);
+
+  // 真正执行"分离"：把文件夹子项移到顶层，并关闭所属文件夹对话框（动画由 closingFolderId 触发）
+  const liftFolderChildToTopLevel = useCallback(
+    (activeData: FolderChildDragData) => {
+      if (isLiftedFolderChild(activeData)) {
+        return;
+      }
+
+      const nextBookmarks = moveBookmarkOutOfFolder(
+        bookmarksRef.current,
+        activeData.folderId,
+        activeData.bookmark.id,
+        folderMoveOutTargetRef.current,
+      );
+
+      closeFolderDialogWithAnimation(activeData.folderId);
+      liftedFolderChildRef.current = {
+        folderId: activeData.folderId,
+        bookmarkId: activeData.bookmark.id,
+      };
+      bookmarksRef.current = nextBookmarks;
+      setBookmarks(nextBookmarks);
+      setFolderMoveOutState({
+        status: "ready",
+        folderId: activeData.folderId,
+        bookmarkId: activeData.bookmark.id,
+        title: activeData.bookmark.title,
+      });
+    },
+    [closeFolderDialogWithAnimation, isLiftedFolderChild],
+  );
+
+  // 文件夹子项拖拽过程中的"移出意图"检测：拖出对话框且悬停超时即触发分离
+  const updateFolderMoveOutIntent = useCallback(
+    (event: DragMoveEvent | DragOverEvent) => {
+      const activeData = event.active.data.current;
+      if (!isFolderChildDragData(activeData)) {
+        resetFolderMoveOutFeedback();
+        return;
+      }
+
+      // 已提起的子项不再重复处理
+      if (isLiftedFolderChild(activeData)) {
+        return;
+      }
+
+      // 仅当所属文件夹正处于打开状态时才考虑移出
+      if (openFolderId !== activeData.folderId) {
+        return;
+      }
+
+      const targetId = getTopLevelOverId(event.over);
+      folderMoveOutTargetRef.current = targetId;
+      // 拖拽项仍与 FolderDialog 相交则取消移出，出界才开始计时
+      if (itemInsideFolderDialogRef.current) {
+        clearPendingFolderMoveOutIntent();
+        return;
+      }
+
+      const candidateId = `${activeData.folderId}:${activeData.bookmark.id}`;
+      setFolderMoveOutState({
+        status: "pending",
+        folderId: activeData.folderId,
+        bookmarkId: activeData.bookmark.id,
+        title: activeData.bookmark.title,
+      });
+
+      // 同一候选已在计时中，不重置
+      if (folderMoveOutCandidateRef.current === candidateId) {
+        return;
+      }
+
+      clearFolderMoveOutTimer();
+      folderMoveOutTargetRef.current = targetId;
+      folderMoveOutCandidateRef.current = candidateId;
+      // 悬停超时才真正提起，避免拖动经过边缘时误触发
+      folderMoveOutTimerRef.current = window.setTimeout(() => {
+        if (folderMoveOutCandidateRef.current !== candidateId) {
+          return;
+        }
+
+        folderMoveOutTimerRef.current = null;
+        liftFolderChildToTopLevel(activeData);
+      }, FOLDER_MOVE_OUT_INTENT_DELAY_MS);
+    },
+    [
+      clearFolderMoveOutTimer,
+      clearPendingFolderMoveOutIntent,
+      isLiftedFolderChild,
+      liftFolderChildToTopLevel,
+      openFolderId,
+      resetFolderMoveOutFeedback,
+    ],
+  );
 
   useEffect(() => {
     if (!canUseChromeStorage()) {
@@ -1275,40 +1828,86 @@ export function Launcher() {
     return () => chrome.storage.onChanged.removeListener(handleStorageChange);
   }, []);
 
+  useEffect(() => {
+    function blockNativeLinkClickAfterDrag(event: MouseEvent) {
+      if (!isClickBlocked() || !(event.target instanceof Element)) {
+        return;
+      }
+
+      const link = event.target.closest("a[href]");
+      if (!link) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    }
+
+    // React onClick 之外再兜底一次，避免拖拽结束后的合成 click 直接触发 a 标签默认跳转。
+    document.addEventListener("click", blockNativeLinkClickAfterDrag, true);
+    return () =>
+      document.removeEventListener(
+        "click",
+        blockNativeLinkClickAfterDrag,
+        true,
+      );
+  }, [isClickBlocked]);
+
+  // 拖拽开始：记录起点快照、清空所有进行中的意图，准备进入拖拽态
   function handleDragStart(event: DragStartEvent) {
     const activeData = event.active.data.current;
 
     dropIntentRef.current = { type: "none" };
+    // 默认视作"在文件夹内"，等首次 collisionDetection 以拖拽项位置修正，避免拖拽起始瞬间误触发移出
+    itemInsideFolderDialogRef.current = true;
+    dragStartBookmarksRef.current = bookmarksRef.current;
+    liftedFolderChildRef.current = null;
+    setClosingFolderId(null);
+    setClosingFolderSnapshot(null);
     setActiveId(event.active.id);
     setActiveFolderChild(isFolderChildDragData(activeData) ? activeData : null);
     clearMergeIntent();
-    recentlyDraggedRef.current = false;
+    resetFolderMoveOutFeedback();
+    clearRecentDragClickBlock();
   }
 
+  // 拖拽移动：按 active 类型分派——文件夹子项走"移出"检测，顶层项走"合并"检测
   function handleDragMove(event: DragMoveEvent) {
     if (isFolderChildDragData(event.active.data.current)) {
       clearMergeIntent();
+      updateFolderMoveOutIntent(event);
       return;
     }
 
+    resetFolderMoveOutFeedback();
     updateMergeIntent();
   }
 
+  // dragOver 与 dragMove 处理一致：dnd-kit 在 over 变化时只触发 dragOver，二者都监听更稳
   function handleDragOver(event: DragOverEvent) {
     if (isFolderChildDragData(event.active.data.current)) {
       clearMergeIntent();
+      updateFolderMoveOutIntent(event);
       return;
     }
 
+    resetFolderMoveOutFeedback();
     updateMergeIntent();
   }
 
+  // 拖拽结束：根据 active 类型和最终意图分派四种结果——顶层排序 / 合并 / 文件夹内排序 / 移出
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
+    const activeData = active.data.current;
+    const currentBookmarks = bookmarksRef.current;
+    const wasLiftedFolderChild =
+      isFolderChildDragData(activeData) && isLiftedFolderChild(activeData);
     const finalMergeTargetId =
       dropIntentRef.current.type === "merge"
         ? dropIntentRef.current.targetId
         : null;
+    // 兜底：若 timer 回调因事件循环未及时把 candidate 升为 ready，但悬停时长已达标，则视作已确认
     const hasDelayedOverTarget =
       finalMergeTargetId !== null &&
       finalMergeTargetId === mergeCandidateRef.current &&
@@ -1317,19 +1916,46 @@ export function Launcher() {
     const confirmedMergeTargetId =
       mergeTargetRef.current ??
       (hasDelayedOverTarget ? finalMergeTargetId : null);
-    const activeData = active.data.current;
 
+    // 统一清理拖拽态
     setActiveId(null);
     setActiveFolderChild(null);
     clearMergeIntent();
+    resetFolderMoveOutFeedback();
     dropIntentRef.current = { type: "none" };
-    recentlyDraggedRef.current = true;
-    window.setTimeout(() => {
-      recentlyDraggedRef.current = false;
-    }, 180);
+    liftedFolderChildRef.current = null;
+    dragStartBookmarksRef.current = null;
+    // 屏蔽松手后短窗内的点击，防止 a 标签把拖拽释放误当作打开。
+    blockClicksAfterDrag();
 
+    // 分支 1：active 是文件夹子项
     if (isFolderChildDragData(activeData)) {
       const overData = over?.data.current;
+      // 1a：中途已被提起为顶层项——按顶层规则排序到落点
+      if (wasLiftedFolderChild) {
+        const targetId = getTopLevelOverId(over);
+        if (!targetId || targetId === activeData.bookmark.id) {
+          saveBookmarks(currentBookmarks);
+          return;
+        }
+
+        const activeIndex = currentBookmarks.findIndex(
+          (bookmark) => bookmark.id === activeData.bookmark.id,
+        );
+        const overIndex = currentBookmarks.findIndex(
+          (bookmark) => bookmark.id === targetId,
+        );
+
+        if (activeIndex < 0 || overIndex < 0) {
+          saveBookmarks(currentBookmarks);
+          return;
+        }
+
+        saveBookmarks(arrayMove(currentBookmarks, activeIndex, overIndex));
+        return;
+      }
+
+      // 1b：落在同文件夹的兄弟项上——文件夹内重排
       if (
         isFolderChildDragData(overData) &&
         overData.folderId === activeData.folderId
@@ -1340,7 +1966,7 @@ export function Launcher() {
 
         saveBookmarks(
           reorderBookmarkInFolder(
-            bookmarks,
+            currentBookmarks,
             activeData.folderId,
             activeData.bookmark.id,
             overData.bookmark.id,
@@ -1349,30 +1975,30 @@ export function Launcher() {
         return;
       }
 
-      if (isFolderDropId(over?.id)) {
+      // 1c：拖拽项仍与所属 FolderDialog 相交，保持原样
+      if (itemInsideFolderDialogRef.current) {
         return;
       }
 
-      const targetId =
-        over && !isFolderDropId(over.id) && !isFolderChildDragData(overData)
-          ? String(over.id)
-          : null;
+      // 1d：拖到了顶层任意位置——执行移出并关闭对话框
+      const targetId = getTopLevelOverId(over);
+      closeFolderDialogWithAnimation(activeData.folderId);
       saveBookmarks(
         moveBookmarkOutOfFolder(
-          bookmarks,
+          currentBookmarks,
           activeData.folderId,
           activeData.bookmark.id,
           targetId,
         ),
       );
-      setOpenFolderId(null);
       return;
     }
 
+    // 分支 2：active 是顶层项，且已确认合并目标——执行合并
     if (confirmedMergeTargetId) {
       saveBookmarks(
         mergeBookmarkNodes(
-          bookmarks,
+          currentBookmarks,
           String(active.id),
           confirmedMergeTargetId,
         ),
@@ -1380,28 +2006,41 @@ export function Launcher() {
       return;
     }
 
+    // 分支 3：顶层项普通排序
     if (!over || active.id === over.id) {
       return;
     }
 
-    const activeIndex = bookmarks.findIndex(
+    const activeIndex = currentBookmarks.findIndex(
       (bookmark) => bookmark.id === active.id,
     );
-    const overIndex = bookmarks.findIndex(
+    const overIndex = currentBookmarks.findIndex(
       (bookmark) => bookmark.id === over.id,
     );
 
     if (activeIndex < 0 || overIndex < 0) {
       return;
     }
-    saveBookmarks(arrayMove(bookmarks, activeIndex, overIndex));
+    saveBookmarks(arrayMove(currentBookmarks, activeIndex, overIndex));
   }
 
+  // 取消拖拽（Esc 或外部取消）：若中途已发生"分离"则回滚到起点快照
   function handleDragCancel() {
+    if (dragStartBookmarksRef.current && liftedFolderChildRef.current) {
+      bookmarksRef.current = dragStartBookmarksRef.current;
+      setBookmarks(dragStartBookmarksRef.current);
+    }
+
     setActiveId(null);
     setActiveFolderChild(null);
     clearMergeIntent();
+    resetFolderMoveOutFeedback();
+    setClosingFolderId(null);
+    setClosingFolderSnapshot(null);
+    liftedFolderChildRef.current = null;
+    dragStartBookmarksRef.current = null;
     dropIntentRef.current = { type: "none" };
+    blockClicksAfterDrag();
   }
 
   return (
@@ -1425,31 +2064,52 @@ export function Launcher() {
               <p className="text-lg font-semibold text-white/80">暂无收藏</p>
             </div>
           ) : (
-            <SortableContext items={bookmarkIds} strategy={rectSortingStrategy}>
+            <SortableContext
+              items={topLevelSortableIds}
+              strategy={rectSortingStrategy}
+            >
               <ul className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-x-6 gap-y-9 pb-10 sm:grid-cols-[repeat(auto-fill,minmax(118px,1fr))] sm:gap-x-8">
-                {bookmarks.map((bookmark) => (
-                  <SortableDesktopItem
-                    key={bookmark.id}
-                    item={bookmark}
-                    isClickBlocked={isClickBlocked}
-                    mergeState={
-                      mergeTargetId === bookmark.id ? "ready" : "idle"
-                    }
-                    onOpenFolder={setOpenFolderId}
-                    onEditBookmark={startTopLevelBookmarkEdit}
-                    onDeleteBookmark={deleteTopLevelBookmark}
-                  />
-                ))}
+                {bookmarks.map((bookmark) => {
+                  const sortableId = getTopLevelSortableId(bookmark);
+                  return (
+                    <SortableDesktopItem
+                      key={sortableId}
+                      item={bookmark}
+                      sortableId={sortableId}
+                      isClickBlocked={isClickBlocked}
+                      mergeState={
+                        mergeTargetId === bookmark.id
+                          ? "ready"
+                          : mergeCandidateId === bookmark.id
+                            ? "pending"
+                            : "idle"
+                      }
+                      onOpenFolder={setOpenFolderId}
+                      onEditBookmark={startTopLevelBookmarkEdit}
+                      onDeleteBookmark={deleteTopLevelBookmark}
+                    />
+                  );
+                })}
               </ul>
             </SortableContext>
           )}
         </section>
 
-        {openFolder ? (
+        {visibleFolder ? (
           <FolderDialog
-            folder={openFolder}
+            folder={visibleFolder}
+            isClosing={closingFolderId === visibleFolder.id}
+            isMoveOutArmed={
+              folderMoveOutState?.status === "pending" &&
+              folderMoveOutState.folderId === visibleFolder.id
+            }
             isClickBlocked={isClickBlocked}
-            onClose={() => setOpenFolderId(null)}
+            onDialogElementChange={setFolderDialogElement}
+            onClose={() => {
+              setOpenFolderId(null);
+              setClosingFolderId(null);
+              setClosingFolderSnapshot(null);
+            }}
             onRenameFolder={renameFolder}
             onEditBookmark={startFolderBookmarkEdit}
             onDeleteBookmark={deleteFolderBookmark}
@@ -1467,10 +2127,12 @@ export function Launcher() {
         ) : null}
         <DragOverlay dropAnimation={null}>
           {activeOverlayItem ? (
-            <DesktopItemPreview
-              item={activeOverlayItem}
-              hideTitle={activeOverlayItem.type === "bookmark"}
-            />
+            <div className="scale-105 rotate-1 drop-shadow-2xl">
+              <DesktopItemPreview
+                item={activeOverlayItem}
+                hideTitle={activeOverlayItem.type === "bookmark"}
+              />
+            </div>
           ) : null}
         </DragOverlay>
       </main>
