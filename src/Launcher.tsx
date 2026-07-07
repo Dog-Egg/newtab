@@ -2051,89 +2051,87 @@ export function Launcher() {
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <main className="min-h-screen min-w-80 overflow-hidden bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.45),transparent_28%),linear-gradient(135deg,#34b3ae_0%,#41a0b7_48%,#7294d4_100%)] font-sans text-white">
-        <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-8 sm:px-10">
-          {isLoading ? (
-            <div className="grid flex-1 place-items-center text-white/80">
-              正在加载...
-            </div>
-          ) : bookmarks.length === 0 ? (
-            <div className="grid flex-1 place-items-center">
-              <p className="text-lg font-semibold text-white/80">暂无收藏</p>
-            </div>
-          ) : (
-            <SortableContext
-              items={topLevelSortableIds}
-              strategy={rectSortingStrategy}
-            >
-              <ul className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-x-6 gap-y-9 pb-10 sm:grid-cols-[repeat(auto-fill,minmax(118px,1fr))] sm:gap-x-8">
-                {bookmarks.map((bookmark) => {
-                  const sortableId = getTopLevelSortableId(bookmark);
-                  return (
-                    <SortableDesktopItem
-                      key={sortableId}
-                      item={bookmark}
-                      sortableId={sortableId}
-                      isClickBlocked={isClickBlocked}
-                      mergeState={
-                        mergeTargetId === bookmark.id
-                          ? "ready"
-                          : mergeCandidateId === bookmark.id
-                            ? "pending"
-                            : "idle"
-                      }
-                      onOpenFolder={setOpenFolderId}
-                      onEditBookmark={startTopLevelBookmarkEdit}
-                      onDeleteBookmark={deleteTopLevelBookmark}
-                    />
-                  );
-                })}
-              </ul>
-            </SortableContext>
-          )}
-        </section>
+      <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 pb-8 pt-20 sm:px-10 sm:pb-8">
+        {isLoading ? (
+          <div className="grid flex-1 place-items-center text-white/80">
+            正在加载...
+          </div>
+        ) : bookmarks.length === 0 ? (
+          <div className="grid flex-1 place-items-center">
+            <p className="text-lg font-semibold text-white/80">暂无收藏</p>
+          </div>
+        ) : (
+          <SortableContext
+            items={topLevelSortableIds}
+            strategy={rectSortingStrategy}
+          >
+            <ul className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-x-6 gap-y-9 pb-10 sm:grid-cols-[repeat(auto-fill,minmax(118px,1fr))] sm:gap-x-8">
+              {bookmarks.map((bookmark) => {
+                const sortableId = getTopLevelSortableId(bookmark);
+                return (
+                  <SortableDesktopItem
+                    key={sortableId}
+                    item={bookmark}
+                    sortableId={sortableId}
+                    isClickBlocked={isClickBlocked}
+                    mergeState={
+                      mergeTargetId === bookmark.id
+                        ? "ready"
+                        : mergeCandidateId === bookmark.id
+                          ? "pending"
+                          : "idle"
+                    }
+                    onOpenFolder={setOpenFolderId}
+                    onEditBookmark={startTopLevelBookmarkEdit}
+                    onDeleteBookmark={deleteTopLevelBookmark}
+                  />
+                );
+              })}
+            </ul>
+          </SortableContext>
+        )}
+      </section>
 
-        {visibleFolder ? (
-          <FolderDialog
-            folder={visibleFolder}
-            isClosing={closingFolderId === visibleFolder.id}
-            isMoveOutArmed={
-              folderMoveOutState?.status === "pending" &&
-              folderMoveOutState.folderId === visibleFolder.id
-            }
-            isClickBlocked={isClickBlocked}
-            onDialogElementChange={setFolderDialogElement}
-            onClose={() => {
-              setOpenFolderId(null);
-              setClosingFolderId(null);
-              setClosingFolderSnapshot(null);
-            }}
-            onRenameFolder={renameFolder}
-            onEditBookmark={startFolderBookmarkEdit}
-            onDeleteBookmark={deleteFolderBookmark}
-          />
+      {visibleFolder ? (
+        <FolderDialog
+          folder={visibleFolder}
+          isClosing={closingFolderId === visibleFolder.id}
+          isMoveOutArmed={
+            folderMoveOutState?.status === "pending" &&
+            folderMoveOutState.folderId === visibleFolder.id
+          }
+          isClickBlocked={isClickBlocked}
+          onDialogElementChange={setFolderDialogElement}
+          onClose={() => {
+            setOpenFolderId(null);
+            setClosingFolderId(null);
+            setClosingFolderSnapshot(null);
+          }}
+          onRenameFolder={renameFolder}
+          onEditBookmark={startFolderBookmarkEdit}
+          onDeleteBookmark={deleteFolderBookmark}
+        />
+      ) : null}
+      {editingBookmark ? (
+        <BookmarkEditDialog
+          bookmark={editingBookmark.bookmark}
+          onClose={() => setEditingBookmark(null)}
+          onSave={(title, url) => {
+            editBookmark(editingBookmark, title, url);
+            setEditingBookmark(null);
+          }}
+        />
+      ) : null}
+      <DragOverlay dropAnimation={null}>
+        {activeOverlayItem ? (
+          <div className="scale-105 rotate-1 drop-shadow-2xl">
+            <DesktopItemPreview
+              item={activeOverlayItem}
+              hideTitle={activeOverlayItem.type === "bookmark"}
+            />
+          </div>
         ) : null}
-        {editingBookmark ? (
-          <BookmarkEditDialog
-            bookmark={editingBookmark.bookmark}
-            onClose={() => setEditingBookmark(null)}
-            onSave={(title, url) => {
-              editBookmark(editingBookmark, title, url);
-              setEditingBookmark(null);
-            }}
-          />
-        ) : null}
-        <DragOverlay dropAnimation={null}>
-          {activeOverlayItem ? (
-            <div className="scale-105 rotate-1 drop-shadow-2xl">
-              <DesktopItemPreview
-                item={activeOverlayItem}
-                hideTitle={activeOverlayItem.type === "bookmark"}
-              />
-            </div>
-          ) : null}
-        </DragOverlay>
-      </main>
+      </DragOverlay>
     </DndContext>
   );
 }
