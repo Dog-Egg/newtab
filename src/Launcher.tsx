@@ -1726,8 +1726,7 @@ export function Launcher() {
         folderId: activeData.folderId,
         bookmarkId: activeData.bookmark.id,
       };
-      bookmarksRef.current = nextBookmarks;
-      setBookmarks(nextBookmarks);
+      saveBookmarks(nextBookmarks);
       setFolderMoveOutState({
         status: "ready",
         folderId: activeData.folderId,
@@ -1735,7 +1734,7 @@ export function Launcher() {
         title: activeData.bookmark.title,
       });
     },
-    [closeFolderDialogWithAnimation, isLiftedFolderChild],
+    [closeFolderDialogWithAnimation, isLiftedFolderChild, saveBookmarks],
   );
 
   // 文件夹子项拖拽过程中的"移出意图"检测：拖出对话框且悬停超时即触发分离
@@ -2027,8 +2026,7 @@ export function Launcher() {
   // 取消拖拽（Esc 或外部取消）：若中途已发生"分离"则回滚到起点快照
   function handleDragCancel() {
     if (dragStartBookmarksRef.current && liftedFolderChildRef.current) {
-      bookmarksRef.current = dragStartBookmarksRef.current;
-      setBookmarks(dragStartBookmarksRef.current);
+      saveBookmarks(dragStartBookmarksRef.current);
     }
 
     setActiveId(null);
