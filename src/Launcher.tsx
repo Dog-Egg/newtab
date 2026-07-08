@@ -45,12 +45,7 @@ import {
   normalizeBookmarks,
 } from "./bookmarks";
 import { Dialog, DialogClose, DialogTitle } from "./components/Dialog";
-import {
-  getSiteIconBackground,
-  getSiteIconImageUrl,
-  getSiteIconText,
-  loadedSiteIconImageUrls,
-} from "./siteIcons";
+import { SiteIcon } from "./components/SiteIcon";
 
 // 悬停超过该时长后才确认"合并"或"移出文件夹"意图，避免误触
 const MERGE_INTENT_DELAY_MS = 650;
@@ -489,44 +484,18 @@ function BookmarkGlyph({
   size?: "normal" | "small";
 }) {
   const isSmall = size === "small";
-  const imageUrl = getSiteIconImageUrl(bookmark.url);
-  const [isImageLoaded, setIsImageLoaded] = useState(() =>
-    Boolean(imageUrl && loadedSiteIconImageUrls.has(imageUrl)),
-  );
-
-  useEffect(() => {
-    setIsImageLoaded(Boolean(imageUrl && loadedSiteIconImageUrls.has(imageUrl)));
-  }, [imageUrl]);
 
   return (
-    <span
+    <SiteIcon
+      title={bookmark.title}
+      url={bookmark.url}
+      seed={bookmark.id}
       className={
         isSmall
-          ? "relative grid size-8 place-items-center overflow-hidden rounded-xl text-xs font-bold text-white shadow-sm"
-          : "relative grid size-24 place-items-center overflow-hidden rounded-[26px] text-4xl font-bold text-white shadow-[0_18px_35px_rgba(15,23,42,0.22)]"
+          ? "size-8 rounded-xl text-xs font-bold shadow-sm"
+          : "size-24 rounded-[26px] text-4xl font-bold shadow-[0_18px_35px_rgba(15,23,42,0.22)]"
       }
-      style={{ background: getSiteIconBackground(bookmark.id) }}
-    >
-      {getSiteIconText({ title: bookmark.title, url: bookmark.url })}
-      {imageUrl ? (
-        <img
-          alt=""
-          className={clsx(
-            "absolute inset-0 size-full object-cover",
-            isImageLoaded ? "opacity-100" : "opacity-0",
-          )}
-          src={imageUrl}
-          onLoad={() => {
-            loadedSiteIconImageUrls.add(imageUrl);
-            setIsImageLoaded(true);
-          }}
-          onError={() => {
-            loadedSiteIconImageUrls.delete(imageUrl);
-            setIsImageLoaded(false);
-          }}
-        />
-      ) : null}
-    </span>
+    />
   );
 }
 

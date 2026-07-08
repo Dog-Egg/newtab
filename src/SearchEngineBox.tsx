@@ -1,12 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import clsx from "clsx";
 import { Dialog, DialogTitle } from "./components/Dialog";
-import {
-  getSiteIconBackground,
-  getSiteIconImageUrl,
-  getSiteIconText,
-  loadedSiteIconImageUrls,
-} from "./siteIcons";
+import { SiteIcon } from "./components/SiteIcon";
 
 type SearchEngine = {
   id: string;
@@ -28,11 +23,6 @@ const SEARCH_ENGINE_SETTINGS_KEY = "browser-tab.searchEngineSettings.v1";
 
 const DEFAULT_SEARCH_ENGINES: SearchEngine[] = [
   {
-    id: "baidu",
-    name: "百度",
-    urlFormat: "https://www.baidu.com/s?wd=%s",
-  },
-  {
     id: "google",
     name: "Google",
     urlFormat: "https://www.google.com/search?q=%s",
@@ -46,6 +36,11 @@ const DEFAULT_SEARCH_ENGINES: SearchEngine[] = [
     id: "sogou",
     name: "搜狗",
     urlFormat: "https://www.sogou.com/web?query=%s",
+  },
+  {
+    id: "baidu",
+    name: "百度",
+    urlFormat: "https://www.baidu.com/s?wd=%s",
   },
 ];
 
@@ -142,43 +137,18 @@ function SearchEngineGlyph({
   size?: "normal" | "small";
 }) {
   const iconSource = getSearchEngineIconSource(engine.urlFormat);
-  const imageUrl = getSiteIconImageUrl(iconSource);
-  const [isImageLoaded, setIsImageLoaded] = useState(() =>
-    Boolean(imageUrl && loadedSiteIconImageUrls.has(imageUrl)),
-  );
-
-  useEffect(() => {
-    setIsImageLoaded(Boolean(imageUrl && loadedSiteIconImageUrls.has(imageUrl)));
-  }, [imageUrl]);
 
   return (
-    <span
+    <SiteIcon
+      title={engine.name}
+      url={iconSource}
+      seed={engine.id}
+      format="png"
       className={clsx(
-        "relative grid shrink-0 place-items-center overflow-hidden rounded-full font-black text-white shadow-sm",
+        "rounded-full font-black shadow-sm",
         size === "small" ? "size-6 text-[12px]" : "size-7 text-[12px]",
       )}
-      style={{ background: getSiteIconBackground(engine.id) }}
-    >
-      {getSiteIconText({ title: engine.name, url: iconSource })}
-      {imageUrl ? (
-        <img
-          alt=""
-          className={clsx(
-            "absolute inset-0 size-full object-cover",
-            isImageLoaded ? "opacity-100" : "opacity-0",
-          )}
-          src={imageUrl}
-          onLoad={() => {
-            loadedSiteIconImageUrls.add(imageUrl);
-            setIsImageLoaded(true);
-          }}
-          onError={() => {
-            loadedSiteIconImageUrls.delete(imageUrl);
-            setIsImageLoaded(false);
-          }}
-        />
-      ) : null}
-    </span>
+    />
   );
 }
 
