@@ -1,5 +1,5 @@
 export type BookmarkItem = {
-  type: 'bookmark';
+  type: "bookmark";
   id: string;
   title: string;
   url: string;
@@ -7,7 +7,7 @@ export type BookmarkItem = {
 };
 
 export type BookmarkFolder = {
-  type: 'folder';
+  type: "folder";
   id: string;
   title: string;
   createdAt: number;
@@ -17,25 +17,25 @@ export type BookmarkFolder = {
 export type BookmarkNode = BookmarkItem | BookmarkFolder;
 export type Bookmark = BookmarkItem;
 
-export const BOOKMARKS_STORAGE_KEY = 'bookmarks';
+export const BOOKMARKS_STORAGE_KEY = "bookmarks";
 
 function normalizeBookmarkItem(value: unknown): BookmarkItem | null {
-  if (!value || typeof value !== 'object') {
+  if (!value || typeof value !== "object") {
     return null;
   }
 
   const bookmark = value as Partial<BookmarkItem> & { type?: unknown };
   if (
-    typeof bookmark.id !== 'string' ||
-    typeof bookmark.title !== 'string' ||
-    typeof bookmark.url !== 'string' ||
-    typeof bookmark.createdAt !== 'number'
+    typeof bookmark.id !== "string" ||
+    typeof bookmark.title !== "string" ||
+    typeof bookmark.url !== "string" ||
+    typeof bookmark.createdAt !== "number"
   ) {
     return null;
   }
 
   return {
-    type: 'bookmark',
+    type: "bookmark",
     id: bookmark.id,
     title: bookmark.title,
     url: bookmark.url,
@@ -49,12 +49,12 @@ export function normalizeBookmarks(value: unknown): BookmarkNode[] {
   }
 
   return value.flatMap((item): BookmarkNode[] => {
-    if (!item || typeof item !== 'object') {
+    if (!item || typeof item !== "object") {
       return [];
     }
 
     const node = item as Partial<BookmarkFolder> & { type?: unknown };
-    if (node.type === 'folder') {
+    if (node.type === "folder") {
       const children = Array.isArray(node.children)
         ? node.children.flatMap((child) => {
             const bookmark = normalizeBookmarkItem(child);
@@ -62,13 +62,17 @@ export function normalizeBookmarks(value: unknown): BookmarkNode[] {
           })
         : [];
 
-      if (typeof node.id !== 'string' || typeof node.title !== 'string' || typeof node.createdAt !== 'number') {
+      if (
+        typeof node.id !== "string" ||
+        typeof node.title !== "string" ||
+        typeof node.createdAt !== "number"
+      ) {
         return [];
       }
 
       return [
         {
-          type: 'folder',
+          type: "folder",
           id: node.id,
           title: node.title,
           createdAt: node.createdAt,

@@ -84,8 +84,7 @@ type FolderMoveOutState = {
 type MergeState = "idle" | "pending" | "ready";
 // 每次 dragMove 计算出的当前意图：不操作 / 合并到目标 / 在目标位置排序
 type DropIntent =
-  | { type: "none" }
-  | { type: "merge" | "sort"; targetId: string };
+  { type: "none" } | { type: "merge" | "sort"; targetId: string };
 type BookmarkEditTarget = {
   folderId?: string;
   bookmark: BookmarkItem;

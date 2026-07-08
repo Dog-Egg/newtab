@@ -258,10 +258,8 @@ export async function importBrowserBookmarks(): Promise<BrowserBookmarksImportRe
     getStoredBookmarks(),
     getBrowserBookmarkTree(),
   ]);
-  const { importedBookmarks, skippedDuplicateCount } = convertBrowserBookmarkTree(
-    browserBookmarkTree,
-    existingBookmarks,
-  );
+  const { importedBookmarks, skippedDuplicateCount } =
+    convertBrowserBookmarkTree(browserBookmarkTree, existingBookmarks);
   const importedCount = countImportedBookmarks(importedBookmarks);
 
   if (importedBookmarks.length > 0) {
@@ -271,7 +269,8 @@ export async function importBrowserBookmarks(): Promise<BrowserBookmarksImportRe
   return {
     importedCount,
     skippedDuplicateCount,
-    folderCount: importedBookmarks.filter((bookmark) => bookmark.type === "folder")
-      .length,
+    folderCount: importedBookmarks.filter(
+      (bookmark) => bookmark.type === "folder",
+    ).length,
   };
 }

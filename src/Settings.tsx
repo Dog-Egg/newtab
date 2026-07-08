@@ -194,7 +194,9 @@ function WallpaperSettingsSection({
           <button
             className="h-10 shrink-0 rounded-full bg-white px-3 text-sm font-bold text-slate-900 outline-none transition hover:bg-white/90 focus-visible:ring-4 focus-visible:ring-white/60 disabled:cursor-not-allowed disabled:opacity-60"
             type="submit"
-            disabled={isApplyingCustomImage || customImageUrl.trim().length === 0}
+            disabled={
+              isApplyingCustomImage || customImageUrl.trim().length === 0
+            }
           >
             {isApplyingCustomImage ? "加载中" : "应用"}
           </button>

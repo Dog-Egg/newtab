@@ -1,13 +1,18 @@
-import { BOOKMARKS_STORAGE_KEY, type Bookmark, type BookmarkNode, normalizeBookmarks } from './bookmarks';
+import {
+  BOOKMARKS_STORAGE_KEY,
+  type Bookmark,
+  type BookmarkNode,
+  normalizeBookmarks,
+} from "./bookmarks";
 
-const MENU_ID = 'save-to-browser-tab';
+const MENU_ID = "save-to-browser-tab";
 
 function createContextMenu() {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: MENU_ID,
-      title: '收藏到 BrowserTab',
-      contexts: ['page'],
+      title: "收藏到 BrowserTab",
+      contexts: ["page"],
     });
   });
 }
@@ -27,7 +32,7 @@ function setBookmarks(bookmarks: BookmarkNode[]) {
 }
 
 function isWebUrl(url: string) {
-  return url.startsWith('http://') || url.startsWith('https://');
+  return url.startsWith("http://") || url.startsWith("https://");
 }
 
 function getFallbackTitle(url: string) {
@@ -38,9 +43,12 @@ function getFallbackTitle(url: string) {
   }
 }
 
-function removeBookmarkUrl(bookmarks: BookmarkNode[], url: string): BookmarkNode[] {
+function removeBookmarkUrl(
+  bookmarks: BookmarkNode[],
+  url: string,
+): BookmarkNode[] {
   return bookmarks.flatMap((item): BookmarkNode[] => {
-    if (item.type === 'bookmark') {
+    if (item.type === "bookmark") {
       return item.url === url ? [] : [item];
     }
 
@@ -56,7 +64,7 @@ function removeBookmarkUrl(bookmarks: BookmarkNode[], url: string): BookmarkNode
 async function saveBookmark(url: string, title?: string) {
   const bookmarks = await getBookmarks();
   const bookmark: Bookmark = {
-    type: 'bookmark',
+    type: "bookmark",
     id: url,
     title: title?.trim() || getFallbackTitle(url),
     url,
