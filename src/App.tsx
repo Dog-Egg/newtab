@@ -1,10 +1,10 @@
 import { Launcher } from "./Launcher";
-import { WallpaperSettings } from "./WallpaperSettings";
+import { Wallpaper } from "./Wallpaper";
 
 export function App() {
   return (
-    <WallpaperSettings>
+    <Wallpaper>
       <Launcher />
-    </WallpaperSettings>
+    </Wallpaper>
   );
 }
