@@ -1219,7 +1219,7 @@ function FolderDialog({
   return (
     <AppDialog
       className={clsx(
-        "max-w-md rounded-[32px] p-6 transition duration-200 ease-out",
+        "flex max-h-[calc(100vh-3rem)] max-w-2xl flex-col overflow-hidden rounded-[32px] p-6 transition duration-200 ease-out",
         isMoveOutArmed &&
           "scale-[0.97] border-white/70 bg-white/24 shadow-[0_0_0_8px_rgba(255,255,255,0.08),0_30px_70px_rgba(15,23,42,0.28)]",
       )}
@@ -1232,7 +1232,7 @@ function FolderDialog({
         }
       }}
     >
-      <div className="mb-5 flex min-w-0 items-center">
+      <div className="mb-5 flex min-w-0 shrink-0 items-center">
         <Dialog.Title className="sr-only">{folder.title}</Dialog.Title>
         {isEditingTitle ? (
           <input
@@ -1255,25 +1255,27 @@ function FolderDialog({
           </button>
         )}
       </div>
-      <SortableContext
-        items={folder.children.map((bookmark) =>
-          getFolderChildDragId(folder.id, bookmark),
-        )}
-        strategy={rectSortingStrategy}
-      >
-        <ul className="grid grid-cols-3 gap-x-4 gap-y-6">
-          {folder.children.map((bookmark) => (
-            <FolderChildItem
-              key={getFolderChildDragId(folder.id, bookmark)}
-              bookmark={bookmark}
-              folderId={folder.id}
-              isClickBlocked={isClickBlocked}
-              onEditBookmark={onEditBookmark}
-              onDeleteBookmark={onDeleteBookmark}
-            />
-          ))}
-        </ul>
-      </SortableContext>
+      <div className="-mr-2 min-h-0 overflow-y-auto overscroll-contain pr-2">
+        <SortableContext
+          items={folder.children.map((bookmark) =>
+            getFolderChildDragId(folder.id, bookmark),
+          )}
+          strategy={rectSortingStrategy}
+        >
+          <ul className="grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-4">
+            {folder.children.map((bookmark) => (
+              <FolderChildItem
+                key={getFolderChildDragId(folder.id, bookmark)}
+                bookmark={bookmark}
+                folderId={folder.id}
+                isClickBlocked={isClickBlocked}
+                onEditBookmark={onEditBookmark}
+                onDeleteBookmark={onDeleteBookmark}
+              />
+            ))}
+          </ul>
+        </SortableContext>
+      </div>
     </AppDialog>
   );
 }
