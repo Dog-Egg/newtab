@@ -17,7 +17,7 @@ export type BookmarkFolder = {
 export type BookmarkNode = BookmarkItem | BookmarkFolder;
 export type Bookmark = BookmarkItem;
 
-export const BOOKMARKS_STORAGE_KEY = 'browserTabBookmarks';
+export const BOOKMARKS_STORAGE_KEY = 'bookmarks';
 
 function normalizeBookmarkItem(value: unknown): BookmarkItem | null {
   if (!value || typeof value !== 'object') {

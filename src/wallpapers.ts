@@ -1,4 +1,4 @@
-export const WALLPAPER_STORAGE_KEY = "browserTabWallpaper";
+export const WALLPAPER_STORAGE_KEY = "wallpaper";
 
 type LegacyStoredWallpaper = {
   imageUrl?: unknown;
