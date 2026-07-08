@@ -46,17 +46,12 @@ import {
   type BookmarkNode,
   normalizeBookmarks,
 } from "./bookmarks";
-
-const ICON_GRADIENTS = [
-  "linear-gradient(145deg, #2563eb, #0ea5e9)",
-  "linear-gradient(145deg, #10b981, #22c55e)",
-  "linear-gradient(145deg, #f97316, #ef4444)",
-  "linear-gradient(145deg, #8b5cf6, #ec4899)",
-  "linear-gradient(145deg, #14b8a6, #06b6d4)",
-  "linear-gradient(145deg, #334155, #64748b)",
-  "linear-gradient(145deg, #f59e0b, #84cc16)",
-  "linear-gradient(145deg, #db2777, #7c3aed)",
-];
+import {
+  getSiteIconBackground,
+  getSiteIconImageUrl,
+  getSiteIconText,
+  loadedSiteIconImageUrls,
+} from "./siteIcons";
 
 // 悬停超过该时长后才确认"合并"或"移出文件夹"意图，避免误触
 const MERGE_INTENT_DELAY_MS = 650;
@@ -65,9 +60,6 @@ const CLICK_DRAG_SUPPRESSION_DISTANCE_PX = 4;
 const RECENT_DRAG_CLICK_BLOCK_MS = 300;
 const FOLDER_DROP_ID_PREFIX = "folder-drop:";
 const FOLDER_CHILD_DRAG_ID_PREFIX = "folder-child:";
-const ICON_IMAGE_URL_TEMPLATE =
-  import.meta.env.VITE_ICON_IMAGE_URL_TEMPLATE?.trim();
-const loadedIconImageUrls = new Set<string>();
 
 // 三种 drag data 通过 type 字段区分，分别表示：桌面顶层项、文件夹内子项、文件夹本身作为放置目标
 type TopLevelDragData = {
@@ -196,43 +188,6 @@ const DEMO_BOOKMARKS: BookmarkNode[] = [
     createdAt: 9,
   },
 ];
-
-function getSeedIndex(seed: string) {
-  let total = 0;
-  for (let index = 0; index < seed.length; index += 1) {
-    total += seed.charCodeAt(index);
-  }
-
-  return total % ICON_GRADIENTS.length;
-}
-
-function getHostLabel(url: string) {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return url;
-  }
-}
-
-function getBookmarkIconImageUrl(url: string) {
-  if (!ICON_IMAGE_URL_TEMPLATE) {
-    return null;
-  }
-
-  try {
-    const domain = new URL(url).hostname;
-    return ICON_IMAGE_URL_TEMPLATE.split("{domain}").join(
-      encodeURIComponent(domain),
-    );
-  } catch {
-    return null;
-  }
-}
-
-function getIconText(bookmark: BookmarkItem) {
-  const source = bookmark.title.trim() || getHostLabel(bookmark.url);
-  return source.slice(0, 1).toUpperCase();
-}
 
 function getFolderDropId(folderId: string) {
   return `${FOLDER_DROP_ID_PREFIX}${folderId}`;
@@ -537,13 +492,13 @@ function BookmarkGlyph({
   size?: "normal" | "small";
 }) {
   const isSmall = size === "small";
-  const imageUrl = getBookmarkIconImageUrl(bookmark.url);
+  const imageUrl = getSiteIconImageUrl(bookmark.url);
   const [isImageLoaded, setIsImageLoaded] = useState(() =>
-    Boolean(imageUrl && loadedIconImageUrls.has(imageUrl)),
+    Boolean(imageUrl && loadedSiteIconImageUrls.has(imageUrl)),
   );
 
   useEffect(() => {
-    setIsImageLoaded(Boolean(imageUrl && loadedIconImageUrls.has(imageUrl)));
+    setIsImageLoaded(Boolean(imageUrl && loadedSiteIconImageUrls.has(imageUrl)));
   }, [imageUrl]);
 
   return (
@@ -553,9 +508,9 @@ function BookmarkGlyph({
           ? "relative grid size-8 place-items-center overflow-hidden rounded-xl text-xs font-bold text-white shadow-sm"
           : "relative grid size-24 place-items-center overflow-hidden rounded-[26px] text-4xl font-bold text-white shadow-[0_18px_35px_rgba(15,23,42,0.22)]"
       }
-      style={{ background: ICON_GRADIENTS[getSeedIndex(bookmark.id)] }}
+      style={{ background: getSiteIconBackground(bookmark.id) }}
     >
-      {getIconText(bookmark)}
+      {getSiteIconText({ title: bookmark.title, url: bookmark.url })}
       {imageUrl ? (
         <img
           alt=""
@@ -565,11 +520,11 @@ function BookmarkGlyph({
           )}
           src={imageUrl}
           onLoad={() => {
-            loadedIconImageUrls.add(imageUrl);
+            loadedSiteIconImageUrls.add(imageUrl);
             setIsImageLoaded(true);
           }}
           onError={() => {
-            loadedIconImageUrls.delete(imageUrl);
+            loadedSiteIconImageUrls.delete(imageUrl);
             setIsImageLoaded(false);
           }}
         />
