@@ -23,7 +23,7 @@ importers:
         specifier: ^0.8.0
         version: 0.8.0(prettier-plugin-astro@0.14.1)(prettier@3.9.4)
 
-  apps/extension:
+  apps/app:
     dependencies:
       "@dnd-kit/core":
         specifier: ^6.3.1
@@ -78,7 +78,7 @@ importers:
         specifier: ^6.0.7
         version: 6.4.3(jiti@1.21.7)(lightningcss@1.32.0)(yaml@2.9.0)
 
-  apps/web:
+  apps/site:
     dependencies:
       astro:
         specifier: ^7.0.0

@@ -1,19 +1,20 @@
 # Browser Tab
 
-Monorepo for the Browser Tab extension and its official website.
+Monorepo for the Browser Tab app and its official site.
 
 ## Apps
 
-- `apps/extension`: Vite + React + TypeScript browser extension that replaces the browser new tab page.
-- `apps/web`: Astro + TypeScript + Tailwind CSS static website.
+- `apps/app`: Vite + React + TypeScript app that can be built for the browser new tab experience.
+- `apps/site`: Astro + TypeScript + Tailwind CSS official site.
 
 ## Scripts
 
 ```sh
 pnpm install
-pnpm dev:extension
-pnpm dev:web
-pnpm build
+pnpm dev:app
+pnpm dev:site
+pnpm build:app
+pnpm build:site
 ```
 
-Load `apps/extension/dist` as an unpacked extension in Chrome or another Chromium-based browser after building the extension.
+Load `apps/app/dist` as an unpacked extension in Chrome or another Chromium-based browser after building the app.

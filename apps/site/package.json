@@ -1,12 +1,12 @@
 {
-  "name": "@browser-tab/web",
+  "name": "@browser-tab/site",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "prepare:extension": "pnpm --filter @browser-tab/extension build && node scripts/sync-extension.mjs",
-    "dev": "pnpm prepare:extension && astro dev",
-    "build": "pnpm prepare:extension && astro check && astro build",
+    "prepare:app": "pnpm --filter @browser-tab/app build && node scripts/sync-app.mjs",
+    "dev": "pnpm prepare:app && astro dev",
+    "build": "pnpm prepare:app && astro check && astro build",
     "preview": "astro preview"
   },
   "dependencies": {

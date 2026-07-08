@@ -1,5 +1,5 @@
 {
-  "name": "@browser-tab/extension",
+  "name": "@browser-tab/app",
   "version": "0.1.0",
   "private": true,
   "type": "module",

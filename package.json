@@ -4,12 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev:ext": "pnpm --filter @browser-tab/extension dev",
-    "dev:web": "pnpm --filter @browser-tab/web dev",
-    "build:ext": "pnpm --filter @browser-tab/extension build",
-    "build:web": "pnpm --filter @browser-tab/web build",
-    "preview:ext": "pnpm --filter @browser-tab/extension preview",
-    "preview:web": "pnpm --filter @browser-tab/web preview",
+    "dev:app": "pnpm --filter @browser-tab/app dev",
+    "dev:site": "pnpm --filter @browser-tab/site dev",
+    "build:app": "pnpm --filter @browser-tab/app build",
+    "build:site": "pnpm --filter @browser-tab/site build",
+    "preview:app": "pnpm --filter @browser-tab/app preview",
+    "preview:site": "pnpm --filter @browser-tab/site preview",
     "format": "prettier --write .",
     "prepare": "husky || true"
   },
