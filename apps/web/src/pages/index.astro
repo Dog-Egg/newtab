@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import IframeWindow from "../components/BrowserWindow/IframeWindow.astro";
 ---
 
 <!doctype html>
@@ -9,11 +10,11 @@ import "../styles/global.css";
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Browser Tab</title>
   </head>
-  <body class="min-h-screen bg-slate-950 text-white">
-    <main class="grid min-h-screen place-items-center px-6">
-      <h1 class="text-4xl font-semibold tracking-normal sm:text-6xl">
-        Hello World
-      </h1>
+  <body class="min-h-screen bg-slate-50 p-6">
+    <main
+      class="mx-auto flex min-h-[calc(100vh-3rem)] max-w-5xl items-center justify-center"
+    >
+      <IframeWindow url="https://www.baidu.com" />
     </main>
   </body>
 </html>

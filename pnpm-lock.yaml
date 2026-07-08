@@ -16,9 +16,12 @@ importers:
       prettier:
         specifier: 3.9.4
         version: 3.9.4
+      prettier-plugin-astro:
+        specifier: ^0.14.1
+        version: 0.14.1
       prettier-plugin-tailwindcss:
         specifier: ^0.8.0
-        version: 0.8.0(prettier@3.9.4)
+        version: 0.8.0(prettier-plugin-astro@0.14.1)(prettier@3.9.4)
 
   apps/extension:
     dependencies:
@@ -83,7 +86,7 @@ importers:
     devDependencies:
       "@astrojs/check":
         specifier: ^0.9.9
-        version: 0.9.9(prettier@3.9.4)(typescript@5.9.3)
+        version: 0.9.9(prettier-plugin-astro@0.14.1)(prettier@3.9.4)(typescript@5.9.3)
       autoprefixer:
         specifier: ^10.5.2
         version: 10.5.2(postcss@8.5.16)
@@ -3829,6 +3832,13 @@ packages:
       }
     engines: { node: ^10 || ^12 || >=14 }
 
+  prettier-plugin-astro@0.14.1:
+    resolution:
+      {
+        integrity: sha512-RiBETaaP9veVstE4vUwSIcdATj6dKmXljouXc/DDNwBSPTp8FRkLGDSGFClKsAFeeg+13SB0Z1JZvbD76bigJw==,
+      }
+    engines: { node: ^14.15.0 || >=16.0.0 }
+
   prettier-plugin-tailwindcss@0.8.0:
     resolution:
       {
@@ -4121,6 +4131,18 @@ packages:
         integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==,
       }
 
+  s.color@0.0.15:
+    resolution:
+      {
+        integrity: sha512-AUNrbEUHeKY8XsYr/DYpl+qk5+aM+DChopnWOPEzn8YKzOhv4l2zH6LzZms3tOZP3wwdOyc0RmTciyi46HLIuA==,
+      }
+
+  sass-formatter@0.7.9:
+    resolution:
+      {
+        integrity: sha512-CWZ8XiSim+fJVG0cFLStwDvft1VI7uvXdCNJYXhDvowiv+DsbD1nXLiQ4zrE5UBvj5DWZJ93cwN0NX5PMsr1Pw==,
+      }
+
   satteri@0.9.4:
     resolution:
       {
@@ -4276,6 +4298,12 @@ packages:
       }
     engines: { node: ">=16 || 14 >=14.17" }
     hasBin: true
+
+  suf-log@2.5.3:
+    resolution:
+      {
+        integrity: sha512-KvC8OPjzdNOe+xQ4XWJV2whQA0aM1kGVczMQ8+dStAO6KfEB140JEVQ9dE76ONZ0/Ylf67ni4tILPJB41U0eow==,
+      }
 
   supports-preserve-symlinks-flag@1.0.0:
     resolution:
@@ -4944,9 +4972,9 @@ packages:
 snapshots:
   "@alloc/quick-lru@5.2.0": {}
 
-  "@astrojs/check@0.9.9(prettier@3.9.4)(typescript@5.9.3)":
+  "@astrojs/check@0.9.9(prettier-plugin-astro@0.14.1)(prettier@3.9.4)(typescript@5.9.3)":
     dependencies:
-      "@astrojs/language-server": 2.16.11(prettier@3.9.4)(typescript@5.9.3)
+      "@astrojs/language-server": 2.16.11(prettier-plugin-astro@0.14.1)(prettier@3.9.4)(typescript@5.9.3)
       chokidar: 4.0.3
       kleur: 4.1.5
       typescript: 5.9.3
@@ -5022,7 +5050,7 @@ snapshots:
       smol-toml: 1.7.0
       unified: 11.0.5
 
-  "@astrojs/language-server@2.16.11(prettier@3.9.4)(typescript@5.9.3)":
+  "@astrojs/language-server@2.16.11(prettier-plugin-astro@0.14.1)(prettier@3.9.4)(typescript@5.9.3)":
     dependencies:
       "@astrojs/compiler": 2.13.1
       "@astrojs/yaml2ts": 0.2.4
@@ -5044,6 +5072,7 @@ snapshots:
       vscode-uri: 3.1.0
     optionalDependencies:
       prettier: 3.9.4
+      prettier-plugin-astro: 0.14.1
     transitivePeerDependencies:
       - typescript
 
@@ -7033,9 +7062,17 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  prettier-plugin-tailwindcss@0.8.0(prettier@3.9.4):
+  prettier-plugin-astro@0.14.1:
+    dependencies:
+      "@astrojs/compiler": 2.13.1
+      prettier: 3.9.4
+      sass-formatter: 0.7.9
+
+  prettier-plugin-tailwindcss@0.8.0(prettier-plugin-astro@0.14.1)(prettier@3.9.4):
     dependencies:
       prettier: 3.9.4
+    optionalDependencies:
+      prettier-plugin-astro: 0.14.1
 
   prettier@3.9.4: {}
 
@@ -7195,6 +7232,12 @@ snapshots:
     dependencies:
       queue-microtask: 1.2.3
 
+  s.color@0.0.15: {}
+
+  sass-formatter@0.7.9:
+    dependencies:
+      suf-log: 2.5.3
+
   satteri@0.9.4:
     dependencies:
       "@types/estree-jsx": 1.0.5
@@ -7325,6 +7368,10 @@ snapshots:
       pirates: 4.0.7
       tinyglobby: 0.2.17
       ts-interface-checker: 0.1.13
+
+  suf-log@2.5.3:
+    dependencies:
+      s.color: 0.0.15
 
   supports-preserve-symlinks-flag@1.0.0: {}
 

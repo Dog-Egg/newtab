@@ -1,0 +1,20 @@
+---
+import BrowserWindow from "./index.astro";
+
+interface Props {
+  url: string;
+}
+
+const { url } = Astro.props;
+---
+
+<div class="p-2.5">
+  <BrowserWindow
+    url={url}
+    class="w-[800px] min-w-[min(100%,45vw)] max-w-full"
+    bodyClass="p-0"
+  >
+    <iframe src={url} title={url} class="block h-[300px] w-full border-0"
+    ></iframe>
+  </BrowserWindow>
+</div>
