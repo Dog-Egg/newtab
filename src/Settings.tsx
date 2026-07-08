@@ -213,7 +213,7 @@ function WallpaperSettingsSection({
           {selectedWallpaperUrl ?? "当前使用默认壁纸"}
         </p>
         <button
-          className="h-9 shrink-0 rounded-full bg-white/10 px-3 text-sm font-semibold outline-none transition hover:bg-white/18 focus-visible:ring-4 focus-visible:ring-white/60 disabled:cursor-not-allowed disabled:opacity-50"
+          className="hover:bg-white/18 h-9 shrink-0 rounded-full bg-white/10 px-3 text-sm font-semibold outline-none transition focus-visible:ring-4 focus-visible:ring-white/60 disabled:cursor-not-allowed disabled:opacity-50"
           type="button"
           onClick={onClearWallpaper}
           disabled={!selectedWallpaperUrl}
@@ -247,7 +247,7 @@ export function SettingsPanel({
       <div className="flex items-center justify-between gap-3 border-b border-white/15 px-4 py-3">
         <h2 className="text-base font-bold">设置</h2>
         <button
-          className="grid size-9 place-items-center rounded-full bg-white/10 outline-none transition hover:bg-white/18 focus-visible:ring-4 focus-visible:ring-white/60"
+          className="hover:bg-white/18 grid size-9 place-items-center rounded-full bg-white/10 outline-none transition focus-visible:ring-4 focus-visible:ring-white/60"
           type="button"
           onClick={onClose}
           aria-label="关闭设置"

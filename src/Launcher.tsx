@@ -1041,7 +1041,7 @@ function FolderDialog({
       className={clsx(
         "flex max-h-[calc(100vh-3rem)] max-w-2xl flex-col overflow-hidden rounded-[32px] p-6 transition duration-200 ease-out",
         isMoveOutArmed &&
-          "scale-[0.97] border-white/70 bg-white/24 shadow-[0_0_0_8px_rgba(255,255,255,0.08),0_30px_70px_rgba(15,23,42,0.28)]",
+          "bg-white/24 scale-[0.97] border-white/70 shadow-[0_0_0_8px_rgba(255,255,255,0.08),0_30px_70px_rgba(15,23,42,0.28)]",
       )}
       contentRef={setContentRef}
       isClosing={isClosing}
@@ -1066,7 +1066,7 @@ function FolderDialog({
           />
         ) : (
           <button
-            className="min-w-0 truncate rounded-xl px-2 py-1 text-left text-2xl font-bold drop-shadow-sm outline-none transition hover:bg-white/15 focus-visible:ring-4 focus-visible:ring-white/70"
+            className="min-w-0 truncate rounded-xl px-2 py-1 text-left text-2xl font-bold outline-none drop-shadow-sm transition hover:bg-white/15 focus-visible:ring-4 focus-visible:ring-white/70"
             type="button"
             onClick={startTitleEdit}
             aria-label="编辑文件夹标题"
@@ -1946,7 +1946,7 @@ export function Launcher() {
       ) : null}
       <DragOverlay dropAnimation={null}>
         {activeOverlayItem ? (
-          <div className="scale-105 rotate-1 drop-shadow-2xl">
+          <div className="rotate-1 scale-105 drop-shadow-2xl">
             <DesktopItemPreview
               item={activeOverlayItem}
               hideTitle={activeOverlayItem.type === "bookmark"}
