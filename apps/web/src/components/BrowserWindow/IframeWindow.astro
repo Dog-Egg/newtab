@@ -12,9 +12,14 @@ const { url } = Astro.props;
   <BrowserWindow
     url={url}
     class="w-[800px] min-w-[min(100%,45vw)] max-w-full"
-    bodyClass="p-0"
+    bodyClass="overflow-hidden p-0"
   >
-    <iframe src={url} title={url} class="block h-[300px] w-full border-0"
-    ></iframe>
+    <div class="h-[450px] w-full overflow-hidden">
+      <iframe
+        src={url}
+        title={url}
+        class="block h-[720px] w-[1280px] max-w-none origin-top-left scale-[0.625] border-0"
+      ></iframe>
+    </div>
   </BrowserWindow>
 </div>
