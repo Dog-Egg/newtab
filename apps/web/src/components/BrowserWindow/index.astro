@@ -20,7 +20,7 @@ const minHeightValue =
   style={minHeightValue ? `min-height: ${minHeightValue};` : undefined}
 >
   <!-- header -->
-  <div class="flex h-10 items-center bg-[#f0f5f9]">
+  <div class="flex h-10 items-center overflow-hidden bg-[#f0f5f9]">
     <div class="flex h-8 shrink-0 items-center gap-1.5 px-4" aria-hidden="true">
       <span class="size-3 rounded-full border border-[#e53e57] bg-[#ff5960]"
       ></span>
@@ -78,7 +78,7 @@ const minHeightValue =
     </span>
   </div>
 
-  <div class:list={["bg-white p-4", bodyClass]}>
+  <div class:list={["bg-white", bodyClass]}>
     <slot />
   </div>
 </div>

@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro check && astro build",
+    "prepare:extension": "pnpm --filter @browser-tab/extension build && node scripts/sync-extension.mjs",
+    "dev": "pnpm prepare:extension && astro dev",
+    "build": "pnpm prepare:extension && astro check && astro build",
     "preview": "astro preview"
   },
   "dependencies": {

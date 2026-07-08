@@ -144,3 +144,6 @@ vite.config.ts.timestamp-*
 
 # Astro
 .astro/
+
+# Web embeds generated from the extension build
+apps/web/public/extension/
