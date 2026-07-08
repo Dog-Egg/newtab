@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import clsx from "clsx";
+import { Dialog, DialogTitle } from "./components/Dialog";
 import {
   getSiteIconBackground,
   getSiteIconImageUrl,
@@ -395,13 +396,14 @@ export function SearchEngineBox() {
       </div>
 
       {isAddDialogOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-6 backdrop-blur-sm">
-          <form
-            className="w-full max-w-xl rounded-2xl bg-white p-6 text-slate-800 shadow-2xl sm:p-8"
-            onSubmit={handleAddCustomEngine}
-            aria-label="新增搜索引擎"
-          >
-            <h2 className="text-2xl font-semibold">新增搜索引擎</h2>
+        <Dialog
+          className="max-w-xl rounded-2xl bg-white p-6 text-slate-800 sm:p-8"
+          onClose={() => setIsAddDialogOpen(false)}
+        >
+          <form onSubmit={handleAddCustomEngine} aria-label="新增搜索引擎">
+            <DialogTitle className="text-2xl font-semibold">
+              新增搜索引擎
+            </DialogTitle>
 
             <label className="mt-7 block text-sm font-semibold text-slate-600">
               名称
@@ -450,7 +452,7 @@ export function SearchEngineBox() {
               </button>
             </div>
           </form>
-        </div>
+        </Dialog>
       ) : null}
     </>
   );

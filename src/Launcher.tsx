@@ -9,10 +9,8 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
-  type Ref,
 } from "react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
-import * as Dialog from "@radix-ui/react-dialog";
 import {
   closestCenter,
   DndContext,
@@ -46,6 +44,7 @@ import {
   type BookmarkNode,
   normalizeBookmarks,
 } from "./bookmarks";
+import { Dialog, DialogClose, DialogTitle } from "./components/Dialog";
 import {
   getSiteIconBackground,
   getSiteIconImageUrl,
@@ -96,8 +95,6 @@ type BookmarkEditTarget = {
   folderId?: string;
   bookmark: BookmarkItem;
 };
-
-const DIALOG_ANIMATION_MS = 160;
 
 const DEMO_BOOKMARKS: BookmarkNode[] = [
   {
@@ -740,106 +737,6 @@ function useDragSafeBookmarkLink(isClickBlocked: () => boolean) {
   };
 }
 
-function AppDialog({
-  children,
-  className = "",
-  contentRef,
-  isClosing = false,
-  onClose,
-  onInteractOutside,
-}: {
-  children: ReactNode;
-  className?: string;
-  contentRef?: Ref<HTMLDivElement>;
-  isClosing?: boolean;
-  onClose: () => void;
-  onInteractOutside?: () => void;
-}) {
-  const [isOpen, setIsOpen] = useState(true);
-  const onCloseRef = useRef(onClose);
-  const closeTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(
-    null,
-  );
-
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  }, [onClose]);
-
-  useEffect(() => {
-    return () => {
-      if (closeTimerRef.current) {
-        window.clearTimeout(closeTimerRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isClosing) {
-      if (closeTimerRef.current) {
-        window.clearTimeout(closeTimerRef.current);
-        closeTimerRef.current = null;
-      }
-
-      setIsOpen(true);
-      return;
-    }
-
-    setIsOpen(false);
-    if (closeTimerRef.current) {
-      window.clearTimeout(closeTimerRef.current);
-    }
-
-    closeTimerRef.current = window.setTimeout(
-      () => onCloseRef.current(),
-      DIALOG_ANIMATION_MS,
-    );
-
-    return () => {
-      if (closeTimerRef.current) {
-        window.clearTimeout(closeTimerRef.current);
-        closeTimerRef.current = null;
-      }
-    };
-  }, [isClosing]);
-
-  function handleOpenChange(open: boolean) {
-    setIsOpen(open);
-
-    if (!open) {
-      if (closeTimerRef.current) {
-        window.clearTimeout(closeTimerRef.current);
-      }
-
-      closeTimerRef.current = window.setTimeout(
-        () => onCloseRef.current(),
-        DIALOG_ANIMATION_MS,
-      );
-    }
-  }
-
-  return (
-    <Dialog.Root open={isOpen} onOpenChange={handleOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay
-          className={
-            "fixed inset-0 z-[60] bg-slate-950/40 backdrop-blur-md data-[state=closed]:animate-dialog-overlay-out data-[state=open]:animate-dialog-overlay-in"
-          }
-        />
-        <Dialog.Content
-          ref={contentRef}
-          className={clsx(
-            "fixed left-1/2 top-1/2 z-[60] w-[calc(100vw-3rem)] -translate-x-1/2 -translate-y-1/2 border border-white/45 bg-white/30 text-white shadow-2xl outline-none backdrop-blur-xl data-[state=closed]:animate-dialog-content-out data-[state=open]:animate-dialog-content-in",
-            className,
-          )}
-          onInteractOutside={onInteractOutside}
-        >
-          {children}
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
-  );
-}
-
 function BookmarkEditDialog({
   bookmark,
   onClose,
@@ -869,10 +766,10 @@ function BookmarkEditDialog({
   }
 
   return (
-    <AppDialog className="max-w-sm rounded-[28px] p-5" onClose={onClose}>
-      <Dialog.Title className="mb-4 text-lg font-bold drop-shadow-sm">
+    <Dialog className="max-w-sm rounded-[28px] p-5" onClose={onClose}>
+      <DialogTitle className="mb-4 text-lg font-bold drop-shadow-sm">
         编辑书签
-      </Dialog.Title>
+      </DialogTitle>
       <form onSubmit={handleSubmit}>
         <label className="mb-3 block text-sm font-semibold text-white/85">
           标题
@@ -892,14 +789,14 @@ function BookmarkEditDialog({
           />
         </label>
         <div className="mt-5 flex justify-end gap-2">
-          <Dialog.Close asChild>
+          <DialogClose asChild>
             <button
               className="rounded-xl bg-white/15 px-4 py-2 text-sm font-semibold outline-none transition hover:bg-white/25 focus-visible:ring-4 focus-visible:ring-white/70"
               type="button"
             >
               取消
             </button>
-          </Dialog.Close>
+          </DialogClose>
           <button
             className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-slate-800 outline-none transition hover:bg-white/90 focus-visible:ring-4 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-50"
             type="submit"
@@ -909,7 +806,7 @@ function BookmarkEditDialog({
           </button>
         </div>
       </form>
-    </AppDialog>
+    </Dialog>
   );
 }
 
@@ -1172,7 +1069,7 @@ function FolderDialog({
   }
 
   return (
-    <AppDialog
+    <Dialog
       className={clsx(
         "flex max-h-[calc(100vh-3rem)] max-w-2xl flex-col overflow-hidden rounded-[32px] p-6 transition duration-200 ease-out",
         isMoveOutArmed &&
@@ -1188,7 +1085,7 @@ function FolderDialog({
       }}
     >
       <div className="mb-5 flex min-w-0 shrink-0 items-center">
-        <Dialog.Title className="sr-only">{folder.title}</Dialog.Title>
+        <DialogTitle className="sr-only">{folder.title}</DialogTitle>
         {isEditingTitle ? (
           <input
             ref={titleInputRef}
@@ -1231,7 +1128,7 @@ function FolderDialog({
           </ul>
         </SortableContext>
       </div>
-    </AppDialog>
+    </Dialog>
   );
 }
 
