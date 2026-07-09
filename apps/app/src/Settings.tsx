@@ -1,4 +1,5 @@
 import { useCallback, useState, type FormEvent } from "react";
+import { toast } from "sonner";
 import { platform } from "@platform";
 import { normalizeImageUrl } from "./wallpapers";
 
@@ -51,17 +52,22 @@ function preloadImage(url: string) {
 
 function BrowserBookmarksImportSettings() {
   const [importMessage, setImportMessage] = useState("");
-  const [importError, setImportError] = useState("");
   const [isImportingBookmarks, setIsImportingBookmarks] = useState(false);
-  const canImportBookmarks = platform.browserBookmarks.canImport;
 
   const handleImportBrowserBookmarks = useCallback(async () => {
     setIsImportingBookmarks(true);
     setImportMessage("");
-    setImportError("");
 
     try {
       const result = await platform.browserBookmarks.import();
+
+      if (result.unsupported) {
+        toast.error("当前环境无法读取浏览器收藏夹", {
+          description: "请在浏览器扩展环境中使用收藏夹导入。",
+        });
+        return;
+      }
+
       const skippedText =
         result.skippedDuplicateCount > 0
           ? `，跳过 ${result.skippedDuplicateCount} 个重复项`
@@ -82,12 +88,7 @@ function BrowserBookmarksImportSettings() {
         }${skippedText}`,
       );
     } catch (error) {
-      setImportError(
-        error instanceof Error &&
-          error.message === "browser-bookmarks-unavailable"
-          ? "当前环境无法读取浏览器收藏夹"
-          : "导入失败，请稍后重试",
-      );
+      toast.error("导入失败，请稍后重试");
     } finally {
       setIsImportingBookmarks(false);
     }
@@ -106,7 +107,7 @@ function BrowserBookmarksImportSettings() {
           className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-white px-3 text-sm font-bold text-slate-900 outline-none transition hover:bg-white/90 focus-visible:ring-4 focus-visible:ring-white/60 disabled:cursor-not-allowed disabled:opacity-60"
           type="button"
           onClick={handleImportBrowserBookmarks}
-          disabled={!canImportBookmarks || isImportingBookmarks}
+          disabled={isImportingBookmarks}
         >
           <ImportIcon />
           {isImportingBookmarks ? "导入中" : "导入"}
@@ -116,9 +117,6 @@ function BrowserBookmarksImportSettings() {
         <p className="text-xs font-semibold text-emerald-100">
           {importMessage}
         </p>
-      ) : null}
-      {importError ? (
-        <p className="text-xs font-semibold text-rose-100">{importError}</p>
       ) : null}
     </section>
   );

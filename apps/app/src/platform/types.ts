@@ -15,6 +15,7 @@ export type BrowserBookmarksImportResult = {
   importedCount: number;
   skippedDuplicateCount: number;
   folderCount: number;
+  unsupported?: boolean;
 };
 
 export type Platform = {
@@ -37,7 +38,6 @@ export type Platform = {
     save: (settings: StoredSearchEngineSettings) => Promise<void>;
   };
   browserBookmarks: {
-    canImport: boolean;
     import: () => Promise<BrowserBookmarksImportResult>;
   };
 };

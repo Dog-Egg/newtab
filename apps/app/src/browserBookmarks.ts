@@ -10,6 +10,7 @@ export type BrowserBookmarksImportResult = {
   importedCount: number;
   skippedDuplicateCount: number;
   folderCount: number;
+  unsupported?: boolean;
 };
 
 type ImportContext = {
@@ -251,7 +252,12 @@ function countImportedBookmarks(bookmarks: BookmarkNode[]) {
 
 export async function importBrowserBookmarks(): Promise<BrowserBookmarksImportResult> {
   if (!canUseChromeBookmarks()) {
-    throw new Error("browser-bookmarks-unavailable");
+    return {
+      importedCount: 0,
+      skippedDuplicateCount: 0,
+      folderCount: 0,
+      unsupported: true,
+    };
   }
 
   const [existingBookmarks, browserBookmarkTree] = await Promise.all([

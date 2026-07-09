@@ -3,10 +3,7 @@ import {
   type BookmarkNode,
   normalizeBookmarks,
 } from "../bookmarks";
-import {
-  importBrowserBookmarks,
-  canUseChromeBookmarks,
-} from "../browserBookmarks";
+import { importBrowserBookmarks } from "../browserBookmarks";
 import {
   normalizeStoredWallpaperUrl,
   WALLPAPER_STORAGE_KEY,
@@ -125,7 +122,6 @@ export const platform: Platform = {
     save: (settings) => setChromeStorage(SEARCH_ENGINE_SETTINGS_KEY, settings),
   },
   browserBookmarks: {
-    canImport: canUseChromeBookmarks(),
     import: importBrowserBookmarks,
   },
 };

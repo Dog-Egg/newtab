@@ -107,9 +107,13 @@ export const platform: Platform = {
     save: async (settings) => saveStoredSearchEngineSettings(settings),
   },
   browserBookmarks: {
-    canImport: false,
     import: async () => {
-      throw new Error("browser-bookmarks-unavailable");
+      return {
+        importedCount: 0,
+        skippedDuplicateCount: 0,
+        folderCount: 0,
+        unsupported: true,
+      };
     },
   },
 };
