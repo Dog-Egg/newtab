@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import clsx from "clsx";
+import { platform } from "@platform";
+import type { StoredSearchEngineSettings } from "./platform/types";
 import { Dialog, DialogTitle } from "./components/Dialog";
 import { SiteIcon } from "./components/SiteIcon";
 
@@ -9,17 +11,6 @@ type SearchEngine = {
   urlFormat: string;
   isCustom?: boolean;
 };
-
-type StoredSearchEngineSettings = {
-  selectedEngineId?: string;
-  customEngines?: Array<{
-    id: string;
-    name: string;
-    urlFormat: string;
-  }>;
-};
-
-const SEARCH_ENGINE_SETTINGS_KEY = "browser-tab.searchEngineSettings.v1";
 
 const DEFAULT_SEARCH_ENGINES: SearchEngine[] = [
   {
@@ -48,39 +39,6 @@ const EMPTY_CUSTOM_ENGINE = {
   name: "",
   urlFormat: "",
 };
-
-function readStoredSettings(): StoredSearchEngineSettings {
-  if (typeof window === "undefined") {
-    return {};
-  }
-
-  try {
-    const rawSettings = window.localStorage.getItem(SEARCH_ENGINE_SETTINGS_KEY);
-    if (!rawSettings) {
-      return {};
-    }
-
-    const parsedSettings = JSON.parse(rawSettings);
-    if (!parsedSettings || typeof parsedSettings !== "object") {
-      return {};
-    }
-
-    return parsedSettings as StoredSearchEngineSettings;
-  } catch {
-    return {};
-  }
-}
-
-function saveStoredSettings(settings: StoredSearchEngineSettings) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(
-    SEARCH_ENGINE_SETTINGS_KEY,
-    JSON.stringify(settings),
-  );
-}
 
 function normalizeCustomEngines(
   customEngines: StoredSearchEngineSettings["customEngines"],
@@ -188,7 +146,9 @@ function PlusIcon() {
 }
 
 export function SearchEngineBox() {
-  const [storedSettings, setStoredSettings] = useState(readStoredSettings);
+  const [storedSettings, setStoredSettings] =
+    useState<StoredSearchEngineSettings>({});
+  const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
   const [query, setQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -212,8 +172,36 @@ export function SearchEngineBox() {
     customEngineDraft.name.trim() && customEngineDraft.urlFormat.trim();
 
   useEffect(() => {
-    saveStoredSettings(storedSettings);
-  }, [storedSettings]);
+    let isCurrent = true;
+
+    void platform.searchEngineSettings.read().then(
+      (settings) => {
+        if (!isCurrent) {
+          return;
+        }
+
+        setStoredSettings(settings);
+        setIsSettingsLoaded(true);
+      },
+      () => {
+        if (isCurrent) {
+          setIsSettingsLoaded(true);
+        }
+      },
+    );
+
+    return () => {
+      isCurrent = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isSettingsLoaded) {
+      return;
+    }
+
+    void platform.searchEngineSettings.save(storedSettings);
+  }, [isSettingsLoaded, storedSettings]);
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {

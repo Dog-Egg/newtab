@@ -4,8 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
+    "dev": "vite --mode web",
+    "dev:web": "vite --mode web",
+    "dev:extension": "vite build --mode extension --watch",
+    "build": "pnpm run build:extension",
+    "build:web": "tsc && vite build --mode web",
+    "build:extension": "tsc && vite build --mode extension",
     "preview": "vite preview"
   },
   "dependencies": {

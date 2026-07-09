@@ -1,8 +1,5 @@
 import { useCallback, useState, type FormEvent } from "react";
-import {
-  canUseChromeBookmarks,
-  importBrowserBookmarks,
-} from "./browserBookmarks";
+import { platform } from "@platform";
 import { normalizeImageUrl } from "./wallpapers";
 
 function CloseIcon() {
@@ -56,7 +53,7 @@ function BrowserBookmarksImportSettings() {
   const [importMessage, setImportMessage] = useState("");
   const [importError, setImportError] = useState("");
   const [isImportingBookmarks, setIsImportingBookmarks] = useState(false);
-  const canImportBookmarks = canUseChromeBookmarks();
+  const canImportBookmarks = platform.browserBookmarks.canImport;
 
   const handleImportBrowserBookmarks = useCallback(async () => {
     setIsImportingBookmarks(true);
@@ -64,7 +61,7 @@ function BrowserBookmarksImportSettings() {
     setImportError("");
 
     try {
-      const result = await importBrowserBookmarks();
+      const result = await platform.browserBookmarks.import();
       const skippedText =
         result.skippedDuplicateCount > 0
           ? `，跳过 ${result.skippedDuplicateCount} 个重复项`

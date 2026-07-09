@@ -37,12 +37,11 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import clsx from "clsx";
+import { platform } from "@platform";
 import {
-  BOOKMARKS_STORAGE_KEY,
   type BookmarkFolder,
   type BookmarkItem,
   type BookmarkNode,
-  normalizeBookmarks,
 } from "./bookmarks";
 import { Dialog, DialogClose, DialogTitle } from "./components/Dialog";
 import { SiteIcon } from "./components/SiteIcon";
@@ -89,96 +88,6 @@ type BookmarkEditTarget = {
   folderId?: string;
   bookmark: BookmarkItem;
 };
-
-const DEMO_BOOKMARKS: BookmarkNode[] = [
-  {
-    type: "bookmark",
-    id: "https://trello.com",
-    title: "Trello",
-    url: "https://trello.com",
-    createdAt: 1,
-  },
-  {
-    type: "bookmark",
-    id: "https://home.mi.com",
-    title: "米家",
-    url: "https://home.mi.com",
-    createdAt: 2,
-  },
-  {
-    type: "folder",
-    id: "folder-finance-demo",
-    title: "财务",
-    createdAt: 3,
-    children: [
-      {
-        type: "bookmark",
-        id: "https://cmbchina.com",
-        title: "招商银行",
-        url: "https://cmbchina.com",
-        createdAt: 3,
-      },
-    ],
-  },
-  {
-    type: "bookmark",
-    id: "https://pan.baidu.com",
-    title: "百度网盘",
-    url: "https://pan.baidu.com",
-    createdAt: 4,
-  },
-  {
-    type: "folder",
-    id: "folder-tools-demo",
-    title: "实用工具",
-    createdAt: 5,
-    children: [
-      {
-        type: "bookmark",
-        id: "https://10010.com",
-        title: "联通",
-        url: "https://10010.com",
-        createdAt: 5,
-      },
-    ],
-  },
-  {
-    type: "folder",
-    id: "folder-travel-demo",
-    title: "旅行",
-    createdAt: 6,
-    children: [
-      {
-        type: "bookmark",
-        id: "https://trip.com",
-        title: "Trip",
-        url: "https://trip.com",
-        createdAt: 6,
-      },
-      {
-        type: "bookmark",
-        id: "https://ctrip.com",
-        title: "携程",
-        url: "https://ctrip.com",
-        createdAt: 7,
-      },
-    ],
-  },
-  {
-    type: "bookmark",
-    id: "https://1password.com",
-    title: "1Password",
-    url: "https://1password.com",
-    createdAt: 8,
-  },
-  {
-    type: "bookmark",
-    id: "https://www.xiachufang.com",
-    title: "下厨房",
-    url: "https://www.xiachufang.com",
-    createdAt: 9,
-  },
-];
 
 function getFolderDropId(folderId: string) {
   return `${FOLDER_DROP_ID_PREFIX}${folderId}`;
@@ -233,14 +142,6 @@ function isSameFolderCollision(
   return (
     (isFolderChildDragData(data) && data.folderId === folderId) ||
     (isFolderDropData(data) && data.folderId === folderId)
-  );
-}
-
-function canUseChromeStorage() {
-  return (
-    typeof chrome !== "undefined" &&
-    typeof chrome.storage !== "undefined" &&
-    typeof chrome.storage.local !== "undefined"
   );
 }
 
@@ -1212,10 +1113,7 @@ export function Launcher() {
   const saveBookmarks = useCallback((nextBookmarks: BookmarkNode[]) => {
     bookmarksRef.current = nextBookmarks;
     setBookmarks(nextBookmarks);
-
-    if (canUseChromeStorage()) {
-      chrome.storage.local.set({ [BOOKMARKS_STORAGE_KEY]: nextBookmarks });
-    }
+    void platform.bookmarks.save(nextBookmarks);
   }, []);
 
   const renameFolder = useCallback(
@@ -1623,30 +1521,34 @@ export function Launcher() {
   );
 
   useEffect(() => {
-    if (!canUseChromeStorage()) {
-      setBookmarks(DEMO_BOOKMARKS);
-      setIsLoading(false);
-      return;
-    }
+    let isCurrent = true;
 
-    chrome.storage.local.get(BOOKMARKS_STORAGE_KEY, (items) => {
-      setBookmarks(normalizeBookmarks(items[BOOKMARKS_STORAGE_KEY]));
-      setIsLoading(false);
+    void platform.bookmarks.read().then(
+      (storedBookmarks) => {
+        if (!isCurrent) {
+          return;
+        }
+
+        bookmarksRef.current = storedBookmarks;
+        setBookmarks(storedBookmarks);
+        setIsLoading(false);
+      },
+      () => {
+        if (isCurrent) {
+          setIsLoading(false);
+        }
+      },
+    );
+
+    const unsubscribe = platform.bookmarks.subscribe((storedBookmarks) => {
+      bookmarksRef.current = storedBookmarks;
+      setBookmarks(storedBookmarks);
     });
 
-    const handleStorageChange = (
-      changes: Record<string, { newValue?: unknown }>,
-      areaName: string,
-    ) => {
-      if (areaName !== "local" || !changes[BOOKMARKS_STORAGE_KEY]) {
-        return;
-      }
-
-      setBookmarks(normalizeBookmarks(changes[BOOKMARKS_STORAGE_KEY].newValue));
+    return () => {
+      isCurrent = false;
+      unsubscribe();
     };
-
-    chrome.storage.onChanged.addListener(handleStorageChange);
-    return () => chrome.storage.onChanged.removeListener(handleStorageChange);
   }, []);
 
   useEffect(() => {

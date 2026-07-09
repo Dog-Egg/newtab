@@ -5,8 +5,12 @@
   "type": "module",
   "scripts": {
     "dev:app": "pnpm --filter @browser-tab/app dev",
+    "dev:app:web": "pnpm --filter @browser-tab/app dev:web",
+    "dev:app:extension": "pnpm --filter @browser-tab/app dev:extension",
     "dev:site": "pnpm --filter @browser-tab/site dev",
     "build:app": "pnpm --filter @browser-tab/app build",
+    "build:app:web": "pnpm --filter @browser-tab/app build:web",
+    "build:app:extension": "pnpm --filter @browser-tab/app build:extension",
     "build:site": "pnpm --filter @browser-tab/site build",
     "preview:app": "pnpm --filter @browser-tab/app preview",
     "preview:site": "pnpm --filter @browser-tab/site preview",

@@ -7,25 +7,12 @@ import {
   type ReactNode,
 } from "react";
 import clsx from "clsx";
+import { platform } from "@platform";
 import { SettingsPanel } from "./Settings";
-import {
-  normalizeImageUrl,
-  readStoredWallpaperUrl,
-  saveStoredWallpaperUrl,
-  WALLPAPER_STORAGE_KEY,
-} from "./wallpapers";
 
 const WALLPAPER_FADE_DURATION_MS = 520;
 const DEFAULT_WALLPAPER_URL =
   "https://images.unsplash.com/photo-1781978604675-9e955e007ee5?q=80&w=5777&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
-
-function canUseChromeStorage() {
-  return (
-    typeof chrome !== "undefined" &&
-    typeof chrome.storage !== "undefined" &&
-    typeof chrome.storage.local !== "undefined"
-  );
-}
 
 function GearIcon() {
   return (
@@ -72,7 +59,7 @@ export function Wallpaper({ children }: { children: ReactNode }) {
 
   const saveWallpaper = useCallback((nextWallpaperUrl: string | null) => {
     setStoredWallpaperUrl(nextWallpaperUrl);
-    void saveStoredWallpaperUrl(nextWallpaperUrl);
+    void platform.wallpaper.save(nextWallpaperUrl);
   }, []);
 
   useEffect(() => {
@@ -122,45 +109,16 @@ export function Wallpaper({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isCurrent = true;
 
-    void readStoredWallpaperUrl().then((wallpaperUrlFromStorage) => {
+    void platform.wallpaper.read().then((wallpaperUrlFromStorage) => {
       if (isCurrent) {
         setStoredWallpaperUrl(wallpaperUrlFromStorage);
       }
     });
 
-    if (!canUseChromeStorage()) {
-      return () => {
-        isCurrent = false;
-      };
-    }
-
-    const handleStorageChange = (
-      changes: Record<string, { newValue?: unknown }>,
-      areaName: string,
-    ) => {
-      if (areaName !== "local" || !changes[WALLPAPER_STORAGE_KEY]) {
-        return;
-      }
-
-      const nextValue = changes[WALLPAPER_STORAGE_KEY].newValue;
-
-      if (typeof nextValue === "string") {
-        try {
-          setStoredWallpaperUrl(normalizeImageUrl(nextValue));
-          return;
-        } catch {
-          setStoredWallpaperUrl(null);
-          return;
-        }
-      }
-
-      setStoredWallpaperUrl(null);
-    };
-
-    chrome.storage.onChanged.addListener(handleStorageChange);
+    const unsubscribe = platform.wallpaper.subscribe(setStoredWallpaperUrl);
     return () => {
       isCurrent = false;
-      chrome.storage.onChanged.removeListener(handleStorageChange);
+      unsubscribe();
     };
   }, []);
 
