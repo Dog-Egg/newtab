@@ -10,6 +10,7 @@
     "build": "pnpm run build:extension",
     "build:web": "tsc && vite build --mode web",
     "build:extension": "tsc && vite build --mode extension",
+    "typecheck": "tsc --noEmit",
     "preview": "vite preview"
   },
   "dependencies": {

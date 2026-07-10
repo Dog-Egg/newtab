@@ -7,6 +7,7 @@
     "prepare:app": "pnpm --filter @browser-tab/app build && node scripts/sync-app.mjs",
     "dev": "pnpm prepare:app && astro dev",
     "build": "pnpm prepare:app && astro check && astro build",
+    "typecheck": "astro check",
     "preview": "astro preview"
   },
   "dependencies": {
