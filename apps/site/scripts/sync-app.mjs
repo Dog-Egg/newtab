@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const siteRoot = resolve(scriptDir, "..");
 const workspaceRoot = resolve(siteRoot, "../..");
-const appDist = resolve(workspaceRoot, "apps/app/dist");
+const appDist = resolve(workspaceRoot, "apps/app/dist/web");
 const siteAppPublicDir = resolve(siteRoot, "public/app");
 
 await rm(siteAppPublicDir, { recursive: true, force: true });

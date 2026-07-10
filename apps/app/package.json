@@ -6,10 +6,9 @@
   "scripts": {
     "dev": "vite --mode web",
     "dev:web": "vite --mode web",
-    "dev:extension": "vite build --mode extension --watch",
-    "build": "pnpm run build:extension",
+    "dev:ext": "vite build --mode extension --watch",
     "build:web": "tsc && vite build --mode web",
-    "build:extension": "tsc && vite build --mode extension",
+    "build:ext": "tsc && vite build --mode extension",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview"
   },

@@ -62,6 +62,8 @@ function SortableShortcut({
         ref={handleRef}
         className="flex w-full touch-none select-none justify-center rounded-[30px] px-1 py-2 outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
         href={shortcut.url}
+        target={import.meta.env.MODE === "web" ? "_parent" : undefined}
+        rel={import.meta.env.MODE === "web" ? "noreferrer" : undefined}
       >
         <ShortcutPreview shortcut={shortcut} hideTitle={isDragging} />
       </a>
