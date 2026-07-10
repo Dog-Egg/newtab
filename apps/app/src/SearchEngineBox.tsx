@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import clsx from "clsx";
+import { ChevronDown, Plus } from "lucide-react";
 import { platform } from "@platform";
 import type { StoredSearchEngineSettings } from "./platform/types";
 import { Dialog, DialogTitle } from "./components/Dialog";
@@ -107,41 +108,6 @@ function SearchEngineGlyph({
         size === "small" ? "size-6 text-[12px]" : "size-7 text-[12px]",
       )}
     />
-  );
-}
-
-function ChevronDownIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="size-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="2"
-    >
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
-
-function PlusIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="size-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="2"
-    >
-      <path d="M12 5v14" />
-      <path d="M5 12h14" />
-    </svg>
   );
 }
 
@@ -297,7 +263,7 @@ export function SearchEngineBox() {
             title={selectedEngine.name}
           >
             <SearchEngineGlyph engine={selectedEngine} size="small" />
-            <ChevronDownIcon />
+            <ChevronDown aria-hidden="true" className="size-4" />
           </button>
 
           {isDropdownOpen ? (
@@ -331,7 +297,7 @@ export function SearchEngineBox() {
                   onClick={openAddDialog}
                 >
                   <span className="grid size-7 place-items-center rounded-full bg-white text-blue-600 shadow-sm">
-                    <PlusIcon />
+                    <Plus aria-hidden="true" className="size-4" />
                   </span>
                   新增
                 </button>

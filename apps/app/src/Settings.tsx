@@ -1,44 +1,8 @@
 import { useCallback, useState, type FormEvent } from "react";
+import { Download, X } from "lucide-react";
 import { toast } from "sonner";
 import { platform } from "@platform";
 import { normalizeImageUrl } from "./wallpapers";
-
-function CloseIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="size-5"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="2"
-    >
-      <path d="M18 6 6 18" />
-      <path d="m6 6 12 12" />
-    </svg>
-  );
-}
-
-function ImportIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="size-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="2"
-    >
-      <path d="M12 3v12" />
-      <path d="m7 10 5 5 5-5" />
-      <path d="M5 21h14" />
-    </svg>
-  );
-}
 
 function preloadImage(url: string) {
   return new Promise<void>((resolve, reject) => {
@@ -109,7 +73,7 @@ function BrowserBookmarksImportSettings() {
           onClick={handleImportBrowserBookmarks}
           disabled={isImportingBookmarks}
         >
-          <ImportIcon />
+          <Download aria-hidden="true" className="size-4" />
           {isImportingBookmarks ? "导入中" : "导入"}
         </button>
       </div>
@@ -247,7 +211,7 @@ export function SettingsPanel({
           onClick={onClose}
           aria-label="关闭设置"
         >
-          <CloseIcon />
+          <X aria-hidden="true" className="size-5" />
         </button>
       </div>
 

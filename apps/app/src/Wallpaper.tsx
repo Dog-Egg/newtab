@@ -7,30 +7,13 @@ import {
   type ReactNode,
 } from "react";
 import clsx from "clsx";
+import { Settings } from "lucide-react";
 import { platform } from "@platform";
 import { SettingsPanel } from "./Settings";
 
 const WALLPAPER_FADE_DURATION_MS = 520;
 const DEFAULT_WALLPAPER_URL =
   "https://images.unsplash.com/photo-1781978604675-9e955e007ee5?q=80&w=5777&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
-
-function GearIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="size-5"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="2"
-    >
-      <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" />
-      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 0 1 4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9L4.2 7A2 2 0 0 1 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 0 1 19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.1a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
-    </svg>
-  );
-}
 
 function getWallpaperLayerStyle(wallpaperUrl: string): CSSProperties {
   return {
@@ -157,7 +140,7 @@ export function Wallpaper({ children }: { children: ReactNode }) {
         aria-label="打开设置"
         aria-expanded={isSettingsOpen}
       >
-        <GearIcon />
+        <Settings aria-hidden="true" className="size-5" />
       </button>
 
       <SettingsPanel
