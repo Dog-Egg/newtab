@@ -1,9 +1,9 @@
 import {
-  BOOKMARKS_STORAGE_KEY,
-  DEMO_BOOKMARKS,
-  type BookmarkNode,
-  normalizeBookmarks,
-} from "../bookmarks";
+  SHORTCUTS_STORAGE_KEY,
+  DEMO_SHORTCUTS,
+  type ShortcutNode,
+  normalizeShortcuts,
+} from "../shortcuts";
 import {
   normalizeStoredWallpaperUrl,
   WALLPAPER_STORAGE_KEY,
@@ -41,17 +41,17 @@ function saveStoredSearchEngineSettings(settings: StoredSearchEngineSettings) {
   );
 }
 
-function readStoredBookmarks() {
-  const storedValue = readJsonStorageValue(BOOKMARKS_STORAGE_KEY);
+function readStoredShortcuts() {
+  const storedValue = readJsonStorageValue(SHORTCUTS_STORAGE_KEY);
   if (typeof storedValue === "undefined") {
-    return DEMO_BOOKMARKS;
+    return DEMO_SHORTCUTS;
   }
 
-  return normalizeBookmarks(storedValue);
+  return normalizeShortcuts(storedValue);
 }
 
-function saveStoredBookmarks(bookmarks: BookmarkNode[]) {
-  window.localStorage.setItem(BOOKMARKS_STORAGE_KEY, JSON.stringify(bookmarks));
+function saveStoredShortcuts(shortcuts: ShortcutNode[]) {
+  window.localStorage.setItem(SHORTCUTS_STORAGE_KEY, JSON.stringify(shortcuts));
 }
 
 function readStoredWallpaperUrl() {
@@ -70,16 +70,16 @@ function saveStoredWallpaperUrl(wallpaperUrl: string | null) {
 }
 
 export const platform: Platform = {
-  bookmarks: {
-    read: async () => readStoredBookmarks(),
-    save: async (bookmarks) => saveStoredBookmarks(bookmarks),
+  shortcuts: {
+    read: async () => readStoredShortcuts(),
+    save: async (shortcuts) => saveStoredShortcuts(shortcuts),
     subscribe: (onChange) => {
       const handleStorageChange = (event: StorageEvent) => {
-        if (event.key !== BOOKMARKS_STORAGE_KEY) {
+        if (event.key !== SHORTCUTS_STORAGE_KEY) {
           return;
         }
 
-        onChange(readStoredBookmarks());
+        onChange(readStoredShortcuts());
       };
 
       window.addEventListener("storage", handleStorageChange);

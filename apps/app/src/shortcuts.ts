@@ -1,75 +1,75 @@
-export type BookmarkItem = {
-  type: "bookmark";
+export type ShortcutItem = {
+  type: "shortcut";
   id: string;
   title: string;
   url: string;
   createdAt: number;
 };
 
-export type BookmarkNode = BookmarkItem;
-export type Bookmark = BookmarkItem;
+export type ShortcutNode = ShortcutItem;
+export type Shortcut = ShortcutItem;
 
-export const BOOKMARKS_STORAGE_KEY = "bookmarks";
+export const SHORTCUTS_STORAGE_KEY = "shortcuts";
 
-export const DEMO_BOOKMARKS: BookmarkNode[] = [
+export const DEMO_SHORTCUTS: ShortcutNode[] = [
   {
-    type: "bookmark",
+    type: "shortcut",
     id: "https://trello.com",
     title: "Trello",
     url: "https://trello.com",
     createdAt: 1,
   },
   {
-    type: "bookmark",
+    type: "shortcut",
     id: "https://home.mi.com",
     title: "米家",
     url: "https://home.mi.com",
     createdAt: 2,
   },
   {
-    type: "bookmark",
+    type: "shortcut",
     id: "https://cmbchina.com",
     title: "招商银行",
     url: "https://cmbchina.com",
     createdAt: 3,
   },
   {
-    type: "bookmark",
+    type: "shortcut",
     id: "https://pan.baidu.com",
     title: "百度网盘",
     url: "https://pan.baidu.com",
     createdAt: 4,
   },
   {
-    type: "bookmark",
+    type: "shortcut",
     id: "https://10010.com",
     title: "联通",
     url: "https://10010.com",
     createdAt: 5,
   },
   {
-    type: "bookmark",
+    type: "shortcut",
     id: "https://trip.com",
     title: "Trip",
     url: "https://trip.com",
     createdAt: 6,
   },
   {
-    type: "bookmark",
+    type: "shortcut",
     id: "https://ctrip.com",
     title: "携程",
     url: "https://ctrip.com",
     createdAt: 7,
   },
   {
-    type: "bookmark",
+    type: "shortcut",
     id: "https://1password.com",
     title: "1Password",
     url: "https://1password.com",
     createdAt: 8,
   },
   {
-    type: "bookmark",
+    type: "shortcut",
     id: "https://www.xiachufang.com",
     title: "下厨房",
     url: "https://www.xiachufang.com",
@@ -77,37 +77,37 @@ export const DEMO_BOOKMARKS: BookmarkNode[] = [
   },
 ];
 
-function normalizeBookmarkItem(value: unknown): BookmarkItem | null {
+function normalizeShortcutItem(value: unknown): ShortcutItem | null {
   if (!value || typeof value !== "object") {
     return null;
   }
 
-  const bookmark = value as Partial<BookmarkItem> & { type?: unknown };
+  const shortcut = value as Partial<ShortcutItem> & { type?: unknown };
   if (
-    typeof bookmark.id !== "string" ||
-    typeof bookmark.title !== "string" ||
-    typeof bookmark.url !== "string" ||
-    typeof bookmark.createdAt !== "number"
+    typeof shortcut.id !== "string" ||
+    typeof shortcut.title !== "string" ||
+    typeof shortcut.url !== "string" ||
+    typeof shortcut.createdAt !== "number"
   ) {
     return null;
   }
 
   return {
-    type: "bookmark",
-    id: bookmark.id,
-    title: bookmark.title,
-    url: bookmark.url,
-    createdAt: bookmark.createdAt,
+    type: "shortcut",
+    id: shortcut.id,
+    title: shortcut.title,
+    url: shortcut.url,
+    createdAt: shortcut.createdAt,
   };
 }
 
-export function normalizeBookmarks(value: unknown): BookmarkNode[] {
+export function normalizeShortcuts(value: unknown): ShortcutNode[] {
   if (!Array.isArray(value)) {
     return [];
   }
 
   return value.flatMap((item) => {
-    const bookmark = normalizeBookmarkItem(item);
-    return bookmark ? [bookmark] : [];
+    const shortcut = normalizeShortcutItem(item);
+    return shortcut ? [shortcut] : [];
   });
 }

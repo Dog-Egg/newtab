@@ -1,4 +1,4 @@
-import type { BookmarkNode } from "../bookmarks";
+import type { ShortcutNode } from "../shortcuts";
 
 export type StorageUnsubscribe = () => void;
 
@@ -19,11 +19,11 @@ export type BrowserBookmarksImportResult = {
 };
 
 export type Platform = {
-  bookmarks: {
-    read: () => Promise<BookmarkNode[]>;
-    save: (bookmarks: BookmarkNode[]) => Promise<void>;
+  shortcuts: {
+    read: () => Promise<ShortcutNode[]>;
+    save: (shortcuts: ShortcutNode[]) => Promise<void>;
     subscribe: (
-      onChange: (bookmarks: BookmarkNode[]) => void,
+      onChange: (shortcuts: ShortcutNode[]) => void,
     ) => StorageUnsubscribe;
   };
   wallpaper: {

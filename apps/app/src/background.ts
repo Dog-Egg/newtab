@@ -1,9 +1,9 @@
 import {
-  BOOKMARKS_STORAGE_KEY,
-  type Bookmark,
-  type BookmarkNode,
-  normalizeBookmarks,
-} from "./bookmarks";
+  SHORTCUTS_STORAGE_KEY,
+  type Shortcut,
+  type ShortcutNode,
+  normalizeShortcuts,
+} from "./shortcuts";
 
 const MENU_ID = "save-to-browser-tab";
 
@@ -11,23 +11,23 @@ function createContextMenu() {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: MENU_ID,
-      title: "收藏到 BrowserTab",
+      title: "添加快捷方式到 BrowserTab",
       contexts: ["page"],
     });
   });
 }
 
-function getBookmarks() {
-  return new Promise<BookmarkNode[]>((resolve) => {
-    chrome.storage.local.get(BOOKMARKS_STORAGE_KEY, (items) => {
-      resolve(normalizeBookmarks(items[BOOKMARKS_STORAGE_KEY]));
+function getShortcuts() {
+  return new Promise<ShortcutNode[]>((resolve) => {
+    chrome.storage.local.get(SHORTCUTS_STORAGE_KEY, (items) => {
+      resolve(normalizeShortcuts(items[SHORTCUTS_STORAGE_KEY]));
     });
   });
 }
 
-function setBookmarks(bookmarks: BookmarkNode[]) {
+function setShortcuts(shortcuts: ShortcutNode[]) {
   return new Promise<void>((resolve) => {
-    chrome.storage.local.set({ [BOOKMARKS_STORAGE_KEY]: bookmarks }, resolve);
+    chrome.storage.local.set({ [SHORTCUTS_STORAGE_KEY]: shortcuts }, resolve);
   });
 }
 
@@ -43,24 +43,24 @@ function getFallbackTitle(url: string) {
   }
 }
 
-function removeBookmarkUrl(
-  bookmarks: BookmarkNode[],
+function removeShortcutUrl(
+  shortcuts: ShortcutNode[],
   url: string,
-): BookmarkNode[] {
-  return bookmarks.filter((bookmark) => bookmark.url !== url);
+): ShortcutNode[] {
+  return shortcuts.filter((shortcut) => shortcut.url !== url);
 }
 
-async function saveBookmark(url: string, title?: string) {
-  const bookmarks = await getBookmarks();
-  const bookmark: Bookmark = {
-    type: "bookmark",
+async function saveShortcut(url: string, title?: string) {
+  const shortcuts = await getShortcuts();
+  const shortcut: Shortcut = {
+    type: "shortcut",
     id: url,
     title: title?.trim() || getFallbackTitle(url),
     url,
     createdAt: Date.now(),
   };
 
-  await setBookmarks([bookmark, ...removeBookmarkUrl(bookmarks, url)]);
+  await setShortcuts([shortcut, ...removeShortcutUrl(shortcuts, url)]);
 }
 
 chrome.runtime.onInstalled.addListener(createContextMenu);
@@ -76,5 +76,5 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     return;
   }
 
-  void saveBookmark(url, tab?.title);
+  void saveShortcut(url, tab?.title);
 });

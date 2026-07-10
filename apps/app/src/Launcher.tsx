@@ -11,22 +11,22 @@ import { move } from "@dnd-kit/helpers";
 import { useSortable } from "@dnd-kit/react/sortable";
 import clsx from "clsx";
 import { platform } from "@platform";
-import { type BookmarkItem } from "./bookmarks";
+import { type ShortcutItem } from "./shortcuts";
 import { SiteIcon } from "./components/SiteIcon";
 
-function BookmarkPreview({
-  bookmark,
+function ShortcutPreview({
+  shortcut,
   hideTitle = false,
 }: {
-  bookmark: BookmarkItem;
+  shortcut: ShortcutItem;
   hideTitle?: boolean;
 }) {
   return (
     <div className="flex w-28 flex-col items-center gap-3 text-center">
       <SiteIcon
-        title={bookmark.title}
-        url={bookmark.url}
-        seed={bookmark.id}
+        title={shortcut.title}
+        url={shortcut.url}
+        seed={shortcut.id}
         className="size-24 rounded-[26px] text-4xl font-bold shadow-[0_18px_35px_rgba(15,23,42,0.22)]"
       />
       <span
@@ -35,21 +35,21 @@ function BookmarkPreview({
           hideTitle && "invisible",
         )}
       >
-        {bookmark.title}
+        {shortcut.title}
       </span>
     </div>
   );
 }
 
-function SortableBookmark({
-  bookmark,
+function SortableShortcut({
+  shortcut,
   index,
 }: {
-  bookmark: BookmarkItem;
+  shortcut: ShortcutItem;
   index: number;
 }) {
   const { ref, handleRef, isDragging } = useSortable({
-    id: bookmark.id,
+    id: shortcut.id,
     index,
   });
 
@@ -61,38 +61,38 @@ function SortableBookmark({
       <a
         ref={handleRef}
         className="flex w-full touch-none select-none justify-center rounded-[30px] px-1 py-2 outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
-        href={bookmark.url}
+        href={shortcut.url}
       >
-        <BookmarkPreview bookmark={bookmark} hideTitle={isDragging} />
+        <ShortcutPreview shortcut={shortcut} hideTitle={isDragging} />
       </a>
     </li>
   );
 }
 
 export function Launcher() {
-  const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
+  const [shortcuts, setShortcuts] = useState<ShortcutItem[]>([]);
   // 记录当前拖拽项，用于渲染跟随指针的浮层预览。
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  const saveBookmarks = useCallback((nextBookmarks: BookmarkItem[]) => {
-    setBookmarks(nextBookmarks);
-    void platform.bookmarks.save(nextBookmarks);
+  const saveShortcuts = useCallback((nextShortcuts: ShortcutItem[]) => {
+    setShortcuts(nextShortcuts);
+    void platform.shortcuts.save(nextShortcuts);
   }, []);
 
   useEffect(() => {
     let isCurrent = true;
-    const applyBookmarks = (storedBookmarks: BookmarkItem[]) => {
-      setBookmarks(storedBookmarks);
+    const applyShortcuts = (storedShortcuts: ShortcutItem[]) => {
+      setShortcuts(storedShortcuts);
     };
 
-    void platform.bookmarks.read().then(
-      (storedBookmarks) => {
-        if (isCurrent) applyBookmarks(storedBookmarks);
+    void platform.shortcuts.read().then(
+      (storedShortcuts) => {
+        if (isCurrent) applyShortcuts(storedShortcuts);
       },
       () => {},
     );
 
-    const unsubscribe = platform.bookmarks.subscribe(applyBookmarks);
+    const unsubscribe = platform.shortcuts.subscribe(applyShortcuts);
     return () => {
       isCurrent = false;
       unsubscribe();
@@ -111,16 +111,16 @@ export function Launcher() {
     setActiveId(null);
     if (event.canceled) return;
 
-    const nextBookmarks = move(bookmarks, event);
+    const nextShortcuts = move(shortcuts, event);
     if (
-      nextBookmarks.some((bookmark, index) => bookmark !== bookmarks[index])
+      nextShortcuts.some((shortcut, index) => shortcut !== shortcuts[index])
     ) {
-      saveBookmarks(nextBookmarks);
+      saveShortcuts(nextShortcuts);
     }
   }
 
-  const activeBookmark = activeId
-    ? bookmarks.find((bookmark) => bookmark.id === activeId)
+  const activeShortcut = activeId
+    ? shortcuts.find((shortcut) => shortcut.id === activeId)
     : undefined;
 
   return (
@@ -138,16 +138,16 @@ export function Launcher() {
       onDragEnd={handleDragEnd}
     >
       <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 pb-8 pt-20 sm:px-10 sm:pb-8">
-        {bookmarks.length === 0 ? (
+        {shortcuts.length === 0 ? (
           <div className="grid flex-1 place-items-center">
-            <p className="text-lg font-semibold text-white/80">暂无收藏</p>
+            <p className="text-lg font-semibold text-white/80">暂无快捷方式</p>
           </div>
         ) : (
           <ul className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-x-6 gap-y-9 pb-10 sm:grid-cols-[repeat(auto-fill,minmax(118px,1fr))] sm:gap-x-8">
-            {bookmarks.map((bookmark, index) => (
-              <SortableBookmark
-                key={bookmark.id}
-                bookmark={bookmark}
+            {shortcuts.map((shortcut, index) => (
+              <SortableShortcut
+                key={shortcut.id}
+                shortcut={shortcut}
                 index={index}
               />
             ))}
@@ -156,9 +156,9 @@ export function Launcher() {
       </section>
       {/* 使用独立浮层展示拖拽项，避免受到列表布局和透明度样式影响。 */}
       <DragOverlay>
-        {activeBookmark ? (
+        {activeShortcut ? (
           <div className="rotate-1 scale-105 drop-shadow-2xl">
-            <BookmarkPreview bookmark={activeBookmark} hideTitle />
+            <ShortcutPreview shortcut={activeShortcut} hideTitle />
           </div>
         ) : null}
       </DragOverlay>

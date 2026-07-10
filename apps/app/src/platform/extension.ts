@@ -1,8 +1,8 @@
 import {
-  BOOKMARKS_STORAGE_KEY,
-  type BookmarkNode,
-  normalizeBookmarks,
-} from "../bookmarks";
+  SHORTCUTS_STORAGE_KEY,
+  type ShortcutNode,
+  normalizeShortcuts,
+} from "../shortcuts";
 import { importBrowserBookmarks } from "../browserBookmarks";
 import {
   normalizeStoredWallpaperUrl,
@@ -85,17 +85,17 @@ function subscribeChromeStorage<T>(
 }
 
 export const platform: Platform = {
-  bookmarks: {
+  shortcuts: {
     read: () =>
-      getChromeStorage<BookmarkNode[]>(
-        BOOKMARKS_STORAGE_KEY,
-        normalizeBookmarks,
+      getChromeStorage<ShortcutNode[]>(
+        SHORTCUTS_STORAGE_KEY,
+        normalizeShortcuts,
       ),
-    save: (bookmarks) => setChromeStorage(BOOKMARKS_STORAGE_KEY, bookmarks),
+    save: (shortcuts) => setChromeStorage(SHORTCUTS_STORAGE_KEY, shortcuts),
     subscribe: (onChange) =>
       subscribeChromeStorage(
-        BOOKMARKS_STORAGE_KEY,
-        normalizeBookmarks,
+        SHORTCUTS_STORAGE_KEY,
+        normalizeShortcuts,
         onChange,
       ),
   },

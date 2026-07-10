@@ -1,9 +1,9 @@
 import {
-  BOOKMARKS_STORAGE_KEY,
-  type BookmarkItem,
-  type BookmarkNode,
-  normalizeBookmarks,
-} from "./bookmarks";
+  SHORTCUTS_STORAGE_KEY,
+  type ShortcutItem,
+  type ShortcutNode,
+  normalizeShortcuts,
+} from "./shortcuts";
 
 export type BrowserBookmarksImportResult = {
   importedCount: number;
@@ -33,23 +33,23 @@ function isWebUrl(url: string) {
   return url.startsWith("http://") || url.startsWith("https://");
 }
 
-function getStoredBookmarks() {
-  return new Promise<BookmarkNode[]>((resolve, reject) => {
-    chrome.storage.local.get(BOOKMARKS_STORAGE_KEY, (items) => {
+function getStoredShortcuts() {
+  return new Promise<ShortcutNode[]>((resolve, reject) => {
+    chrome.storage.local.get(SHORTCUTS_STORAGE_KEY, (items) => {
       const error = chrome.runtime.lastError;
       if (error) {
         reject(new Error(error.message));
         return;
       }
 
-      resolve(normalizeBookmarks(items[BOOKMARKS_STORAGE_KEY]));
+      resolve(normalizeShortcuts(items[SHORTCUTS_STORAGE_KEY]));
     });
   });
 }
 
-function setStoredBookmarks(bookmarks: BookmarkNode[]) {
+function setStoredShortcuts(shortcuts: ShortcutNode[]) {
   return new Promise<void>((resolve, reject) => {
-    chrome.storage.local.set({ [BOOKMARKS_STORAGE_KEY]: bookmarks }, () => {
+    chrome.storage.local.set({ [SHORTCUTS_STORAGE_KEY]: shortcuts }, () => {
       const error = chrome.runtime.lastError;
       if (error) {
         reject(new Error(error.message));
@@ -75,15 +75,15 @@ function getBrowserBookmarkTree() {
   });
 }
 
-function addExistingUrls(bookmarks: BookmarkNode[], seenUrls: Set<string>) {
-  for (const bookmark of bookmarks) {
-    seenUrls.add(bookmark.url);
+function addExistingUrls(shortcuts: ShortcutNode[], seenUrls: Set<string>) {
+  for (const shortcut of shortcuts) {
+    seenUrls.add(shortcut.url);
   }
 }
 
-function addExistingIds(bookmarks: BookmarkNode[], usedIds: Set<string>) {
-  for (const bookmark of bookmarks) {
-    usedIds.add(bookmark.id);
+function addExistingIds(shortcuts: ShortcutNode[], usedIds: Set<string>) {
+  for (const shortcut of shortcuts) {
+    usedIds.add(shortcut.id);
   }
 }
 
@@ -122,10 +122,10 @@ function getBookmarkTitle(node: chrome.bookmarks.BookmarkTreeNode) {
   }
 }
 
-function convertBookmarkItem(
+function convertBookmarkToShortcut(
   node: chrome.bookmarks.BookmarkTreeNode,
   context: ImportContext,
-): BookmarkItem | null {
+): ShortcutItem | null {
   if (!node.url || !isWebUrl(node.url)) {
     return null;
   }
@@ -139,7 +139,7 @@ function convertBookmarkItem(
   context.createdAtFallback += 1;
 
   return {
-    type: "bookmark",
+    type: "shortcut",
     id: createUniqueId(node.url, context),
     title: getBookmarkTitle(node),
     url: node.url,
@@ -151,28 +151,28 @@ function convertFolder(
   node: chrome.bookmarks.BookmarkTreeNode,
   path: string[],
   context: ImportContext,
-): BookmarkNode[] {
+): ShortcutNode[] {
   const nextPath = node.title.trim() ? [...path, node.title.trim()] : path;
-  const bookmarks: BookmarkNode[] = [];
+  const shortcuts: ShortcutNode[] = [];
 
   for (const child of node.children ?? []) {
     if (child.url) {
-      const bookmark = convertBookmarkItem(child, context);
-      if (bookmark) {
-        bookmarks.push(bookmark);
+      const shortcut = convertBookmarkToShortcut(child, context);
+      if (shortcut) {
+        shortcuts.push(shortcut);
       }
       continue;
     }
 
-    bookmarks.push(...convertFolder(child, nextPath, context));
+    shortcuts.push(...convertFolder(child, nextPath, context));
   }
 
-  return bookmarks;
+  return shortcuts;
 }
 
 function convertBrowserBookmarkTree(
   tree: chrome.bookmarks.BookmarkTreeNode[],
-  existingBookmarks: BookmarkNode[],
+  existingShortcuts: ShortcutNode[],
 ) {
   const context: ImportContext = {
     createdAtFallback: Date.now(),
@@ -180,33 +180,33 @@ function convertBrowserBookmarkTree(
     seenUrls: new Set<string>(),
     skippedDuplicateCount: 0,
   };
-  const importedBookmarks: BookmarkNode[] = [];
+  const importedShortcuts: ShortcutNode[] = [];
 
-  addExistingUrls(existingBookmarks, context.seenUrls);
-  addExistingIds(existingBookmarks, context.usedIds);
+  addExistingUrls(existingShortcuts, context.seenUrls);
+  addExistingIds(existingShortcuts, context.usedIds);
 
   for (const root of tree) {
     for (const child of root.children ?? []) {
       if (child.url) {
-        const bookmark = convertBookmarkItem(child, context);
-        if (bookmark) {
-          importedBookmarks.push(bookmark);
+        const shortcut = convertBookmarkToShortcut(child, context);
+        if (shortcut) {
+          importedShortcuts.push(shortcut);
         }
         continue;
       }
 
-      importedBookmarks.push(...convertFolder(child, [], context));
+      importedShortcuts.push(...convertFolder(child, [], context));
     }
   }
 
   return {
-    importedBookmarks,
+    importedShortcuts,
     skippedDuplicateCount: context.skippedDuplicateCount,
   };
 }
 
-function countImportedBookmarks(bookmarks: BookmarkNode[]) {
-  return bookmarks.length;
+function countImportedShortcuts(shortcuts: ShortcutNode[]) {
+  return shortcuts.length;
 }
 
 export async function importBrowserBookmarks(): Promise<BrowserBookmarksImportResult> {
@@ -219,16 +219,16 @@ export async function importBrowserBookmarks(): Promise<BrowserBookmarksImportRe
     };
   }
 
-  const [existingBookmarks, browserBookmarkTree] = await Promise.all([
-    getStoredBookmarks(),
+  const [existingShortcuts, browserBookmarkTree] = await Promise.all([
+    getStoredShortcuts(),
     getBrowserBookmarkTree(),
   ]);
-  const { importedBookmarks, skippedDuplicateCount } =
-    convertBrowserBookmarkTree(browserBookmarkTree, existingBookmarks);
-  const importedCount = countImportedBookmarks(importedBookmarks);
+  const { importedShortcuts, skippedDuplicateCount } =
+    convertBrowserBookmarkTree(browserBookmarkTree, existingShortcuts);
+  const importedCount = countImportedShortcuts(importedShortcuts);
 
-  if (importedBookmarks.length > 0) {
-    await setStoredBookmarks([...existingBookmarks, ...importedBookmarks]);
+  if (importedShortcuts.length > 0) {
+    await setStoredShortcuts([...existingShortcuts, ...importedShortcuts]);
   }
 
   return {
