@@ -47,18 +47,7 @@ function removeBookmarkUrl(
   bookmarks: BookmarkNode[],
   url: string,
 ): BookmarkNode[] {
-  return bookmarks.flatMap((item): BookmarkNode[] => {
-    if (item.type === "bookmark") {
-      return item.url === url ? [] : [item];
-    }
-
-    return [
-      {
-        ...item,
-        children: item.children.filter((child) => child.url !== url),
-      },
-    ];
-  });
+  return bookmarks.filter((bookmark) => bookmark.url !== url);
 }
 
 async function saveBookmark(url: string, title?: string) {

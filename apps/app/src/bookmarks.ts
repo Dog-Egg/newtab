@@ -6,15 +6,7 @@ export type BookmarkItem = {
   createdAt: number;
 };
 
-export type BookmarkFolder = {
-  type: "folder";
-  id: string;
-  title: string;
-  createdAt: number;
-  children: BookmarkItem[];
-};
-
-export type BookmarkNode = BookmarkItem | BookmarkFolder;
+export type BookmarkNode = BookmarkItem;
 export type Bookmark = BookmarkItem;
 
 export const BOOKMARKS_STORAGE_KEY = "bookmarks";
@@ -35,19 +27,11 @@ export const DEMO_BOOKMARKS: BookmarkNode[] = [
     createdAt: 2,
   },
   {
-    type: "folder",
-    id: "folder-finance-demo",
-    title: "财务",
+    type: "bookmark",
+    id: "https://cmbchina.com",
+    title: "招商银行",
+    url: "https://cmbchina.com",
     createdAt: 3,
-    children: [
-      {
-        type: "bookmark",
-        id: "https://cmbchina.com",
-        title: "招商银行",
-        url: "https://cmbchina.com",
-        createdAt: 3,
-      },
-    ],
   },
   {
     type: "bookmark",
@@ -57,41 +41,25 @@ export const DEMO_BOOKMARKS: BookmarkNode[] = [
     createdAt: 4,
   },
   {
-    type: "folder",
-    id: "folder-tools-demo",
-    title: "实用工具",
+    type: "bookmark",
+    id: "https://10010.com",
+    title: "联通",
+    url: "https://10010.com",
     createdAt: 5,
-    children: [
-      {
-        type: "bookmark",
-        id: "https://10010.com",
-        title: "联通",
-        url: "https://10010.com",
-        createdAt: 5,
-      },
-    ],
   },
   {
-    type: "folder",
-    id: "folder-travel-demo",
-    title: "旅行",
+    type: "bookmark",
+    id: "https://trip.com",
+    title: "Trip",
+    url: "https://trip.com",
     createdAt: 6,
-    children: [
-      {
-        type: "bookmark",
-        id: "https://trip.com",
-        title: "Trip",
-        url: "https://trip.com",
-        createdAt: 6,
-      },
-      {
-        type: "bookmark",
-        id: "https://ctrip.com",
-        title: "携程",
-        url: "https://ctrip.com",
-        createdAt: 7,
-      },
-    ],
+  },
+  {
+    type: "bookmark",
+    id: "https://ctrip.com",
+    title: "携程",
+    url: "https://ctrip.com",
+    createdAt: 7,
   },
   {
     type: "bookmark",
@@ -138,39 +106,7 @@ export function normalizeBookmarks(value: unknown): BookmarkNode[] {
     return [];
   }
 
-  return value.flatMap((item): BookmarkNode[] => {
-    if (!item || typeof item !== "object") {
-      return [];
-    }
-
-    const node = item as Partial<BookmarkFolder> & { type?: unknown };
-    if (node.type === "folder") {
-      const children = Array.isArray(node.children)
-        ? node.children.flatMap((child) => {
-            const bookmark = normalizeBookmarkItem(child);
-            return bookmark ? [bookmark] : [];
-          })
-        : [];
-
-      if (
-        typeof node.id !== "string" ||
-        typeof node.title !== "string" ||
-        typeof node.createdAt !== "number"
-      ) {
-        return [];
-      }
-
-      return [
-        {
-          type: "folder",
-          id: node.id,
-          title: node.title,
-          createdAt: node.createdAt,
-          children,
-        },
-      ];
-    }
-
+  return value.flatMap((item) => {
     const bookmark = normalizeBookmarkItem(item);
     return bookmark ? [bookmark] : [];
   });

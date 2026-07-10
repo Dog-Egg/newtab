@@ -1,6 +1,5 @@
 import {
   BOOKMARKS_STORAGE_KEY,
-  type BookmarkFolder,
   type BookmarkItem,
   type BookmarkNode,
   normalizeBookmarks,
@@ -78,26 +77,13 @@ function getBrowserBookmarkTree() {
 
 function addExistingUrls(bookmarks: BookmarkNode[], seenUrls: Set<string>) {
   for (const bookmark of bookmarks) {
-    if (bookmark.type === "bookmark") {
-      seenUrls.add(bookmark.url);
-      continue;
-    }
-
-    for (const child of bookmark.children) {
-      seenUrls.add(child.url);
-    }
+    seenUrls.add(bookmark.url);
   }
 }
 
 function addExistingIds(bookmarks: BookmarkNode[], usedIds: Set<string>) {
   for (const bookmark of bookmarks) {
     usedIds.add(bookmark.id);
-
-    if (bookmark.type === "folder") {
-      for (const child of bookmark.children) {
-        usedIds.add(child.id);
-      }
-    }
   }
 }
 
@@ -161,50 +147,27 @@ function convertBookmarkItem(
   };
 }
 
-function getFolderTitle(path: string[]) {
-  return path
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .join(" / ");
-}
-
 function convertFolder(
   node: chrome.bookmarks.BookmarkTreeNode,
   path: string[],
   context: ImportContext,
 ): BookmarkNode[] {
-  const title = node.title.trim();
-  const nextPath = title ? [...path, title] : path;
-  const directBookmarks: BookmarkItem[] = [];
-  const nestedNodes: BookmarkNode[] = [];
+  const nextPath = node.title.trim() ? [...path, node.title.trim()] : path;
+  const bookmarks: BookmarkNode[] = [];
 
   for (const child of node.children ?? []) {
     if (child.url) {
       const bookmark = convertBookmarkItem(child, context);
       if (bookmark) {
-        directBookmarks.push(bookmark);
+        bookmarks.push(bookmark);
       }
       continue;
     }
 
-    nestedNodes.push(...convertFolder(child, nextPath, context));
+    bookmarks.push(...convertFolder(child, nextPath, context));
   }
 
-  const folderTitle = getFolderTitle(nextPath);
-  const folderNodes =
-    directBookmarks.length > 0 && folderTitle
-      ? [
-          {
-            type: "folder",
-            id: createUniqueId(`browser-folder-${node.id}`, context),
-            title: folderTitle,
-            createdAt: node.dateAdded ?? Date.now(),
-            children: directBookmarks,
-          } satisfies BookmarkFolder,
-        ]
-      : [];
-
-  return [...folderNodes, ...nestedNodes];
+  return bookmarks;
 }
 
 function convertBrowserBookmarkTree(
@@ -243,11 +206,7 @@ function convertBrowserBookmarkTree(
 }
 
 function countImportedBookmarks(bookmarks: BookmarkNode[]) {
-  return bookmarks.reduce(
-    (total, bookmark) =>
-      total + (bookmark.type === "bookmark" ? 1 : bookmark.children.length),
-    0,
-  );
+  return bookmarks.length;
 }
 
 export async function importBrowserBookmarks(): Promise<BrowserBookmarksImportResult> {
@@ -275,8 +234,6 @@ export async function importBrowserBookmarks(): Promise<BrowserBookmarksImportRe
   return {
     importedCount,
     skippedDuplicateCount,
-    folderCount: importedBookmarks.filter(
-      (bookmark) => bookmark.type === "folder",
-    ).length,
+    folderCount: 0,
   };
 }
