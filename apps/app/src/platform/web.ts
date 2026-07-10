@@ -1,6 +1,5 @@
 import {
   SHORTCUTS_STORAGE_KEY,
-  DEMO_SHORTCUTS,
   type ShortcutNode,
   normalizeShortcuts,
 } from "../shortcuts";
@@ -11,6 +10,63 @@ import {
 import type { Platform, StoredSearchEngineSettings } from "./types";
 
 const SEARCH_ENGINE_SETTINGS_KEY = "browser-tab.searchEngineSettings.v1";
+
+const DEFAULT_SHORTCUTS: ShortcutNode[] = [
+  {
+    id: "https://trello.com",
+    title: "Trello",
+    url: "https://trello.com",
+    createdAt: 1,
+  },
+  {
+    id: "https://home.mi.com",
+    title: "米家",
+    url: "https://home.mi.com",
+    createdAt: 2,
+  },
+  {
+    id: "https://cmbchina.com",
+    title: "招商银行",
+    url: "https://cmbchina.com",
+    createdAt: 3,
+  },
+  {
+    id: "https://pan.baidu.com",
+    title: "百度网盘",
+    url: "https://pan.baidu.com",
+    createdAt: 4,
+  },
+  {
+    id: "https://10010.com",
+    title: "联通",
+    url: "https://10010.com",
+    createdAt: 5,
+  },
+  {
+    id: "https://trip.com",
+    title: "Trip",
+    url: "https://trip.com",
+    createdAt: 6,
+  },
+  {
+    id: "https://ctrip.com",
+    title: "携程",
+    url: "https://ctrip.com",
+    createdAt: 7,
+  },
+  {
+    id: "https://1password.com",
+    title: "1Password",
+    url: "https://1password.com",
+    createdAt: 8,
+  },
+  {
+    id: "https://www.xiachufang.com",
+    title: "下厨房",
+    url: "https://www.xiachufang.com",
+    createdAt: 9,
+  },
+];
 
 function readJsonStorageValue(key: string) {
   const saved = window.localStorage.getItem(key);
@@ -44,7 +100,7 @@ function saveStoredSearchEngineSettings(settings: StoredSearchEngineSettings) {
 function readStoredShortcuts() {
   const storedValue = readJsonStorageValue(SHORTCUTS_STORAGE_KEY);
   if (typeof storedValue === "undefined") {
-    return DEMO_SHORTCUTS;
+    return DEFAULT_SHORTCUTS;
   }
 
   return normalizeShortcuts(storedValue);

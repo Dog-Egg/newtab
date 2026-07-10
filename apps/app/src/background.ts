@@ -53,7 +53,6 @@ function removeShortcutUrl(
 async function saveShortcut(url: string, title?: string) {
   const shortcuts = await getShortcuts();
   const shortcut: Shortcut = {
-    type: "shortcut",
     id: url,
     title: title?.trim() || getFallbackTitle(url),
     url,

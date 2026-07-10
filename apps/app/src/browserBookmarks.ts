@@ -139,7 +139,6 @@ function convertBookmarkToShortcut(
   context.createdAtFallback += 1;
 
   return {
-    type: "shortcut",
     id: createUniqueId(node.url, context),
     title: getBookmarkTitle(node),
     url: node.url,
