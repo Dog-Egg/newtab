@@ -1,20 +1,42 @@
-import { useCallback, useEffect, useState } from "react";
+/**
+ * 启动器交互说明：
+ *
+ * - 点击快捷方式会打开对应页面；点击文件夹会打开文件夹对话框。
+ * - 首页中的快捷方式和文件夹均可拖拽排序。
+ * - 首页快捷方式可拖到另一个快捷方式或文件夹上进行合并：
+ *   两个快捷方式会组成新文件夹，快捷方式拖到已有文件夹上则加入该文件夹。
+ * - 文件夹内的快捷方式可独立拖拽排序。
+ * - 将文件夹内的快捷方式拖出文件夹边界，会关闭文件夹对话框；本次拖拽继续进行，
+ *   可直接把该快捷方式放到首页中的目标位置。
+ */
+
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type Ref,
+  type RefObject,
+} from "react";
 import {
   DragDropProvider,
   DragOverlay,
   PointerSensor,
   type DragEndEvent,
+  type DragOverEvent,
   type DragStartEvent,
   useDroppable,
 } from "@dnd-kit/react";
 import { PointerActivationConstraints } from "@dnd-kit/dom";
 import { type SortableDraggable } from "@dnd-kit/dom/sortable";
 import { move } from "@dnd-kit/helpers";
-import { useSortable } from "@dnd-kit/react/sortable";
+import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 import clsx from "clsx";
 import { platform } from "@platform";
 import {
+  createShortcutSortableGroups,
   mergeShortcutIntoNode,
+  resolveShortcutSortableGroups,
   type ShortcutFolder,
   type ShortcutItem,
   type ShortcutNode,
@@ -25,16 +47,32 @@ type SortableCollisionDetector = NonNullable<
   Parameters<typeof useSortable>[0]["collisionDetector"]
 >;
 const MERGE_TARGET_PREFIX = "merge:";
+// dnd-kit 用 group 区分多个 sortable 容器：首页是 root，每个 Folder 使用自身 ID。
+const ROOT_SORTABLE_GROUP = "root";
+
+type ShortcutContainer =
+  | { type: "root"; id: typeof ROOT_SORTABLE_GROUP }
+  | { type: "folder"; id: string };
+
+/**
+ * 与 draggable/droppable 绑定的稳定业务上下文。
+ * node/container 用于识别业务对象；会变化的位置只读取 sortable.group/index。
+ */
+type ShortcutDndData = Record<string, unknown> & {
+  node: ShortcutNode;
+  container: ShortcutContainer;
+  folderPanelRef?: RefObject<HTMLElement | null>;
+};
+
+function getShortcutDndData(
+  entity: { data: Record<string, unknown> } | null | undefined,
+): ShortcutDndData | null {
+  const data = entity?.data as Partial<ShortcutDndData> | undefined;
+  return data?.node && data.container ? (data as ShortcutDndData) : null;
+}
 
 function getMergeTargetId(itemId: string) {
   return `${MERGE_TARGET_PREFIX}${itemId}`;
-}
-
-function getItemIdFromMergeTarget(id: unknown) {
-  const targetId = String(id);
-  return targetId.startsWith(MERGE_TARGET_PREFIX)
-    ? targetId.slice(MERGE_TARGET_PREFIX.length)
-    : null;
 }
 
 /**
@@ -53,6 +91,31 @@ const reorderCollisionDetector: SortableCollisionDetector = ({
   // A 当前跟随手指移动的位置。
   const source = dragOperation.source;
   const sourceCurrent = dragOperation.shape?.current;
+
+  // Dialog 覆盖在首页网格上方，但碰撞系统仍能看到遮罩后的 root sortables。
+  // 指针还在 Folder 面板内时忽略这些 root 候选项，防止尚未越界就切换 group。
+  if (
+    source &&
+    "sortable" in source &&
+    "sortable" in droppable &&
+    (source as unknown as SortableDraggable<Record<string, unknown>>).sortable
+      .group !== ROOT_SORTABLE_GROUP &&
+    (droppable as unknown as { sortable: { group?: unknown } }).sortable
+      .group === ROOT_SORTABLE_GROUP
+  ) {
+    const panel = getShortcutDndData(source)?.folderPanelRef?.current;
+    const pointer = dragOperation.position.current;
+    const rect = panel?.getBoundingClientRect();
+    if (
+      rect &&
+      pointer.x >= rect.left &&
+      pointer.x <= rect.right &&
+      pointer.y >= rect.top &&
+      pointer.y <= rect.bottom
+    ) {
+      return null;
+    }
+  }
 
   // B 是 dnd-kit 本轮正在检查的候选项。
   const target = droppable.shape;
@@ -120,6 +183,7 @@ const mergeCollisionDetector: SortableCollisionDetector = ({
   droppable,
 }) => {
   const source = dragOperation.source;
+  const sourceData = getShortcutDndData(source);
   const target = droppable.shape;
   const pointer = dragOperation.position.current;
   const sourceMergeTargetId = source
@@ -127,7 +191,8 @@ const mergeCollisionDetector: SortableCollisionDetector = ({
     : null;
 
   if (
-    source?.type !== "item" ||
+    sourceData?.node.type !== "item" ||
+    sourceData.container.type !== "root" ||
     sourceMergeTargetId === droppable.id ||
     !target
   ) {
@@ -182,6 +247,33 @@ function ShortcutPreview({
         {shortcut.title}
       </span>
     </div>
+  );
+}
+
+function ShortcutLink({
+  shortcut,
+  dragHandleRef,
+  isDragging,
+  className,
+}: {
+  shortcut: ShortcutItem;
+  dragHandleRef: Ref<HTMLAnchorElement>;
+  isDragging: boolean;
+  className?: string;
+}) {
+  return (
+    <a
+      ref={dragHandleRef}
+      className={clsx(
+        "flex touch-none select-none justify-center rounded-[30px] px-1 py-2 outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70",
+        className,
+      )}
+      href={shortcut.url}
+      target={import.meta.env.MODE === "web" ? "_parent" : undefined}
+      rel={import.meta.env.MODE === "web" ? "noreferrer" : undefined}
+    >
+      <ShortcutPreview shortcut={shortcut} hideTitle={isDragging} />
+    </a>
   );
 }
 
@@ -240,17 +332,25 @@ function SortableNode({
   index: number;
   onOpenFolder: (folder: ShortcutFolder) => void;
 }) {
-  const { ref, handleRef, isDragging } = useSortable({
+  const dndData: ShortcutDndData = {
+    node,
+    container: { type: "root", id: ROOT_SORTABLE_GROUP },
+  };
+  const { ref, handleRef, isDragging } = useSortable<ShortcutDndData>({
     id: node.id,
     index,
+    group: ROOT_SORTABLE_GROUP,
     type: node.type,
+    data: dndData,
     collisionDetector: reorderCollisionDetector,
   });
-  const { ref: mergeRef, isDropTarget: isMergeTarget } = useDroppable({
-    id: getMergeTargetId(node.id),
-    type: "merge",
-    collisionDetector: mergeCollisionDetector,
-  });
+  const { ref: mergeRef, isDropTarget: isMergeTarget } =
+    useDroppable<ShortcutDndData>({
+      id: getMergeTargetId(node.id),
+      type: "merge",
+      data: dndData,
+      collisionDetector: mergeCollisionDetector,
+    });
 
   return (
     <li
@@ -268,15 +368,12 @@ function SortableNode({
         className="pointer-events-none absolute inset-0"
       />
       {node.type === "item" ? (
-        <a
-          ref={handleRef}
-          className="flex w-full touch-none select-none justify-center rounded-[30px] px-1 py-2 outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
-          href={node.url}
-          target={import.meta.env.MODE === "web" ? "_parent" : undefined}
-          rel={import.meta.env.MODE === "web" ? "noreferrer" : undefined}
-        >
-          <ShortcutPreview shortcut={node} hideTitle={isDragging} />
-        </a>
+        <ShortcutLink
+          shortcut={node}
+          dragHandleRef={handleRef}
+          isDragging={isDragging}
+          className="w-full"
+        />
       ) : (
         <button
           ref={handleRef}
@@ -294,9 +391,11 @@ function SortableNode({
 function FolderDialog({
   folder,
   onClose,
+  panelRef,
 }: {
   folder: ShortcutFolder;
   onClose: () => void;
+  panelRef: RefObject<HTMLElement | null>;
 }) {
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
@@ -315,6 +414,7 @@ function FolderDialog({
       }}
     >
       <section
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label={folder.title}
@@ -332,17 +432,14 @@ function FolderDialog({
           </button>
         </div>
         <ul className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-x-5 gap-y-7">
-          {folder.children.map((item) => (
-            <li key={item.id}>
-              <a
-                className="flex justify-center rounded-[30px] px-1 py-2 outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
-                href={item.url}
-                target={import.meta.env.MODE === "web" ? "_parent" : undefined}
-                rel={import.meta.env.MODE === "web" ? "noreferrer" : undefined}
-              >
-                <ShortcutPreview shortcut={item} />
-              </a>
-            </li>
+          {folder.children.map((item, index) => (
+            <FolderSortableItem
+              key={item.id}
+              folderId={folder.id}
+              item={item}
+              index={index}
+              folderPanelRef={panelRef}
+            />
           ))}
         </ul>
       </section>
@@ -350,12 +447,61 @@ function FolderDialog({
   );
 }
 
+function FolderSortableItem({
+  folderId,
+  item,
+  index,
+  folderPanelRef,
+}: {
+  folderId: string;
+  item: ShortcutItem;
+  index: number;
+  folderPanelRef: RefObject<HTMLElement | null>;
+}) {
+  // group/index 是 dnd-kit 管理跨容器排序的核心数据。子项沿用自身 ID；移到
+  // root 后，顶层 SortableNode 会用相同 ID 重新注册并接续当前 operation。
+  const { ref, handleRef, isDragging } = useSortable<ShortcutDndData>({
+    id: item.id,
+    index,
+    group: folderId,
+    type: "folder-item",
+    data: {
+      node: item,
+      container: { type: "folder", id: folderId },
+      folderPanelRef,
+    },
+    collisionDetector: reorderCollisionDetector,
+  });
+
+  return (
+    <li
+      ref={ref}
+      className={clsx(
+        "rounded-[30px] transition will-change-transform",
+        isDragging && "opacity-30",
+      )}
+    >
+      <ShortcutLink
+        shortcut={item}
+        dragHandleRef={handleRef}
+        isDragging={isDragging}
+      />
+    </li>
+  );
+}
+
 export function Launcher() {
   const [shortcuts, setShortcuts] = useState<ShortcutNode[]>([]);
-  // 记录当前拖拽项，用于渲染跟随指针的浮层预览。
-  const [activeId, setActiveId] = useState<string | null>(null);
+  // 预览直接使用 draggable.data.node，不再用 ID 回到业务数组做二次查找。
+  const [activeNode, setActiveNode] = useState<ShortcutNode | null>(null);
 
-  const [openFolder, setOpenFolder] = useState<ShortcutFolder | null>(null);
+  const [openFolderId, setOpenFolderId] = useState<string | null>(null);
+  // 碰撞检测用真实面板隔离遮罩后的 root sortables；Dialog 卸载时会自动清空 ref。
+  const folderPanelRef = useRef<HTMLElement | null>(null);
+  // DragStart 快照只用于 canceled 时回滚尚未保存的跨 group 投影。
+  const dragStartShortcutsRef = useRef<ShortcutNode[] | null>(null);
+  // 同一轮 dragover 可能重复报告 root target，只投影一次容器切换。
+  const projectedToRootItemIdRef = useRef<string | null>(null);
 
   const saveShortcuts = useCallback((nextShortcuts: ShortcutNode[]) => {
     setShortcuts(nextShortcuts);
@@ -384,45 +530,103 @@ export function Launcher() {
 
   function handleDragStart(event: DragStartEvent) {
     const source = event.operation.source;
-    if (!source) return;
+    const sourceData = getShortcutDndData(source);
+    if (!source || !sourceData) return;
 
-    setActiveId(String(source.id));
+    setActiveNode(sourceData.node);
+    // 保存业务数据快照。dnd-kit 会在 DOM 层回滚 canceled operation，React 数据
+    // 也必须恢复到同一版本，二者才能保持一致。
+    dragStartShortcutsRef.current = shortcuts;
+    projectedToRootItemIdRef.current = null;
+  }
+
+  function handleDragOver(event: DragOverEvent) {
+    const { source, target } = event.operation;
+    const sourceData = getShortcutDndData(source);
+    const targetData = getShortcutDndData(target);
+    if (
+      !isSortable(source) ||
+      !isSortable(target) ||
+      sourceData?.container.type !== "folder" ||
+      targetData?.container.type !== "root" ||
+      projectedToRootItemIdRef.current !== null ||
+      sourceData.container.id !== openFolderId ||
+      target.sortable.group !== ROOT_SORTABLE_GROUP
+    ) {
+      return;
+    }
+
+    // OptimisticSortingPlugin 已选中 root sortable。这里用同一个 event 投影 React
+    // 数据，使 Dialog 可以安全卸载，而同 ID 的 Item 会立即在 root group 重新挂载。
+    projectedToRootItemIdRef.current = sourceData.node.id;
+    const projectedGroups = move(
+      createShortcutSortableGroups(shortcuts, ROOT_SORTABLE_GROUP),
+      event,
+    );
+    setShortcuts(
+      resolveShortcutSortableGroups(projectedGroups, ROOT_SORTABLE_GROUP),
+    );
+    setOpenFolderId(null);
   }
 
   function handleDragEnd(event: DragEndEvent) {
     // 无论是否完成排序，拖拽结束后都要关闭浮层预览。
-    setActiveId(null);
+    setActiveNode(null);
 
-    const sourceId = event.operation.source?.id;
+    const sourceData = getShortcutDndData(event.operation.source);
     const finalTarget = event.operation.target;
-    const targetId =
-      finalTarget?.type === "merge"
-        ? getItemIdFromMergeTarget(finalTarget.id)
-        : null;
+    const targetData = getShortcutDndData(finalTarget);
 
-    if (event.canceled) return;
+    if (event.canceled) {
+      // 跨 group 的投影尚未写入存储，取消时恢复 DragStart 的 React 快照即可。
+      if (projectedToRootItemIdRef.current) {
+        setShortcuts(dragStartShortcutsRef.current ?? shortcuts);
+      }
+      return;
+    }
 
-    if (sourceId && targetId) {
+    if (
+      finalTarget?.type === "merge" &&
+      sourceData?.node.type === "item" &&
+      targetData
+    ) {
+      // 合并双方都直接来自 dnd operation.data；ID 仅作为持久化层的节点键。
       const nextShortcuts = mergeShortcutIntoNode(
         shortcuts,
-        String(sourceId),
-        targetId,
+        sourceData.node.id,
+        targetData.node.id,
         `folder:${crypto.randomUUID()}`,
       );
       if (nextShortcuts !== shortcuts) saveShortcuts(nextShortcuts);
       return;
     }
 
-    const nextShortcuts = move(shortcuts, event);
-    if (
-      nextShortcuts.some((shortcut, index) => shortcut !== shortcuts[index])
-    ) {
+    const source = event.operation.source;
+    if (!isSortable(source)) return;
+
+    // isSortable() 保证 initialGroup/group 与 initialIndex/index 可用；move() 会
+    // 根据这些由 dnd-kit 维护的最终值统一处理 root、Folder 内和跨 group 排序。
+    const nextGroups = move(
+      createShortcutSortableGroups(shortcuts, ROOT_SORTABLE_GROUP),
+      event,
+    );
+    const nextShortcuts = resolveShortcutSortableGroups(
+      nextGroups,
+      ROOT_SORTABLE_GROUP,
+    );
+    const hasSortableChange =
+      source.sortable.initialGroup !== source.sortable.group ||
+      source.sortable.initialIndex !== source.sortable.index;
+    if (hasSortableChange || projectedToRootItemIdRef.current) {
       saveShortcuts(nextShortcuts);
     }
   }
 
-  const activeNode = activeId
-    ? shortcuts.find((node) => node.id === activeId)
+  const openFolder = openFolderId
+    ? shortcuts.find(
+        (node): node is ShortcutFolder =>
+          node.type === "folder" && node.id === openFolderId,
+      )
     : undefined;
 
   return (
@@ -437,6 +641,7 @@ export function Launcher() {
         }),
       ]}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 pb-8 pt-20 sm:px-10 sm:pb-8">
@@ -451,7 +656,7 @@ export function Launcher() {
                 key={node.id}
                 node={node}
                 index={index}
-                onOpenFolder={setOpenFolder}
+                onOpenFolder={(folder) => setOpenFolderId(folder.id)}
               />
             ))}
           </ul>
@@ -466,7 +671,11 @@ export function Launcher() {
         ) : null}
       </DragOverlay>
       {openFolder ? (
-        <FolderDialog folder={openFolder} onClose={() => setOpenFolder(null)} />
+        <FolderDialog
+          folder={openFolder}
+          onClose={() => setOpenFolderId(null)}
+          panelRef={folderPanelRef}
+        />
       ) : null}
     </DragDropProvider>
   );

@@ -124,6 +124,42 @@ export function mergeShortcutIntoNode(
   ];
 }
 
+/** dnd-kit 的 move() 支持 Record<groupId, items[]> 形式的多组排序数据。 */
+export type ShortcutSortableGroups = Record<string, ShortcutNode[]>;
+
+/**
+ * 把持久化使用的树形结构投影成 dnd-kit 可直接排序的 group Record。
+ * rootGroup 保存首页节点，每个 Folder ID 对应它自己的 children group。
+ */
+export function createShortcutSortableGroups(
+  nodes: ShortcutNode[],
+  rootGroup: string,
+): ShortcutSortableGroups {
+  const groups: ShortcutSortableGroups = { [rootGroup]: nodes };
+  for (const node of nodes) {
+    if (node.type === "folder") groups[node.id] = node.children;
+  }
+  return groups;
+}
+
+/**
+ * 把 move() 产生的 group Record 还原成存储层需要的 ShortcutNode[]。
+ * 空 Folder 会被移除，避免 Item 全部移出后留下不可操作的空壳。
+ */
+export function resolveShortcutSortableGroups(
+  groups: ShortcutSortableGroups,
+  rootGroup: string,
+): ShortcutNode[] {
+  return (groups[rootGroup] ?? []).flatMap<ShortcutNode>((node) => {
+    if (node.type === "item") return [node];
+
+    const children = (groups[node.id] ?? []).filter(
+      (child): child is ShortcutItem => child.type === "item",
+    );
+    return children.length ? [{ ...node, children }] : [];
+  });
+}
+
 export function normalizeShortcuts(value: unknown): ShortcutNode[] {
   if (!Array.isArray(value)) {
     return [];
