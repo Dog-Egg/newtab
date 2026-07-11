@@ -1020,9 +1020,9 @@ export function Launcher() {
           </div>
         ) : (
           <ul
-            className="grid gap-x-3 gap-y-5 sm:gap-x-4"
+            className="grid justify-center gap-x-3 gap-y-5 sm:gap-x-4"
             style={{
-              gridTemplateColumns: `repeat(auto-fill, minmax(${Math.round(88 * nodeScale)}px, 1fr))`,
+              gridTemplateColumns: `repeat(auto-fit, ${Math.round(88 * nodeScale)}px)`,
             }}
           >
             {shortcuts.map((node, index) => (
