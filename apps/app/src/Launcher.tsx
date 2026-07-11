@@ -604,22 +604,60 @@ export function Launcher() {
     const source = event.operation.source;
     if (!isSortable(source)) return;
 
-    // isSortable() 保证 initialGroup/group 与 initialIndex/index 可用；move() 会
-    // 根据这些由 dnd-kit 维护的最终值统一处理 root、Folder 内和跨 group 排序。
-    const nextGroups = move(
-      createShortcutSortableGroups(shortcuts, ROOT_SORTABLE_GROUP),
-      event,
-    );
-    const nextShortcuts = resolveShortcutSortableGroups(
-      nextGroups,
-      ROOT_SORTABLE_GROUP,
-    );
-    const hasSortableChange =
-      source.sortable.initialGroup !== source.sortable.group ||
-      source.sortable.initialIndex !== source.sortable.index;
-    if (hasSortableChange || projectedToRootItemIdRef.current) {
-      saveShortcuts(nextShortcuts);
+    // Folder 内排序直接更新业务树中的 children。界面上的 optimistic sorting
+    // 不会修改 React 数据；这里必须把 source 的最终 index 明确写回对应 Folder。
+    if (
+      sourceData?.container.type === "folder" &&
+      source.initialGroup === source.group
+    ) {
+      const folderId = sourceData.container.id;
+      setShortcuts((currentShortcuts) => {
+        const nextShortcuts = currentShortcuts.map((node) => {
+          if (node.type !== "folder" || node.id !== folderId) return node;
+
+          const children = [...node.children];
+          const sourceIndex = children.findIndex(
+            (item) => item.id === sourceData.node.id,
+          );
+          if (sourceIndex < 0) return node;
+
+          const [item] = children.splice(sourceIndex, 1);
+          if (!item) return node;
+          children.splice(source.index, 0, item);
+          return { ...node, children };
+        });
+
+        void platform.shortcuts.save(nextShortcuts);
+        return nextShortcuts;
+      });
+      return;
     }
+
+    // Folder Item 跨到 root 时，onDragOver 已经把最终结构投影进 React state；
+    // 此处只持久化该结构，不能再对同一个 event 执行一次 move()。
+    if (projectedToRootItemIdRef.current) {
+      setShortcuts((currentShortcuts) => {
+        void platform.shortcuts.save(currentShortcuts);
+        return currentShortcuts;
+      });
+      return;
+    }
+
+    // 普通排序始终基于最新 React state 计算并持久化。不能把保存建立在
+    // initialIndex/index 的变化判断上，否则 optimistic sorting 已经改变了界面、
+    // 但事件值未被识别为变化时，Folder children 的新顺序会被漏存。
+    setShortcuts((currentShortcuts) => {
+      const nextGroups = move(
+        createShortcutSortableGroups(currentShortcuts, ROOT_SORTABLE_GROUP),
+        event,
+      );
+      const nextShortcuts = resolveShortcutSortableGroups(
+        nextGroups,
+        ROOT_SORTABLE_GROUP,
+      );
+      void platform.shortcuts.save(nextShortcuts);
+      return nextShortcuts;
+    });
   }
 
   const openFolder = openFolderId
