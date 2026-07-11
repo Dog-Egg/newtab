@@ -9,6 +9,10 @@ import {
   WALLPAPER_STORAGE_KEY,
 } from "../wallpapers";
 import type { Platform, StoredSearchEngineSettings } from "./types";
+import {
+  LAUNCHER_SETTINGS_STORAGE_KEY,
+  normalizeLauncherSettings,
+} from "../launcherSettings";
 
 const SEARCH_ENGINE_SETTINGS_KEY = "browser-tab.searchEngineSettings.v1";
 
@@ -110,6 +114,21 @@ export const platform: Platform = {
       subscribeChromeStorage(
         WALLPAPER_STORAGE_KEY,
         normalizeStoredWallpaperUrl,
+        onChange,
+      ),
+  },
+  launcherSettings: {
+    read: () =>
+      getChromeStorage(
+        LAUNCHER_SETTINGS_STORAGE_KEY,
+        normalizeLauncherSettings,
+      ),
+    save: (settings) =>
+      setChromeStorage(LAUNCHER_SETTINGS_STORAGE_KEY, settings),
+    subscribe: (onChange) =>
+      subscribeChromeStorage(
+        LAUNCHER_SETTINGS_STORAGE_KEY,
+        normalizeLauncherSettings,
         onChange,
       ),
   },

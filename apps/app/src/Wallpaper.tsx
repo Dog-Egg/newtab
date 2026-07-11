@@ -6,10 +6,6 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import clsx from "clsx";
-import { Settings } from "lucide-react";
-import { platform } from "@platform";
-import { SettingsPanel } from "./Settings";
 
 const WALLPAPER_FADE_DURATION_MS = 520;
 const DEFAULT_WALLPAPER_URL =
@@ -23,10 +19,13 @@ function getWallpaperLayerStyle(wallpaperUrl: string): CSSProperties {
   };
 }
 
-export function Wallpaper({ children }: { children: ReactNode }) {
-  const [storedWallpaperUrl, setStoredWallpaperUrl] = useState<string | null>(
-    null,
-  );
+export function Wallpaper({
+  children,
+  wallpaperUrl: selectedWallpaperUrl,
+}: {
+  children: ReactNode;
+  wallpaperUrl: string | null;
+}) {
   const [activeWallpaperUrl, setActiveWallpaperUrl] = useState<string | null>(
     null,
   );
@@ -35,15 +34,9 @@ export function Wallpaper({ children }: { children: ReactNode }) {
   );
   const [isPendingWallpaperVisible, setIsPendingWallpaperVisible] =
     useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const wallpaperRequestIdRef = useRef(0);
 
-  const wallpaperUrl = storedWallpaperUrl ?? DEFAULT_WALLPAPER_URL;
-
-  const saveWallpaper = useCallback((nextWallpaperUrl: string | null) => {
-    setStoredWallpaperUrl(nextWallpaperUrl);
-    void platform.wallpaper.save(nextWallpaperUrl);
-  }, []);
+  const wallpaperUrl = selectedWallpaperUrl ?? DEFAULT_WALLPAPER_URL;
 
   useEffect(() => {
     const requestId = wallpaperRequestIdRef.current + 1;
@@ -89,22 +82,6 @@ export function Wallpaper({ children }: { children: ReactNode }) {
     setIsPendingWallpaperVisible(false);
   }, [isPendingWallpaperVisible, pendingWallpaperUrl]);
 
-  useEffect(() => {
-    let isCurrent = true;
-
-    void platform.wallpaper.read().then((wallpaperUrlFromStorage) => {
-      if (isCurrent) {
-        setStoredWallpaperUrl(wallpaperUrlFromStorage);
-      }
-    });
-
-    const unsubscribe = platform.wallpaper.subscribe(setStoredWallpaperUrl);
-    return () => {
-      isCurrent = false;
-      unsubscribe();
-    };
-  }, []);
-
   return (
     <main className="relative min-h-screen min-w-80 overflow-hidden font-sans text-white">
       {activeWallpaperUrl ? (
@@ -129,27 +106,6 @@ export function Wallpaper({ children }: { children: ReactNode }) {
       {activeWallpaperUrl || pendingWallpaperUrl ? (
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.2),transparent_28%)]" />
       ) : null}
-
-      <button
-        className={clsx(
-          "fixed right-4 top-4 z-50 grid size-11 place-items-center rounded-full border border-white/35 bg-slate-950/35 text-white shadow-xl outline-none backdrop-blur-md transition hover:bg-slate-950/45 focus-visible:ring-4 focus-visible:ring-white/70 sm:right-8 sm:top-6",
-          isSettingsOpen && "bg-white text-slate-900 hover:bg-white/90",
-        )}
-        type="button"
-        onClick={() => setIsSettingsOpen((isOpen) => !isOpen)}
-        aria-label="打开设置"
-        aria-expanded={isSettingsOpen}
-      >
-        <Settings aria-hidden="true" className="size-5" />
-      </button>
-
-      <SettingsPanel
-        isOpen={isSettingsOpen}
-        selectedWallpaperUrl={storedWallpaperUrl}
-        onClose={() => setIsSettingsOpen(false)}
-        onSelectWallpaper={saveWallpaper}
-        onClearWallpaper={() => saveWallpaper(null)}
-      />
 
       {children}
     </main>

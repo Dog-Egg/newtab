@@ -15,6 +15,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type Ref,
   type RefObject,
 } from "react";
@@ -46,6 +47,7 @@ import {
 import { Dialog, DialogTitle } from "./components/Dialog";
 import { importBrowserBookmarksWithToast } from "./browserBookmarks";
 import { SiteIcon } from "./components/SiteIcon";
+import { useLauncherSettings } from "./launcherSettings";
 
 type SortableCollisionDetector = NonNullable<
   Parameters<typeof useSortable>[0]["collisionDetector"]
@@ -251,16 +253,32 @@ function ShortcutPreview({
   hideTitle?: boolean;
   iconClassName?: string;
 }) {
+  const { nodeScale } = useLauncherSettings();
+  const previewStyle: CSSProperties = {
+    width: 80 * nodeScale,
+    gap: 8 * nodeScale,
+  };
+  const iconStyle: CSSProperties = {
+    width: 64 * nodeScale,
+    height: 64 * nodeScale,
+    borderRadius: 18 * nodeScale,
+    fontSize: 24 * nodeScale,
+  };
+
   return (
-    <div className="flex w-28 flex-col items-center gap-3 text-center">
+    <div
+      className="flex flex-col items-center text-center"
+      style={previewStyle}
+    >
       <SiteIcon
         title={shortcut.title}
         url={shortcut.url}
         seed={shortcut.id}
         className={clsx(
-          "size-24 rounded-[26px] text-4xl font-bold shadow-[0_18px_35px_rgba(15,23,42,0.22)] transition-all duration-200 ease-out",
+          "font-bold shadow-[0_18px_35px_rgba(15,23,42,0.22)] transition-all duration-200 ease-out",
           iconClassName,
         )}
+        style={iconStyle}
       />
       <span
         className={clsx(
@@ -316,13 +334,30 @@ function FolderPreview({
   hideTitle?: boolean;
   iconClassName?: string;
 }) {
+  const { nodeScale } = useLauncherSettings();
+  const previewStyle: CSSProperties = {
+    width: 80 * nodeScale,
+    gap: 8 * nodeScale,
+  };
+  const iconStyle: CSSProperties = {
+    width: 64 * nodeScale,
+    height: 64 * nodeScale,
+    borderRadius: 18 * nodeScale,
+    gap: 4 * nodeScale,
+    padding: 8 * nodeScale,
+  };
+
   return (
-    <div className="flex w-28 flex-col items-center gap-3 text-center">
+    <div
+      className="flex flex-col items-center text-center"
+      style={previewStyle}
+    >
       <div
         className={clsx(
-          "grid size-24 grid-cols-2 grid-rows-2 gap-1.5 rounded-[26px] bg-white/25 p-3 shadow-[0_18px_35px_rgba(15,23,42,0.22)] backdrop-blur-md transition-all duration-200 ease-out",
+          "grid grid-cols-2 grid-rows-2 bg-white/25 shadow-[0_18px_35px_rgba(15,23,42,0.22)] backdrop-blur-md transition-all duration-200 ease-out",
           iconClassName,
         )}
+        style={iconStyle}
       >
         {folder.children.slice(0, 4).map((item) => (
           <SiteIcon
@@ -330,7 +365,8 @@ function FolderPreview({
             title={item.title}
             url={item.url}
             seed={item.id}
-            className="size-full min-h-0 min-w-0 rounded-xl text-sm font-bold shadow-sm"
+            className="size-full min-h-0 min-w-0 text-sm font-bold shadow-sm"
+            style={{ borderRadius: 8 * nodeScale }}
           />
         ))}
       </div>
@@ -610,54 +646,61 @@ function NodeMenu({
   onEdit: () => void;
   onDelete?: () => void;
 }) {
+  const { nodeScale } = useLauncherSettings();
+
   return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild>
-        <button
-          type="button"
-          aria-label={`${node.title}的更多操作`}
-          className="absolute right-0.5 top-0.5 z-20 grid size-6 place-items-center rounded-full bg-slate-900/75 text-white opacity-0 shadow-lg outline-none backdrop-blur transition-opacity delay-0 hover:bg-slate-800 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-white group-hover:opacity-100 group-hover:delay-500 data-[state=open]:opacity-100"
-          onClick={(event) => event.stopPropagation()}
-          onPointerDown={(event) => event.stopPropagation()}
-        >
-          <EllipsisVertical className="size-4" />
-        </button>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          align="end"
-          sideOffset={6}
-          onCloseAutoFocus={(event) => event.preventDefault()}
-          className="data-[state=closed]:animate-out data-[state=open]:animate-in z-[80] min-w-36 rounded-xl border border-white/20 bg-slate-900/95 p-1.5 text-sm text-white shadow-2xl backdrop-blur-xl"
-        >
-          <DropdownMenu.Item
-            className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-white/15"
-            onSelect={onEdit}
+    <div
+      className="pointer-events-none absolute left-1/2 top-2 z-20 -translate-x-1/2"
+      style={{ width: 64 * nodeScale, height: 64 * nodeScale }}
+    >
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger asChild>
+          <button
+            type="button"
+            aria-label={`${node.title}的更多操作`}
+            className="pointer-events-auto absolute right-0 top-0 grid size-6 -translate-y-1/3 translate-x-1/3 place-items-center rounded-full bg-slate-900/75 text-white opacity-0 shadow-lg outline-none backdrop-blur transition-opacity delay-0 hover:bg-slate-800 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-white group-hover:opacity-100 group-hover:delay-500 data-[state=open]:opacity-100"
+            onClick={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
           >
-            <Pencil className="size-4" />
-            {node.type === "folder" ? "修改标题" : "编辑"}
-          </DropdownMenu.Item>
-          {onExpand ? (
+            <EllipsisVertical className="size-4" />
+          </button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content
+            align="end"
+            sideOffset={6}
+            onCloseAutoFocus={(event) => event.preventDefault()}
+            className="data-[state=closed]:animate-out data-[state=open]:animate-in z-[80] min-w-36 rounded-xl border border-white/20 bg-slate-900/95 p-1.5 text-sm text-white shadow-2xl backdrop-blur-xl"
+          >
             <DropdownMenu.Item
               className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-white/15"
-              onSelect={onExpand}
+              onSelect={onEdit}
             >
-              <FolderOpen className="size-4" />
-              展开文件夹
+              <Pencil className="size-4" />
+              {node.type === "folder" ? "修改标题" : "编辑"}
             </DropdownMenu.Item>
-          ) : null}
-          {onDelete ? (
-            <DropdownMenu.Item
-              className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 text-red-300 outline-none data-[highlighted]:bg-red-500/20"
-              onSelect={onDelete}
-            >
-              <Trash2 className="size-4" />
-              {node.type === "folder" ? "删除文件夹" : "删除"}
-            </DropdownMenu.Item>
-          ) : null}
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
+            {onExpand ? (
+              <DropdownMenu.Item
+                className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-white/15"
+                onSelect={onExpand}
+              >
+                <FolderOpen className="size-4" />
+                展开文件夹
+              </DropdownMenu.Item>
+            ) : null}
+            {onDelete ? (
+              <DropdownMenu.Item
+                className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 text-red-300 outline-none data-[highlighted]:bg-red-500/20"
+                onSelect={onDelete}
+              >
+                <Trash2 className="size-4" />
+                {node.type === "folder" ? "删除文件夹" : "删除"}
+              </DropdownMenu.Item>
+            ) : null}
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>
+    </div>
   );
 }
 
@@ -731,6 +774,7 @@ function EditItemDialog({
 }
 
 export function Launcher() {
+  const { nodeScale } = useLauncherSettings();
   const [shortcuts, setShortcuts] = useState<ShortcutNode[]>([]);
   const [isImportingBookmarks, setIsImportingBookmarks] = useState(false);
   // 预览直接使用 draggable.data.node，不再用 ID 回到业务数组做二次查找。
@@ -975,7 +1019,12 @@ export function Launcher() {
             </button>
           </div>
         ) : (
-          <ul className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-x-6 gap-y-9 pb-10 sm:grid-cols-[repeat(auto-fill,minmax(118px,1fr))] sm:gap-x-8">
+          <ul
+            className="grid gap-x-3 gap-y-5 sm:gap-x-4"
+            style={{
+              gridTemplateColumns: `repeat(auto-fill, minmax(${Math.round(88 * nodeScale)}px, 1fr))`,
+            }}
+          >
             {shortcuts.map((node, index) => (
               <SortableNode
                 key={node.id}

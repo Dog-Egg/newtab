@@ -8,6 +8,11 @@ import {
   WALLPAPER_STORAGE_KEY,
 } from "../wallpapers";
 import type { Platform, StoredSearchEngineSettings } from "./types";
+import {
+  LAUNCHER_SETTINGS_STORAGE_KEY,
+  normalizeLauncherSettings,
+  type LauncherSettings,
+} from "../launcherSettings";
 
 const SEARCH_ENGINE_SETTINGS_KEY = "browser-tab.searchEngineSettings.v1";
 
@@ -134,6 +139,19 @@ function saveStoredWallpaperUrl(wallpaperUrl: string | null) {
   window.localStorage.removeItem(WALLPAPER_STORAGE_KEY);
 }
 
+function readStoredLauncherSettings() {
+  return normalizeLauncherSettings(
+    readJsonStorageValue(LAUNCHER_SETTINGS_STORAGE_KEY),
+  );
+}
+
+function saveStoredLauncherSettings(settings: LauncherSettings) {
+  window.localStorage.setItem(
+    LAUNCHER_SETTINGS_STORAGE_KEY,
+    JSON.stringify(settings),
+  );
+}
+
 export const platform: Platform = {
   shortcuts: {
     read: async () => readStoredShortcuts(),
@@ -163,6 +181,19 @@ export const platform: Platform = {
         onChange(readStoredWallpaperUrl());
       };
 
+      window.addEventListener("storage", handleStorageChange);
+      return () => window.removeEventListener("storage", handleStorageChange);
+    },
+  },
+  launcherSettings: {
+    read: async () => readStoredLauncherSettings(),
+    save: async (settings) => saveStoredLauncherSettings(settings),
+    subscribe: (onChange) => {
+      const handleStorageChange = (event: StorageEvent) => {
+        if (event.key === LAUNCHER_SETTINGS_STORAGE_KEY) {
+          onChange(readStoredLauncherSettings());
+        }
+      };
       window.addEventListener("storage", handleStorageChange);
       return () => window.removeEventListener("storage", handleStorageChange);
     },

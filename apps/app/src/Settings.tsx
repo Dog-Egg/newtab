@@ -2,6 +2,12 @@ import { useCallback, useState, type FormEvent } from "react";
 import { Download, X } from "lucide-react";
 import { importBrowserBookmarksWithToast } from "./browserBookmarks";
 import { normalizeImageUrl } from "./wallpapers";
+import {
+  LAUNCHER_NODE_SCALE_STEP,
+  MAX_LAUNCHER_NODE_SCALE,
+  MIN_LAUNCHER_NODE_SCALE,
+  type LauncherSettings,
+} from "./launcherSettings";
 
 function preloadImage(url: string) {
   return new Promise<void>((resolve, reject) => {
@@ -40,6 +46,49 @@ function BrowserBookmarksImportSettings() {
           <Download aria-hidden="true" className="size-4" />
           {isImportingBookmarks ? "导入中" : "导入"}
         </button>
+      </div>
+    </section>
+  );
+}
+
+function LauncherSizeSettings({
+  settings,
+  onChange,
+}: {
+  settings: LauncherSettings;
+  onChange: (settings: LauncherSettings) => void;
+}) {
+  return (
+    <section className="space-y-3 border-b border-white/10 px-4 py-4">
+      <div className="flex items-center justify-between gap-3">
+        <label className="text-sm font-bold" htmlFor="launcher-node-size">
+          快捷方式大小
+        </label>
+        <output
+          className="text-xs font-semibold tabular-nums text-white/70"
+          htmlFor="launcher-node-size"
+        >
+          {Math.round(settings.nodeScale * 100)}%
+        </output>
+      </div>
+      <div>
+        <input
+          id="launcher-node-size"
+          className="w-full cursor-pointer accent-white"
+          type="range"
+          min={MIN_LAUNCHER_NODE_SCALE}
+          max={MAX_LAUNCHER_NODE_SCALE}
+          step={LAUNCHER_NODE_SCALE_STEP}
+          value={settings.nodeScale}
+          aria-label="快捷方式大小"
+          onChange={(event) =>
+            onChange({ nodeScale: Number(event.currentTarget.value) })
+          }
+        />
+        <div className="flex justify-between text-xs font-semibold text-white/55">
+          <span>小</span>
+          <span>大</span>
+        </div>
       </div>
     </section>
   );
@@ -146,15 +195,19 @@ function WallpaperSettingsSection({
 export function SettingsPanel({
   isOpen,
   selectedWallpaperUrl,
+  launcherSettings,
   onClose,
   onSelectWallpaper,
   onClearWallpaper,
+  onChangeLauncherSettings,
 }: {
   isOpen: boolean;
   selectedWallpaperUrl: string | null;
+  launcherSettings: LauncherSettings;
   onClose: () => void;
   onSelectWallpaper: (wallpaperUrl: string) => void;
   onClearWallpaper: () => void;
+  onChangeLauncherSettings: (settings: LauncherSettings) => void;
 }) {
   if (!isOpen) {
     return null;
@@ -175,6 +228,10 @@ export function SettingsPanel({
       </div>
 
       <BrowserBookmarksImportSettings />
+      <LauncherSizeSettings
+        settings={launcherSettings}
+        onChange={onChangeLauncherSettings}
+      />
       <WallpaperSettingsSection
         selectedWallpaperUrl={selectedWallpaperUrl}
         onSelectWallpaper={onSelectWallpaper}

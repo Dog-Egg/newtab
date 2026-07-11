@@ -1,4 +1,5 @@
 import type { ShortcutNode } from "../shortcuts";
+import type { LauncherSettings } from "../launcherSettings";
 
 export type StorageUnsubscribe = () => void;
 
@@ -31,6 +32,13 @@ export type Platform = {
     save: (wallpaperUrl: string | null) => Promise<void>;
     subscribe: (
       onChange: (wallpaperUrl: string | null) => void,
+    ) => StorageUnsubscribe;
+  };
+  launcherSettings: {
+    read: () => Promise<LauncherSettings>;
+    save: (settings: LauncherSettings) => Promise<void>;
+    subscribe: (
+      onChange: (settings: LauncherSettings) => void,
     ) => StorageUnsubscribe;
   };
   searchEngineSettings: {
