@@ -6,8 +6,8 @@
  * - 首页快捷方式可拖到另一个快捷方式或文件夹上进行合并：
  *   两个快捷方式会组成新文件夹，快捷方式拖到已有文件夹上则加入该文件夹。
  * - 文件夹内的快捷方式可独立拖拽排序。
- * - 将文件夹内的快捷方式拖出文件夹边界，会关闭文件夹对话框；本次拖拽继续进行，
- *   可直接把该快捷方式放到首页中的目标位置。
+ * - 将文件夹内的快捷方式拖出文件夹边界，会立即关闭文件夹对话框；本次拖拽
+ *   继续进行，可直接把该快捷方式放到首页中的目标位置。
  */
 
 import {
@@ -41,6 +41,7 @@ import {
   type ShortcutItem,
   type ShortcutNode,
 } from "./shortcuts";
+import { Dialog, DialogTitle } from "./components/Dialog";
 import { SiteIcon } from "./components/SiteIcon";
 
 type SortableCollisionDetector = NonNullable<
@@ -61,7 +62,7 @@ type ShortcutContainer =
 type ShortcutDndData = Record<string, unknown> & {
   node: ShortcutNode;
   container: ShortcutContainer;
-  folderPanelRef?: RefObject<HTMLElement | null>;
+  folderPanelRef?: RefObject<HTMLDivElement | null>;
 };
 
 function getShortcutDndData(
@@ -93,7 +94,8 @@ const reorderCollisionDetector: SortableCollisionDetector = ({
   const sourceCurrent = dragOperation.shape?.current;
 
   // Dialog 覆盖在首页网格上方，但碰撞系统仍能看到遮罩后的 root sortables。
-  // 指针还在 Folder 面板内时忽略这些 root 候选项，防止尚未越界就切换 group。
+  // 指针还在 Folder 面板内时忽略这些候选项；一旦越界，立即选择离指针最近的
+  // root sortable，让 onDragOver 投影数据并关闭 Dialog，无需等待拖拽项与目标重叠。
   if (
     source &&
     "sortable" in source &&
@@ -106,8 +108,8 @@ const reorderCollisionDetector: SortableCollisionDetector = ({
     const panel = getShortcutDndData(source)?.folderPanelRef?.current;
     const pointer = dragOperation.position.current;
     const rect = panel?.getBoundingClientRect();
+    if (!rect) return null;
     if (
-      rect &&
       pointer.x >= rect.left &&
       pointer.x <= rect.right &&
       pointer.y >= rect.top &&
@@ -115,6 +117,20 @@ const reorderCollisionDetector: SortableCollisionDetector = ({
     ) {
       return null;
     }
+
+    const target = droppable.shape;
+    if (!target) return null;
+
+    const distanceToTarget = Math.hypot(
+      pointer.x - target.center.x,
+      pointer.y - target.center.y,
+    );
+    return {
+      id: droppable.id,
+      priority: 2,
+      type: 1,
+      value: 1 / (distanceToTarget + 1),
+    };
   }
 
   // B 是 dnd-kit 本轮正在检查的候选项。
@@ -390,60 +406,39 @@ function SortableNode({
 
 function FolderDialog({
   folder,
+  isClosing,
   onClose,
   panelRef,
 }: {
   folder: ShortcutFolder;
+  isClosing: boolean;
   onClose: () => void;
-  panelRef: RefObject<HTMLElement | null>;
+  panelRef: RefObject<HTMLDivElement | null>;
 }) {
-  useEffect(() => {
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [onClose]);
-
   return (
-    <div
-      className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 p-6 backdrop-blur-sm"
-      onMouseDown={(event) => {
-        // 只有点击遮罩本身时才关闭，点击面板内的快捷方式不能冒泡误关。
-        if (event.target === event.currentTarget) onClose();
-      }}
+    <Dialog
+      contentRef={panelRef}
+      isClosing={isClosing}
+      onClose={onClose}
+      className="max-w-xl rounded-[32px] border-white/20 bg-slate-900/80 p-7 backdrop-blur-2xl"
     >
-      <section
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={folder.title}
-        className="relative w-full max-w-xl rounded-[32px] border border-white/20 bg-slate-900/80 p-7 shadow-2xl backdrop-blur-2xl"
-      >
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <h2 className="text-xl font-bold text-white">{folder.title}</h2>
-          <button
-            type="button"
-            aria-label="关闭文件夹"
-            onClick={onClose}
-            className="grid size-9 place-items-center rounded-full bg-white/10 text-xl text-white transition hover:bg-white/20 focus-visible:ring-4 focus-visible:ring-white/70"
-          >
-            ×
-          </button>
-        </div>
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-x-5 gap-y-7">
-          {folder.children.map((item, index) => (
-            <FolderSortableItem
-              key={item.id}
-              folderId={folder.id}
-              item={item}
-              index={index}
-              folderPanelRef={panelRef}
-            />
-          ))}
-        </ul>
-      </section>
-    </div>
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <DialogTitle className="text-xl font-bold text-white">
+          {folder.title}
+        </DialogTitle>
+      </div>
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-x-5 gap-y-7">
+        {folder.children.map((item, index) => (
+          <FolderSortableItem
+            key={item.id}
+            folderId={folder.id}
+            item={item}
+            index={index}
+            folderPanelRef={panelRef}
+          />
+        ))}
+      </ul>
+    </Dialog>
   );
 }
 
@@ -456,7 +451,7 @@ function FolderSortableItem({
   folderId: string;
   item: ShortcutItem;
   index: number;
-  folderPanelRef: RefObject<HTMLElement | null>;
+  folderPanelRef: RefObject<HTMLDivElement | null>;
 }) {
   // group/index 是 dnd-kit 管理跨容器排序的核心数据。子项沿用自身 ID；移到
   // root 后，顶层 SortableNode 会用相同 ID 重新注册并接续当前 operation。
@@ -496,8 +491,13 @@ export function Launcher() {
   const [activeNode, setActiveNode] = useState<ShortcutNode | null>(null);
 
   const [openFolderId, setOpenFolderId] = useState<string | null>(null);
+  // 越界后业务数据会立即迁移到 root；这份不含拖拽项的快照仅用于
+  // 让 Dialog 播完关闭动画，也覆盖空 Folder 已被业务数据删除的情况。
+  const [closingFolder, setClosingFolder] = useState<ShortcutFolder | null>(
+    null,
+  );
   // 碰撞检测用真实面板隔离遮罩后的 root sortables；Dialog 卸载时会自动清空 ref。
-  const folderPanelRef = useRef<HTMLElement | null>(null);
+  const folderPanelRef = useRef<HTMLDivElement | null>(null);
   // DragStart 快照只用于 canceled 时回滚尚未保存的跨 group 投影。
   const dragStartShortcutsRef = useRef<ShortcutNode[] | null>(null);
   // 同一轮 dragover 可能重复报告 root target，只投影一次容器切换。
@@ -563,10 +563,31 @@ export function Launcher() {
       createShortcutSortableGroups(shortcuts, ROOT_SORTABLE_GROUP),
       event,
     );
-    setShortcuts(
-      resolveShortcutSortableGroups(projectedGroups, ROOT_SORTABLE_GROUP),
+    const projectedShortcuts = resolveShortcutSortableGroups(
+      projectedGroups,
+      ROOT_SORTABLE_GROUP,
     );
-    setOpenFolderId(null);
+    setShortcuts(projectedShortcuts);
+
+    const projectedFolder = projectedShortcuts.find(
+      (node): node is ShortcutFolder =>
+        node.type === "folder" && node.id === sourceData.container.id,
+    );
+    const currentFolder = shortcuts.find(
+      (node): node is ShortcutFolder =>
+        node.type === "folder" && node.id === sourceData.container.id,
+    );
+    setClosingFolder(
+      projectedFolder ??
+        (currentFolder
+          ? {
+              ...currentFolder,
+              children: currentFolder.children.filter(
+                (item) => item.id !== sourceData.node.id,
+              ),
+            }
+          : null),
+    );
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -666,6 +687,7 @@ export function Launcher() {
           node.type === "folder" && node.id === openFolderId,
       )
     : undefined;
+  const displayedFolder = closingFolder ?? openFolder;
 
   return (
     <DragDropProvider
@@ -694,7 +716,10 @@ export function Launcher() {
                 key={node.id}
                 node={node}
                 index={index}
-                onOpenFolder={(folder) => setOpenFolderId(folder.id)}
+                onOpenFolder={(folder) => {
+                  setClosingFolder(null);
+                  setOpenFolderId(folder.id);
+                }}
               />
             ))}
           </ul>
@@ -708,10 +733,14 @@ export function Launcher() {
           </div>
         ) : null}
       </DragOverlay>
-      {openFolder ? (
+      {displayedFolder ? (
         <FolderDialog
-          folder={openFolder}
-          onClose={() => setOpenFolderId(null)}
+          folder={displayedFolder}
+          isClosing={closingFolder !== null}
+          onClose={() => {
+            setClosingFolder(null);
+            setOpenFolderId(null);
+          }}
           panelRef={folderPanelRef}
         />
       ) : null}
