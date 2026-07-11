@@ -609,7 +609,7 @@ function NodeMenu({
         <button
           type="button"
           aria-label={`${node.title}的更多操作`}
-          className="absolute right-1 top-1 z-20 grid size-6 place-items-center rounded-full bg-slate-900/75 text-white opacity-0 shadow-lg outline-none backdrop-blur transition-opacity delay-0 hover:bg-slate-800 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-white group-hover:opacity-100 group-hover:delay-300 data-[state=open]:opacity-100"
+          className="absolute right-0.5 top-0.5 z-20 grid size-6 place-items-center rounded-full bg-slate-900/75 text-white opacity-0 shadow-lg outline-none backdrop-blur transition-opacity delay-0 hover:bg-slate-800 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-white group-hover:opacity-100 group-hover:delay-500 data-[state=open]:opacity-100"
           onClick={(event) => event.stopPropagation()}
           onPointerDown={(event) => event.stopPropagation()}
         >

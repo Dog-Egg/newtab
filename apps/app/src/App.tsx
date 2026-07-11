@@ -17,7 +17,7 @@ export function App() {
           },
         }}
       />
-      <div className="flex flex-col gap-4 pt-16 sm:gap-6 sm:pt-20">
+      <div className="flex flex-col pt-16 sm:pt-48">
         <div className="relative z-20 px-6 sm:px-10">
           <SearchEngineBox />
         </div>
