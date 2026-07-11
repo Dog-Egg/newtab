@@ -851,8 +851,10 @@ export function Launcher() {
       return;
     }
 
-    // OptimisticSortingPlugin 已选中 root sortable。这里用同一个 event 投影 React
-    // 数据，使 Dialog 可以安全卸载，而同 ID 的 Item 会立即在 root group 重新挂载。
+    // 跨 group 时由 React 投影数据，禁止 OptimisticSortingPlugin 再通过
+    // insertAdjacentElement 直接迁移同一个 DOM 节点。否则 React 随后卸载
+    // Folder 子树时会从旧父节点 removeChild，触发 NotFoundError。
+    event.preventDefault();
     projectedToRootItemIdRef.current = sourceData.node.id;
     const projectedGroups = move(
       createShortcutSortableGroups(shortcuts, ROOT_SORTABLE_GROUP),
