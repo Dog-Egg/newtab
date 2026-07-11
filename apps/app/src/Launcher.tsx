@@ -31,7 +31,9 @@ import { PointerActivationConstraints } from "@dnd-kit/dom";
 import { type SortableDraggable } from "@dnd-kit/dom/sortable";
 import { move } from "@dnd-kit/helpers";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import clsx from "clsx";
+import { Pencil, Trash2, EllipsisVertical } from "lucide-react";
 import { platform } from "@platform";
 import {
   createShortcutSortableGroups,
@@ -362,10 +364,14 @@ function SortableNode({
   node,
   index,
   onOpenFolder,
+  onEdit,
+  onDelete,
 }: {
   node: ShortcutNode;
   index: number;
   onOpenFolder: (folder: ShortcutFolder) => void;
+  onEdit: (node: ShortcutNode) => void;
+  onDelete: (item: ShortcutItem) => void;
 }) {
   const dndData: ShortcutDndData = {
     node,
@@ -391,7 +397,7 @@ function SortableNode({
     <li
       ref={ref}
       className={clsx(
-        "relative rounded-[30px] transition will-change-transform",
+        "group relative rounded-[30px] transition will-change-transform",
         isDragging && "opacity-30",
       )}
     >
@@ -399,6 +405,11 @@ function SortableNode({
         ref={mergeRef}
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
+      />
+      <NodeMenu
+        node={node}
+        onEdit={() => onEdit(node)}
+        onDelete={node.type === "item" ? () => onDelete(node) : undefined}
       />
       {node.type === "item" ? (
         <ShortcutLink
@@ -433,12 +444,18 @@ function FolderDialog({
   isClosing,
   onClose,
   onRename,
+  editTitleInitially,
+  onEditItem,
+  onDeleteItem,
   panelRef,
 }: {
   folder: ShortcutFolder;
   isClosing: boolean;
   onClose: () => void;
   onRename: (title: string) => void;
+  editTitleInitially: boolean;
+  onEditItem: (item: ShortcutItem) => void;
+  onDeleteItem: (item: ShortcutItem) => void;
   panelRef: RefObject<HTMLDivElement | null>;
 }) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -447,8 +464,14 @@ function FolderDialog({
 
   useEffect(() => {
     setTitle(folder.title);
-    setIsEditingTitle(false);
-  }, [folder.id, folder.title]);
+    setIsEditingTitle(editTitleInitially);
+    if (editTitleInitially) {
+      requestAnimationFrame(() => {
+        titleInputRef.current?.focus();
+        titleInputRef.current?.select();
+      });
+    }
+  }, [editTitleInitially, folder.id, folder.title]);
 
   function commitTitle() {
     const nextTitle = title.trim();
@@ -514,6 +537,8 @@ function FolderDialog({
             item={item}
             index={index}
             folderPanelRef={panelRef}
+            onEdit={() => onEditItem(item)}
+            onDelete={() => onDeleteItem(item)}
           />
         ))}
       </ul>
@@ -526,11 +551,15 @@ function FolderSortableItem({
   item,
   index,
   folderPanelRef,
+  onEdit,
+  onDelete,
 }: {
   folderId: string;
   item: ShortcutItem;
   index: number;
   folderPanelRef: RefObject<HTMLDivElement | null>;
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
   // group/index 是 dnd-kit 管理跨容器排序的核心数据。子项沿用自身 ID；移到
   // root 后，顶层 SortableNode 会用相同 ID 重新注册并接续当前 operation。
@@ -551,10 +580,11 @@ function FolderSortableItem({
     <li
       ref={ref}
       className={clsx(
-        "rounded-[30px] transition will-change-transform",
+        "group relative rounded-[30px] transition will-change-transform",
         isDragging && "opacity-30",
       )}
     >
+      <NodeMenu node={item} onEdit={onEdit} onDelete={onDelete} />
       <ShortcutLink
         shortcut={item}
         dragHandleRef={handleRef}
@@ -564,11 +594,133 @@ function FolderSortableItem({
   );
 }
 
+function NodeMenu({
+  node,
+  onEdit,
+  onDelete,
+}: {
+  node: ShortcutNode;
+  onEdit: () => void;
+  onDelete?: () => void;
+}) {
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <button
+          type="button"
+          aria-label={`${node.title}的更多操作`}
+          className="absolute right-1 top-1 z-20 grid size-6 place-items-center rounded-full bg-slate-900/75 text-white opacity-0 shadow-lg outline-none backdrop-blur transition-opacity delay-0 hover:bg-slate-800 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-white group-hover:opacity-100 group-hover:delay-300 data-[state=open]:opacity-100"
+          onClick={(event) => event.stopPropagation()}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <EllipsisVertical className="size-4" />
+        </button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          align="end"
+          sideOffset={6}
+          onCloseAutoFocus={(event) => event.preventDefault()}
+          className="data-[state=closed]:animate-out data-[state=open]:animate-in z-[80] min-w-36 rounded-xl border border-white/20 bg-slate-900/95 p-1.5 text-sm text-white shadow-2xl backdrop-blur-xl"
+        >
+          <DropdownMenu.Item
+            className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-white/15"
+            onSelect={onEdit}
+          >
+            <Pencil className="size-4" />
+            {node.type === "folder" ? "修改标题" : "编辑"}
+          </DropdownMenu.Item>
+          {onDelete ? (
+            <DropdownMenu.Item
+              className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 text-red-300 outline-none data-[highlighted]:bg-red-500/20"
+              onSelect={onDelete}
+            >
+              <Trash2 className="size-4" />
+              删除
+            </DropdownMenu.Item>
+          ) : null}
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
+  );
+}
+
+function EditItemDialog({
+  item,
+  onClose,
+  onSave,
+}: {
+  item: ShortcutItem;
+  onClose: () => void;
+  onSave: (title: string, url: string) => void;
+}) {
+  const [title, setTitle] = useState(item.title);
+  const [url, setUrl] = useState(item.url);
+  const titleInputRef = useRef<HTMLInputElement | null>(null);
+
+  return (
+    <Dialog
+      onClose={onClose}
+      className="max-w-md rounded-[28px] border-white/20 bg-slate-900/90 p-7 backdrop-blur-2xl"
+    >
+      <DialogTitle className="mb-6 text-xl font-bold">编辑快捷方式</DialogTitle>
+      <form
+        className="space-y-5"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const nextTitle = title.trim();
+          const nextUrl = url.trim();
+          if (nextTitle && nextUrl) onSave(nextTitle, nextUrl);
+        }}
+      >
+        <label className="block space-y-2 text-sm font-medium">
+          <span>名称</span>
+          <input
+            ref={titleInputRef}
+            autoFocus
+            required
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            className="w-full rounded-xl bg-white/10 px-4 py-3 outline-none ring-1 ring-white/20 focus:ring-2 focus:ring-white/60"
+          />
+        </label>
+        <label className="block space-y-2 text-sm font-medium">
+          <span>URL</span>
+          <input
+            type="url"
+            required
+            value={url}
+            onChange={(event) => setUrl(event.target.value)}
+            className="w-full rounded-xl bg-white/10 px-4 py-3 outline-none ring-1 ring-white/20 focus:ring-2 focus:ring-white/60"
+          />
+        </label>
+        <div className="flex justify-end gap-3 pt-1">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl px-4 py-2.5 font-semibold transition hover:bg-white/10"
+          >
+            取消
+          </button>
+          <button
+            type="submit"
+            className="rounded-xl bg-white px-4 py-2.5 font-semibold text-slate-900 transition hover:bg-slate-100"
+          >
+            保存
+          </button>
+        </div>
+      </form>
+    </Dialog>
+  );
+}
+
 export function Launcher() {
   const [shortcuts, setShortcuts] = useState<ShortcutNode[]>([]);
   const [isImportingBookmarks, setIsImportingBookmarks] = useState(false);
   // 预览直接使用 draggable.data.node，不再用 ID 回到业务数组做二次查找。
   const [activeNode, setActiveNode] = useState<ShortcutNode | null>(null);
+  const [renameFolderId, setRenameFolderId] = useState<string | null>(null);
+  const [editingItem, setEditingItem] = useState<ShortcutItem | null>(null);
 
   const [openFolderId, setOpenFolderId] = useState<string | null>(null);
   // 越界后业务数据会立即迁移到 root；这份不含拖拽项的快照仅用于
@@ -814,7 +966,22 @@ export function Launcher() {
                 index={index}
                 onOpenFolder={(folder) => {
                   setClosingFolder(null);
+                  setRenameFolderId(null);
                   setOpenFolderId(folder.id);
+                }}
+                onEdit={(selectedNode) => {
+                  if (selectedNode.type === "folder") {
+                    setClosingFolder(null);
+                    setRenameFolderId(selectedNode.id);
+                    setOpenFolderId(selectedNode.id);
+                  } else {
+                    setEditingItem(selectedNode);
+                  }
+                }}
+                onDelete={(item) => {
+                  saveShortcuts(
+                    shortcuts.filter((node) => node.id !== item.id),
+                  );
                 }}
               />
             ))}
@@ -833,6 +1000,36 @@ export function Launcher() {
         <FolderDialog
           folder={displayedFolder}
           isClosing={closingFolder !== null}
+          editTitleInitially={renameFolderId === displayedFolder.id}
+          onEditItem={setEditingItem}
+          onDeleteItem={(item) => {
+            setShortcuts((currentShortcuts) => {
+              const nextShortcuts = currentShortcuts
+                .filter(
+                  (node) =>
+                    node.type !== "folder" ||
+                    node.id !== displayedFolder.id ||
+                    node.children.length > 1,
+                )
+                .map((node) =>
+                  node.type === "folder" && node.id === displayedFolder.id
+                    ? {
+                        ...node,
+                        children: node.children.filter(
+                          (child) => child.id !== item.id,
+                        ),
+                      }
+                    : node,
+                );
+              void platform.shortcuts.save(nextShortcuts);
+              return nextShortcuts;
+            });
+            if (displayedFolder.children.length === 1) {
+              setClosingFolder(null);
+              setRenameFolderId(null);
+              setOpenFolderId(null);
+            }
+          }}
           onRename={(title) => {
             if (closingFolder) return;
             setShortcuts((currentShortcuts) => {
@@ -847,9 +1044,36 @@ export function Launcher() {
           }}
           onClose={() => {
             setClosingFolder(null);
+            setRenameFolderId(null);
             setOpenFolderId(null);
           }}
           panelRef={folderPanelRef}
+        />
+      ) : null}
+      {editingItem ? (
+        <EditItemDialog
+          item={editingItem}
+          onClose={() => setEditingItem(null)}
+          onSave={(title, url) => {
+            setShortcuts((currentShortcuts) => {
+              const nextShortcuts = currentShortcuts.map((node) => {
+                if (node.type === "item") {
+                  return node.id === editingItem.id
+                    ? { ...node, title, url }
+                    : node;
+                }
+                return {
+                  ...node,
+                  children: node.children.map((item) =>
+                    item.id === editingItem.id ? { ...item, title, url } : item,
+                  ),
+                };
+              });
+              void platform.shortcuts.save(nextShortcuts);
+              return nextShortcuts;
+            });
+            setEditingItem(null);
+          }}
         />
       ) : null}
     </DragDropProvider>
