@@ -17,10 +17,10 @@ export function App() {
           },
         }}
       />
-      <div className="absolute left-0 right-0 top-16 z-20 px-6 sm:top-20 sm:px-10">
-        <SearchEngineBox />
-      </div>
-      <div className="pt-16 sm:pt-[68px]">
+      <div className="flex flex-col gap-4 pt-16 sm:gap-6 sm:pt-20">
+        <div className="relative z-20 px-6 sm:px-10">
+          <SearchEngineBox />
+        </div>
         <Launcher />
       </div>
     </Wallpaper>

@@ -1,7 +1,6 @@
 import { useCallback, useState, type FormEvent } from "react";
 import { Download, X } from "lucide-react";
-import { toast } from "sonner";
-import { platform } from "@platform";
+import { importBrowserBookmarksWithToast } from "./browserBookmarks";
 import { normalizeImageUrl } from "./wallpapers";
 
 function preloadImage(url: string) {
@@ -15,44 +14,12 @@ function preloadImage(url: string) {
 }
 
 function BrowserBookmarksImportSettings() {
-  const [importMessage, setImportMessage] = useState("");
   const [isImportingBookmarks, setIsImportingBookmarks] = useState(false);
 
   const handleImportBrowserBookmarks = useCallback(async () => {
     setIsImportingBookmarks(true);
-    setImportMessage("");
-
     try {
-      const result = await platform.browserBookmarks.import();
-
-      if (result.unsupported) {
-        toast.error("当前环境无法读取浏览器收藏夹", {
-          description: "请在浏览器扩展环境中使用收藏夹导入。",
-        });
-        return;
-      }
-
-      const skippedText =
-        result.skippedDuplicateCount > 0
-          ? `，跳过 ${result.skippedDuplicateCount} 个重复项`
-          : "";
-
-      if (result.importedCount === 0) {
-        setImportMessage(
-          result.skippedDuplicateCount > 0
-            ? `没有新的可导入收藏${skippedText}`
-            : "没有找到可导入的浏览器收藏",
-        );
-        return;
-      }
-
-      setImportMessage(
-        `已导入 ${result.importedCount} 个收藏${
-          result.folderCount > 0 ? `，包含 ${result.folderCount} 个文件夹` : ""
-        }${skippedText}`,
-      );
-    } catch (error) {
-      toast.error("导入失败，请稍后重试");
+      await importBrowserBookmarksWithToast();
     } finally {
       setIsImportingBookmarks(false);
     }
@@ -62,10 +29,7 @@ function BrowserBookmarksImportSettings() {
     <section className="space-y-3 border-b border-white/10 px-4 py-3">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="text-sm font-bold">收藏夹</h3>
-          <p className="mt-1 text-xs font-semibold text-white/60">
-            将浏览器收藏夹合并到当前书签
-          </p>
+          <h3 className="text-sm font-bold">导入浏览器收藏夹</h3>
         </div>
         <button
           className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-white px-3 text-sm font-bold text-slate-900 outline-none transition hover:bg-white/90 focus-visible:ring-4 focus-visible:ring-white/60 disabled:cursor-not-allowed disabled:opacity-60"
@@ -77,11 +41,6 @@ function BrowserBookmarksImportSettings() {
           {isImportingBookmarks ? "导入中" : "导入"}
         </button>
       </div>
-      {importMessage ? (
-        <p className="text-xs font-semibold text-emerald-100">
-          {importMessage}
-        </p>
-      ) : null}
     </section>
   );
 }

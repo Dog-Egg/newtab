@@ -42,6 +42,7 @@ import {
   type ShortcutNode,
 } from "./shortcuts";
 import { Dialog, DialogTitle } from "./components/Dialog";
+import { importBrowserBookmarksWithToast } from "./browserBookmarks";
 import { SiteIcon } from "./components/SiteIcon";
 
 type SortableCollisionDetector = NonNullable<
@@ -510,6 +511,7 @@ function FolderSortableItem({
 
 export function Launcher() {
   const [shortcuts, setShortcuts] = useState<ShortcutNode[]>([]);
+  const [isImportingBookmarks, setIsImportingBookmarks] = useState(false);
   // 预览直接使用 draggable.data.node，不再用 ID 回到业务数组做二次查找。
   const [activeNode, setActiveNode] = useState<ShortcutNode | null>(null);
 
@@ -712,6 +714,15 @@ export function Launcher() {
     : undefined;
   const displayedFolder = closingFolder ?? openFolder;
 
+  async function handleImportBrowserBookmarks() {
+    setIsImportingBookmarks(true);
+    try {
+      await importBrowserBookmarksWithToast();
+    } finally {
+      setIsImportingBookmarks(false);
+    }
+  }
+
   return (
     <DragDropProvider
       sensors={(defaults) => [
@@ -727,10 +738,17 @@ export function Launcher() {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 pb-8 pt-20 sm:px-10 sm:pb-8">
+      <section className="relative z-10 mx-auto flex w-full max-w-6xl flex-col px-6 pb-8 pt-20 sm:px-10 sm:pb-8">
         {shortcuts.length === 0 ? (
           <div className="grid flex-1 place-items-center">
-            <p className="text-lg font-semibold text-white/80">暂无快捷方式</p>
+            <button
+              type="button"
+              className="rounded-2xl bg-white/20 px-6 py-3 text-base font-semibold text-white shadow-lg backdrop-blur-md transition hover:bg-white/30 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-60"
+              disabled={isImportingBookmarks}
+              onClick={() => void handleImportBrowserBookmarks()}
+            >
+              {isImportingBookmarks ? "正在导入…" : "导入浏览器收藏夹"}
+            </button>
           </div>
         ) : (
           <ul className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-x-6 gap-y-9 pb-10 sm:grid-cols-[repeat(auto-fill,minmax(118px,1fr))] sm:gap-x-8">

@@ -147,3 +147,5 @@ vite.config.ts.timestamp-*
 
 # Web embeds generated from the extension build
 apps/site/public/app/
+
+.DS_Store

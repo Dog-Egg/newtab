@@ -1,9 +1,11 @@
 import {
   SHORTCUTS_STORAGE_KEY,
+  type ShortcutFolder,
   type ShortcutItem,
   type ShortcutNode,
   normalizeShortcuts,
 } from "./shortcuts";
+import { toast } from "sonner";
 
 export type BrowserBookmarksImportResult = {
   importedCount: number;
@@ -17,6 +19,7 @@ type ImportContext = {
   usedIds: Set<string>;
   seenUrls: Set<string>;
   skippedDuplicateCount: number;
+  folderCount: number;
 };
 
 export function canUseChromeBookmarks() {
@@ -154,25 +157,37 @@ function convertBookmarkToShortcut(
 
 function convertFolder(
   node: chrome.bookmarks.BookmarkTreeNode,
-  path: string[],
   context: ImportContext,
-): ShortcutNode[] {
-  const nextPath = node.title.trim() ? [...path, node.title.trim()] : path;
-  const shortcuts: ShortcutNode[] = [];
+): ShortcutFolder[] {
+  const children: ShortcutItem[] = [];
+  const liftedFolders: ShortcutFolder[] = [];
 
   for (const child of node.children ?? []) {
     if (child.url) {
       const shortcut = convertBookmarkToShortcut(child, context);
       if (shortcut) {
-        shortcuts.push(shortcut);
+        children.push(shortcut);
       }
       continue;
     }
 
-    shortcuts.push(...convertFolder(child, nextPath, context));
+    liftedFolders.push(...convertFolder(child, context));
   }
 
-  return shortcuts;
+  if (children.length === 0) return liftedFolders;
+
+  context.createdAtFallback += 1;
+  context.folderCount += 1;
+  return [
+    {
+      type: "folder",
+      id: createUniqueId(`bookmark-folder:${node.id}`, context),
+      title: getBookmarkTitle(node),
+      children,
+      createdAt: node.dateAdded ?? context.createdAtFallback,
+    },
+    ...liftedFolders,
+  ];
 }
 
 function convertBrowserBookmarkTree(
@@ -184,6 +199,7 @@ function convertBrowserBookmarkTree(
     usedIds: new Set<string>(),
     seenUrls: new Set<string>(),
     skippedDuplicateCount: 0,
+    folderCount: 0,
   };
   const importedShortcuts: ShortcutNode[] = [];
 
@@ -200,18 +216,22 @@ function convertBrowserBookmarkTree(
         continue;
       }
 
-      importedShortcuts.push(...convertFolder(child, [], context));
+      importedShortcuts.push(...convertFolder(child, context));
     }
   }
 
   return {
     importedShortcuts,
     skippedDuplicateCount: context.skippedDuplicateCount,
+    folderCount: context.folderCount,
   };
 }
 
-function countImportedShortcuts(shortcuts: ShortcutNode[]) {
-  return shortcuts.length;
+function countImportedShortcuts(shortcuts: ShortcutNode[]): number {
+  return shortcuts.reduce(
+    (count, node) => count + (node.type === "item" ? 1 : node.children.length),
+    0,
+  );
 }
 
 export async function importBrowserBookmarks(): Promise<BrowserBookmarksImportResult> {
@@ -228,7 +248,7 @@ export async function importBrowserBookmarks(): Promise<BrowserBookmarksImportRe
     getStoredShortcuts(),
     getBrowserBookmarkTree(),
   ]);
-  const { importedShortcuts, skippedDuplicateCount } =
+  const { importedShortcuts, skippedDuplicateCount, folderCount } =
     convertBrowserBookmarkTree(browserBookmarkTree, existingShortcuts);
   const importedCount = countImportedShortcuts(importedShortcuts);
 
@@ -239,6 +259,43 @@ export async function importBrowserBookmarks(): Promise<BrowserBookmarksImportRe
   return {
     importedCount,
     skippedDuplicateCount,
-    folderCount: 0,
+    folderCount,
   };
+}
+
+export async function importBrowserBookmarksWithToast() {
+  try {
+    // 动态加载平台适配层，避免与调用本文件的扩展适配层形成静态循环依赖。
+    const { platform } = await import("@platform");
+    const result = await platform.browserBookmarks.import();
+
+    if (result.unsupported) {
+      toast.error("当前环境无法读取浏览器收藏夹", {
+        description: "请在浏览器扩展环境中使用收藏夹导入。",
+      });
+      return;
+    }
+
+    const skippedText =
+      result.skippedDuplicateCount > 0
+        ? `，跳过 ${result.skippedDuplicateCount} 个重复项`
+        : "";
+
+    if (result.importedCount === 0) {
+      toast.info(
+        result.skippedDuplicateCount > 0
+          ? `没有新的可导入收藏${skippedText}`
+          : "没有找到可导入的浏览器收藏",
+      );
+      return;
+    }
+
+    toast.success(
+      `已导入 ${result.importedCount} 个收藏${
+        result.folderCount > 0 ? `，包含 ${result.folderCount} 个文件夹` : ""
+      }${skippedText}`,
+    );
+  } catch {
+    toast.error("导入失败，请稍后重试");
+  }
 }
