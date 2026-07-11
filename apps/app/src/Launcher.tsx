@@ -242,9 +242,11 @@ const mergeCollisionDetector: SortableCollisionDetector = ({
 function ShortcutPreview({
   shortcut,
   hideTitle = false,
+  iconClassName,
 }: {
   shortcut: ShortcutItem;
   hideTitle?: boolean;
+  iconClassName?: string;
 }) {
   return (
     <div className="flex w-28 flex-col items-center gap-3 text-center">
@@ -252,7 +254,10 @@ function ShortcutPreview({
         title={shortcut.title}
         url={shortcut.url}
         seed={shortcut.id}
-        className="size-24 rounded-[26px] text-4xl font-bold shadow-[0_18px_35px_rgba(15,23,42,0.22)]"
+        className={clsx(
+          "size-24 rounded-[26px] text-4xl font-bold shadow-[0_18px_35px_rgba(15,23,42,0.22)] transition-all duration-200 ease-out",
+          iconClassName,
+        )}
       />
       <span
         className={clsx(
@@ -271,11 +276,13 @@ function ShortcutLink({
   dragHandleRef,
   isDragging,
   className,
+  iconClassName,
 }: {
   shortcut: ShortcutItem;
   dragHandleRef: Ref<HTMLAnchorElement>;
   isDragging: boolean;
   className?: string;
+  iconClassName?: string;
 }) {
   return (
     <a
@@ -288,7 +295,11 @@ function ShortcutLink({
       target={import.meta.env.MODE === "web" ? "_parent" : undefined}
       rel={import.meta.env.MODE === "web" ? "noreferrer" : undefined}
     >
-      <ShortcutPreview shortcut={shortcut} hideTitle={isDragging} />
+      <ShortcutPreview
+        shortcut={shortcut}
+        hideTitle={isDragging}
+        iconClassName={iconClassName}
+      />
     </a>
   );
 }
@@ -296,13 +307,20 @@ function ShortcutLink({
 function FolderPreview({
   folder,
   hideTitle = false,
+  iconClassName,
 }: {
   folder: ShortcutFolder;
   hideTitle?: boolean;
+  iconClassName?: string;
 }) {
   return (
     <div className="flex w-28 flex-col items-center gap-3 text-center">
-      <div className="grid size-24 grid-cols-2 grid-rows-2 gap-1.5 rounded-[26px] bg-white/25 p-3 shadow-[0_18px_35px_rgba(15,23,42,0.22)] backdrop-blur-md">
+      <div
+        className={clsx(
+          "grid size-24 grid-cols-2 grid-rows-2 gap-1.5 rounded-[26px] bg-white/25 p-3 shadow-[0_18px_35px_rgba(15,23,42,0.22)] backdrop-blur-md transition-all duration-200 ease-out",
+          iconClassName,
+        )}
+      >
         {folder.children.slice(0, 4).map((item) => (
           <SiteIcon
             key={item.id}
@@ -374,8 +392,6 @@ function SortableNode({
       className={clsx(
         "relative rounded-[30px] transition will-change-transform",
         isDragging && "opacity-30",
-        isMergeTarget &&
-          "scale-95 bg-white/15 shadow-[0_0_32px_rgba(255,255,255,0.35)] ring-4 ring-white/80",
       )}
     >
       <div
@@ -389,6 +405,7 @@ function SortableNode({
           dragHandleRef={handleRef}
           isDragging={isDragging}
           className="w-full"
+          iconClassName={isMergeTarget ? "ring-8 ring-slate-100/75" : undefined}
         />
       ) : (
         <button
@@ -397,7 +414,13 @@ function SortableNode({
           className="flex w-full touch-none select-none justify-center rounded-[30px] px-1 py-2 outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
           onClick={() => onOpenFolder(node)}
         >
-          <FolderPreview folder={node} hideTitle={isDragging} />
+          <FolderPreview
+            folder={node}
+            hideTitle={isDragging}
+            iconClassName={
+              isMergeTarget ? "ring-8 ring-slate-100/75" : undefined
+            }
+          />
         </button>
       )}
     </li>
