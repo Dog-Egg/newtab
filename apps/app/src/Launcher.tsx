@@ -912,18 +912,19 @@ export function Launcher() {
       return;
     }
 
-    // 普通排序始终基于最新 React state 计算并持久化。不能把保存建立在
-    // initialIndex/index 的变化判断上，否则 optimistic sorting 已经改变了界面、
-    // 但事件值未被识别为变化时，Folder children 的新顺序会被漏存。
+    // Root 内的 optimistic sorting 已经把 source.index 推进到最终占位，不能再对
+    // 同一个 event 调用 move()，否则会把已完成的移动重复应用并保存成旧顺序。
+    // 业务 state 尚未参与 optimistic sorting，因此按节点 ID 和最终 index 明确重排。
     setShortcuts((currentShortcuts) => {
-      const nextGroups = move(
-        createShortcutSortableGroups(currentShortcuts, ROOT_SORTABLE_GROUP),
-        event,
+      const sourceIndex = currentShortcuts.findIndex(
+        (node) => node.id === sourceData?.node.id,
       );
-      const nextShortcuts = resolveShortcutSortableGroups(
-        nextGroups,
-        ROOT_SORTABLE_GROUP,
-      );
+      if (sourceIndex < 0) return currentShortcuts;
+
+      const nextShortcuts = [...currentShortcuts];
+      const [node] = nextShortcuts.splice(sourceIndex, 1);
+      if (!node) return currentShortcuts;
+      nextShortcuts.splice(source.index, 0, node);
       void platform.shortcuts.save(nextShortcuts);
       return nextShortcuts;
     });
