@@ -33,7 +33,7 @@ import { move } from "@dnd-kit/helpers";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import clsx from "clsx";
-import { Pencil, Trash2, EllipsisVertical } from "lucide-react";
+import { EllipsisVertical, FolderOpen, Pencil, Trash2 } from "lucide-react";
 import { platform } from "@platform";
 import {
   createShortcutSortableGroups,
@@ -364,12 +364,14 @@ function SortableNode({
   node,
   index,
   onOpenFolder,
+  onExpandFolder,
   onEdit,
   onDelete,
 }: {
   node: ShortcutNode;
   index: number;
   onOpenFolder: (folder: ShortcutFolder) => void;
+  onExpandFolder: (folder: ShortcutFolder) => void;
   onEdit: (node: ShortcutNode) => void;
   onDelete: (item: ShortcutItem) => void;
 }) {
@@ -408,6 +410,9 @@ function SortableNode({
       />
       <NodeMenu
         node={node}
+        onExpand={
+          node.type === "folder" ? () => onExpandFolder(node) : undefined
+        }
         onEdit={() => onEdit(node)}
         onDelete={node.type === "item" ? () => onDelete(node) : undefined}
       />
@@ -596,10 +601,12 @@ function FolderSortableItem({
 
 function NodeMenu({
   node,
+  onExpand,
   onEdit,
   onDelete,
 }: {
   node: ShortcutNode;
+  onExpand?: () => void;
   onEdit: () => void;
   onDelete?: () => void;
 }) {
@@ -623,6 +630,15 @@ function NodeMenu({
           onCloseAutoFocus={(event) => event.preventDefault()}
           className="data-[state=closed]:animate-out data-[state=open]:animate-in z-[80] min-w-36 rounded-xl border border-white/20 bg-slate-900/95 p-1.5 text-sm text-white shadow-2xl backdrop-blur-xl"
         >
+          {onExpand ? (
+            <DropdownMenu.Item
+              className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-white/15"
+              onSelect={onExpand}
+            >
+              <FolderOpen className="size-4" />
+              展开文件夹
+            </DropdownMenu.Item>
+          ) : null}
           <DropdownMenu.Item
             className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-white/15"
             onSelect={onEdit}
@@ -968,6 +984,18 @@ export function Launcher() {
                   setClosingFolder(null);
                   setRenameFolderId(null);
                   setOpenFolderId(folder.id);
+                }}
+                onExpandFolder={(folder) => {
+                  saveShortcuts(
+                    shortcuts.flatMap((node) =>
+                      node.id === folder.id ? folder.children : [node],
+                    ),
+                  );
+                  if (openFolderId === folder.id) {
+                    setClosingFolder(null);
+                    setRenameFolderId(null);
+                    setOpenFolderId(null);
+                  }
                 }}
                 onEdit={(selectedNode) => {
                   if (selectedNode.type === "folder") {
