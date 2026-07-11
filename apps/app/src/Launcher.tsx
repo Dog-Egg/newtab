@@ -365,8 +365,11 @@ function FolderPreview({
             title={item.title}
             url={item.url}
             seed={item.id}
-            className="size-full min-h-0 min-w-0 text-sm font-bold shadow-sm"
-            style={{ borderRadius: 8 * nodeScale }}
+            className="size-full min-h-0 min-w-0 font-bold shadow-sm"
+            style={{
+              borderRadius: 8 * nodeScale,
+              fontSize: 10 * nodeScale,
+            }}
           />
         ))}
       </div>
