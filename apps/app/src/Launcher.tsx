@@ -432,13 +432,35 @@ function FolderDialog({
   folder,
   isClosing,
   onClose,
+  onRename,
   panelRef,
 }: {
   folder: ShortcutFolder;
   isClosing: boolean;
   onClose: () => void;
+  onRename: (title: string) => void;
   panelRef: RefObject<HTMLDivElement | null>;
 }) {
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [title, setTitle] = useState(folder.title);
+  const titleInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    setTitle(folder.title);
+    setIsEditingTitle(false);
+  }, [folder.id, folder.title]);
+
+  function commitTitle() {
+    const nextTitle = title.trim();
+    setIsEditingTitle(false);
+    if (!nextTitle) {
+      setTitle(folder.title);
+      return;
+    }
+    setTitle(nextTitle);
+    if (nextTitle !== folder.title) onRename(nextTitle);
+  }
+
   return (
     <Dialog
       contentRef={panelRef}
@@ -448,7 +470,40 @@ function FolderDialog({
     >
       <div className="mb-6 flex items-center justify-between gap-4">
         <DialogTitle className="text-xl font-bold text-white">
-          {folder.title}
+          {isEditingTitle ? (
+            <input
+              ref={titleInputRef}
+              className="min-w-0 rounded-lg bg-white/10 px-2 py-1 text-inherit outline-none ring-2 ring-white/60 [font:inherit]"
+              value={title}
+              aria-label="文件夹标题"
+              onChange={(event) => setTitle(event.target.value)}
+              onBlur={commitTitle}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  event.currentTarget.blur();
+                } else if (event.key === "Escape") {
+                  event.preventDefault();
+                  setTitle(folder.title);
+                  setIsEditingTitle(false);
+                }
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              className="rounded-lg px-2 py-1 text-left outline-none transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/60"
+              onClick={() => {
+                setIsEditingTitle(true);
+                requestAnimationFrame(() => {
+                  titleInputRef.current?.focus();
+                  titleInputRef.current?.select();
+                });
+              }}
+            >
+              {folder.title}
+            </button>
+          )}
         </DialogTitle>
       </div>
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-x-5 gap-y-7">
@@ -778,6 +833,18 @@ export function Launcher() {
         <FolderDialog
           folder={displayedFolder}
           isClosing={closingFolder !== null}
+          onRename={(title) => {
+            if (closingFolder) return;
+            setShortcuts((currentShortcuts) => {
+              const nextShortcuts = currentShortcuts.map((node) =>
+                node.type === "folder" && node.id === displayedFolder.id
+                  ? { ...node, title }
+                  : node,
+              );
+              void platform.shortcuts.save(nextShortcuts);
+              return nextShortcuts;
+            });
+          }}
           onClose={() => {
             setClosingFolder(null);
             setOpenFolderId(null);
