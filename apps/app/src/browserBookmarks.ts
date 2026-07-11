@@ -76,14 +76,19 @@ function getBrowserBookmarkTree() {
 }
 
 function addExistingUrls(shortcuts: ShortcutNode[], seenUrls: Set<string>) {
-  for (const shortcut of shortcuts) {
-    seenUrls.add(shortcut.url);
+  for (const node of shortcuts) {
+    if (node.type === "folder") {
+      addExistingUrls(node.children, seenUrls);
+    } else {
+      seenUrls.add(node.url);
+    }
   }
 }
 
 function addExistingIds(shortcuts: ShortcutNode[], usedIds: Set<string>) {
-  for (const shortcut of shortcuts) {
-    usedIds.add(shortcut.id);
+  for (const node of shortcuts) {
+    usedIds.add(node.id);
+    if (node.type === "folder") addExistingIds(node.children, usedIds);
   }
 }
 
@@ -139,6 +144,7 @@ function convertBookmarkToShortcut(
   context.createdAtFallback += 1;
 
   return {
+    type: "item",
     id: createUniqueId(node.url, context),
     title: getBookmarkTitle(node),
     url: node.url,

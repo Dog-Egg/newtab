@@ -5,6 +5,7 @@ import {
   PointerSensor,
   type DragEndEvent,
   type DragStartEvent,
+  useDroppable,
 } from "@dnd-kit/react";
 import { PointerActivationConstraints } from "@dnd-kit/dom";
 import { type SortableDraggable } from "@dnd-kit/dom/sortable";
@@ -12,12 +13,29 @@ import { move } from "@dnd-kit/helpers";
 import { useSortable } from "@dnd-kit/react/sortable";
 import clsx from "clsx";
 import { platform } from "@platform";
-import { type ShortcutItem } from "./shortcuts";
+import {
+  mergeShortcutIntoNode,
+  type ShortcutFolder,
+  type ShortcutItem,
+  type ShortcutNode,
+} from "./shortcuts";
 import { SiteIcon } from "./components/SiteIcon";
 
 type SortableCollisionDetector = NonNullable<
   Parameters<typeof useSortable>[0]["collisionDetector"]
 >;
+const MERGE_TARGET_PREFIX = "merge:";
+
+function getMergeTargetId(itemId: string) {
+  return `${MERGE_TARGET_PREFIX}${itemId}`;
+}
+
+function getItemIdFromMergeTarget(id: unknown) {
+  const targetId = String(id);
+  return targetId.startsWith(MERGE_TARGET_PREFIX)
+    ? targetId.slice(MERGE_TARGET_PREFIX.length)
+    : null;
+}
 
 /**
  * 判断被拖拽的 A 是否应该移动到候选项 B 的位置。
@@ -96,6 +114,50 @@ const reorderCollisionDetector: SortableCollisionDetector = ({
   };
 };
 
+/** 独立的中心 droppable 只表达合并，不参与 sortable 的位置交换。 */
+const mergeCollisionDetector: SortableCollisionDetector = ({
+  dragOperation,
+  droppable,
+}) => {
+  const source = dragOperation.source;
+  const target = droppable.shape;
+  const pointer = dragOperation.position.current;
+  const sourceMergeTargetId = source
+    ? getMergeTargetId(String(source.id))
+    : null;
+
+  if (
+    source?.type !== "item" ||
+    sourceMergeTargetId === droppable.id ||
+    !target
+  ) {
+    return null;
+  }
+
+  const rect = target.boundingRectangle;
+  if (
+    pointer.x >= rect.left &&
+    pointer.x <= rect.right &&
+    pointer.y >= rect.top &&
+    pointer.y <= rect.bottom
+  ) {
+    const distanceToTarget = Math.hypot(
+      pointer.x - target.center.x,
+      pointer.y - target.center.y,
+    );
+
+    return {
+      id: droppable.id,
+      // 合并区域优先于同时命中的外层排序区域。
+      priority: 4,
+      type: 2,
+      value: 1 / (distanceToTarget + 1),
+    };
+  }
+
+  return null;
+};
+
 function ShortcutPreview({
   shortcut,
   hideTitle = false,
@@ -123,50 +185,186 @@ function ShortcutPreview({
   );
 }
 
-function SortableShortcut({
-  shortcut,
-  index,
+function FolderPreview({
+  folder,
+  hideTitle = false,
 }: {
-  shortcut: ShortcutItem;
+  folder: ShortcutFolder;
+  hideTitle?: boolean;
+}) {
+  return (
+    <div className="flex w-28 flex-col items-center gap-3 text-center">
+      <div className="grid size-24 grid-cols-2 grid-rows-2 gap-1.5 rounded-[26px] bg-white/25 p-3 shadow-[0_18px_35px_rgba(15,23,42,0.22)] backdrop-blur-md">
+        {folder.children.slice(0, 4).map((item) => (
+          <SiteIcon
+            key={item.id}
+            title={item.title}
+            url={item.url}
+            seed={item.id}
+            className="size-full min-h-0 min-w-0 rounded-xl text-sm font-bold shadow-sm"
+          />
+        ))}
+      </div>
+      <span
+        className={clsx(
+          "line-clamp-2 min-h-10 w-full text-balance text-sm font-semibold leading-5 text-white drop-shadow-[0_1px_2px_rgba(15,23,42,0.45)]",
+          hideTitle && "invisible",
+        )}
+      >
+        {folder.title}
+      </span>
+    </div>
+  );
+}
+
+function NodePreview({
+  node,
+  hideTitle = false,
+}: {
+  node: ShortcutNode;
+  hideTitle?: boolean;
+}) {
+  return node.type === "item" ? (
+    <ShortcutPreview shortcut={node} hideTitle={hideTitle} />
+  ) : (
+    <FolderPreview folder={node} hideTitle={hideTitle} />
+  );
+}
+
+function SortableNode({
+  node,
+  index,
+  onOpenFolder,
+}: {
+  node: ShortcutNode;
   index: number;
+  onOpenFolder: (folder: ShortcutFolder) => void;
 }) {
   const { ref, handleRef, isDragging } = useSortable({
-    id: shortcut.id,
+    id: node.id,
     index,
+    type: node.type,
     collisionDetector: reorderCollisionDetector,
+  });
+  const { ref: mergeRef, isDropTarget: isMergeTarget } = useDroppable({
+    id: getMergeTargetId(node.id),
+    type: "merge",
+    collisionDetector: mergeCollisionDetector,
   });
 
   return (
     <li
       ref={ref}
-      className={clsx("will-change-transform", isDragging && "opacity-30")}
+      className={clsx(
+        "relative rounded-[30px] transition will-change-transform",
+        isDragging && "opacity-30",
+        isMergeTarget &&
+          "scale-95 bg-white/15 shadow-[0_0_32px_rgba(255,255,255,0.35)] ring-4 ring-white/80",
+      )}
     >
-      <a
-        ref={handleRef}
-        className="flex w-full touch-none select-none justify-center rounded-[30px] px-1 py-2 outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
-        href={shortcut.url}
-        target={import.meta.env.MODE === "web" ? "_parent" : undefined}
-        rel={import.meta.env.MODE === "web" ? "noreferrer" : undefined}
-      >
-        <ShortcutPreview shortcut={shortcut} hideTitle={isDragging} />
-      </a>
+      <div
+        ref={mergeRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+      />
+      {node.type === "item" ? (
+        <a
+          ref={handleRef}
+          className="flex w-full touch-none select-none justify-center rounded-[30px] px-1 py-2 outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
+          href={node.url}
+          target={import.meta.env.MODE === "web" ? "_parent" : undefined}
+          rel={import.meta.env.MODE === "web" ? "noreferrer" : undefined}
+        >
+          <ShortcutPreview shortcut={node} hideTitle={isDragging} />
+        </a>
+      ) : (
+        <button
+          ref={handleRef}
+          type="button"
+          className="flex w-full touch-none select-none justify-center rounded-[30px] px-1 py-2 outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
+          onClick={() => onOpenFolder(node)}
+        >
+          <FolderPreview folder={node} hideTitle={isDragging} />
+        </button>
+      )}
     </li>
   );
 }
 
+function FolderDialog({
+  folder,
+  onClose,
+}: {
+  folder: ShortcutFolder;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 p-6 backdrop-blur-sm"
+      onMouseDown={(event) => {
+        // 只有点击遮罩本身时才关闭，点击面板内的快捷方式不能冒泡误关。
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-label={folder.title}
+        className="relative w-full max-w-xl rounded-[32px] border border-white/20 bg-slate-900/80 p-7 shadow-2xl backdrop-blur-2xl"
+      >
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <h2 className="text-xl font-bold text-white">{folder.title}</h2>
+          <button
+            type="button"
+            aria-label="关闭文件夹"
+            onClick={onClose}
+            className="grid size-9 place-items-center rounded-full bg-white/10 text-xl text-white transition hover:bg-white/20 focus-visible:ring-4 focus-visible:ring-white/70"
+          >
+            ×
+          </button>
+        </div>
+        <ul className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-x-5 gap-y-7">
+          {folder.children.map((item) => (
+            <li key={item.id}>
+              <a
+                className="flex justify-center rounded-[30px] px-1 py-2 outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
+                href={item.url}
+                target={import.meta.env.MODE === "web" ? "_parent" : undefined}
+                rel={import.meta.env.MODE === "web" ? "noreferrer" : undefined}
+              >
+                <ShortcutPreview shortcut={item} />
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
+}
+
 export function Launcher() {
-  const [shortcuts, setShortcuts] = useState<ShortcutItem[]>([]);
+  const [shortcuts, setShortcuts] = useState<ShortcutNode[]>([]);
   // 记录当前拖拽项，用于渲染跟随指针的浮层预览。
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  const saveShortcuts = useCallback((nextShortcuts: ShortcutItem[]) => {
+  const [openFolder, setOpenFolder] = useState<ShortcutFolder | null>(null);
+
+  const saveShortcuts = useCallback((nextShortcuts: ShortcutNode[]) => {
     setShortcuts(nextShortcuts);
     void platform.shortcuts.save(nextShortcuts);
   }, []);
 
   useEffect(() => {
     let isCurrent = true;
-    const applyShortcuts = (storedShortcuts: ShortcutItem[]) => {
+    const applyShortcuts = (storedShortcuts: ShortcutNode[]) => {
       setShortcuts(storedShortcuts);
     };
 
@@ -194,7 +392,26 @@ export function Launcher() {
   function handleDragEnd(event: DragEndEvent) {
     // 无论是否完成排序，拖拽结束后都要关闭浮层预览。
     setActiveId(null);
+
+    const sourceId = event.operation.source?.id;
+    const finalTarget = event.operation.target;
+    const targetId =
+      finalTarget?.type === "merge"
+        ? getItemIdFromMergeTarget(finalTarget.id)
+        : null;
+
     if (event.canceled) return;
+
+    if (sourceId && targetId) {
+      const nextShortcuts = mergeShortcutIntoNode(
+        shortcuts,
+        String(sourceId),
+        targetId,
+        `folder:${crypto.randomUUID()}`,
+      );
+      if (nextShortcuts !== shortcuts) saveShortcuts(nextShortcuts);
+      return;
+    }
 
     const nextShortcuts = move(shortcuts, event);
     if (
@@ -204,8 +421,8 @@ export function Launcher() {
     }
   }
 
-  const activeShortcut = activeId
-    ? shortcuts.find((shortcut) => shortcut.id === activeId)
+  const activeNode = activeId
+    ? shortcuts.find((node) => node.id === activeId)
     : undefined;
 
   return (
@@ -229,11 +446,12 @@ export function Launcher() {
           </div>
         ) : (
           <ul className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-x-6 gap-y-9 pb-10 sm:grid-cols-[repeat(auto-fill,minmax(118px,1fr))] sm:gap-x-8">
-            {shortcuts.map((shortcut, index) => (
-              <SortableShortcut
-                key={shortcut.id}
-                shortcut={shortcut}
+            {shortcuts.map((node, index) => (
+              <SortableNode
+                key={node.id}
+                node={node}
                 index={index}
+                onOpenFolder={setOpenFolder}
               />
             ))}
           </ul>
@@ -241,12 +459,15 @@ export function Launcher() {
       </section>
       {/* 使用独立浮层展示拖拽项，避免受到列表布局和透明度样式影响。 */}
       <DragOverlay>
-        {activeShortcut ? (
+        {activeNode ? (
           <div className="rotate-1 scale-105 drop-shadow-2xl">
-            <ShortcutPreview shortcut={activeShortcut} hideTitle />
+            <NodePreview node={activeNode} hideTitle />
           </div>
         ) : null}
       </DragOverlay>
+      {openFolder ? (
+        <FolderDialog folder={openFolder} onClose={() => setOpenFolder(null)} />
+      ) : null}
     </DragDropProvider>
   );
 }

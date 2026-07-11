@@ -47,12 +47,19 @@ function removeShortcutUrl(
   shortcuts: ShortcutNode[],
   url: string,
 ): ShortcutNode[] {
-  return shortcuts.filter((shortcut) => shortcut.url !== url);
+  return shortcuts.flatMap<ShortcutNode>((node) => {
+    if (node.type === "item") return node.url === url ? [] : [node];
+
+    const children = node.children.filter((item) => item.url !== url);
+    // 删除最后一个子项后也删除空文件夹，避免首页留下无法打开的空壳。
+    return children.length > 0 ? [{ ...node, children }] : [];
+  });
 }
 
 async function saveShortcut(url: string, title?: string) {
   const shortcuts = await getShortcuts();
   const shortcut: Shortcut = {
+    type: "item",
     id: url,
     title: title?.trim() || getFallbackTitle(url),
     url,
