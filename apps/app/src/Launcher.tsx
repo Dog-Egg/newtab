@@ -373,7 +373,7 @@ function SortableNode({
   onOpenFolder: (folder: ShortcutFolder) => void;
   onExpandFolder: (folder: ShortcutFolder) => void;
   onEdit: (node: ShortcutNode) => void;
-  onDelete: (item: ShortcutItem) => void;
+  onDelete: (node: ShortcutNode) => void;
 }) {
   const dndData: ShortcutDndData = {
     node,
@@ -414,7 +414,7 @@ function SortableNode({
           node.type === "folder" ? () => onExpandFolder(node) : undefined
         }
         onEdit={() => onEdit(node)}
-        onDelete={node.type === "item" ? () => onDelete(node) : undefined}
+        onDelete={() => onDelete(node)}
       />
       {node.type === "item" ? (
         <ShortcutLink
@@ -630,6 +630,13 @@ function NodeMenu({
           onCloseAutoFocus={(event) => event.preventDefault()}
           className="data-[state=closed]:animate-out data-[state=open]:animate-in z-[80] min-w-36 rounded-xl border border-white/20 bg-slate-900/95 p-1.5 text-sm text-white shadow-2xl backdrop-blur-xl"
         >
+          <DropdownMenu.Item
+            className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-white/15"
+            onSelect={onEdit}
+          >
+            <Pencil className="size-4" />
+            {node.type === "folder" ? "修改标题" : "编辑"}
+          </DropdownMenu.Item>
           {onExpand ? (
             <DropdownMenu.Item
               className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-white/15"
@@ -639,20 +646,13 @@ function NodeMenu({
               展开文件夹
             </DropdownMenu.Item>
           ) : null}
-          <DropdownMenu.Item
-            className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-white/15"
-            onSelect={onEdit}
-          >
-            <Pencil className="size-4" />
-            {node.type === "folder" ? "修改标题" : "编辑"}
-          </DropdownMenu.Item>
           {onDelete ? (
             <DropdownMenu.Item
               className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 text-red-300 outline-none data-[highlighted]:bg-red-500/20"
               onSelect={onDelete}
             >
               <Trash2 className="size-4" />
-              删除
+              {node.type === "folder" ? "删除文件夹" : "删除"}
             </DropdownMenu.Item>
           ) : null}
         </DropdownMenu.Content>
@@ -1006,9 +1006,9 @@ export function Launcher() {
                     setEditingItem(selectedNode);
                   }
                 }}
-                onDelete={(item) => {
+                onDelete={(selectedNode) => {
                   saveShortcuts(
-                    shortcuts.filter((node) => node.id !== item.id),
+                    shortcuts.filter((node) => node.id !== selectedNode.id),
                   );
                 }}
               />
