@@ -3,9 +3,19 @@ import * as RadixDialog from "@radix-ui/react-dialog";
 import clsx from "clsx";
 
 const DIALOG_ANIMATION_MS = 160;
+const MAIN_DIALOG_PORTAL_ID = "main-dialog-portal";
 
 export const DialogClose = RadixDialog.Close;
 export const DialogTitle = RadixDialog.Title;
+
+export function MainDialogPortal() {
+  return (
+    <div
+      id={MAIN_DIALOG_PORTAL_ID}
+      className="pointer-events-none absolute inset-0 z-[60]"
+    />
+  );
+}
 
 export function Dialog({
   children,
@@ -23,10 +33,16 @@ export function Dialog({
   onInteractOutside?: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(true);
+  const [portalContainer, setPortalContainer] =
+    useState<HTMLElement | null>(null);
   const onCloseRef = useRef(onClose);
   const closeTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(
     null,
   );
+
+  useEffect(() => {
+    setPortalContainer(document.getElementById(MAIN_DIALOG_PORTAL_ID));
+  }, []);
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -85,24 +101,45 @@ export function Dialog({
   }
 
   return (
-    <RadixDialog.Root open={isOpen} onOpenChange={handleOpenChange}>
-      <RadixDialog.Portal>
-        <RadixDialog.Overlay
-          className={
-            "fixed inset-0 z-[60] bg-slate-950/40 backdrop-blur-md data-[state=closed]:animate-dialog-overlay-out data-[state=open]:animate-dialog-overlay-in"
-          }
-        />
-        <RadixDialog.Content
-          ref={contentRef}
-          className={clsx(
-            "fixed left-1/2 top-1/2 z-[60] max-h-[calc(100dvh-3rem)] w-[calc(100vw-3rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain border border-white/45 bg-white/30 text-white shadow-2xl outline-none backdrop-blur-xl data-[state=closed]:animate-dialog-content-out data-[state=open]:animate-dialog-content-in",
-            className,
-          )}
-          onInteractOutside={onInteractOutside}
-        >
-          {children}
-        </RadixDialog.Content>
-      </RadixDialog.Portal>
+    <RadixDialog.Root
+      modal={false}
+      open={isOpen}
+      onOpenChange={handleOpenChange}
+    >
+      {portalContainer ? (
+        <RadixDialog.Portal container={portalContainer}>
+          <div
+            className={clsx(
+              "pointer-events-auto absolute inset-0 bg-slate-950/40 backdrop-blur-md",
+              isOpen
+                ? "animate-dialog-overlay-in"
+                : "animate-dialog-overlay-out",
+            )}
+            aria-hidden="true"
+          />
+          <RadixDialog.Content
+            ref={contentRef}
+            className={clsx(
+              "pointer-events-auto absolute left-1/2 top-1/2 z-10 max-h-[calc(100%-3rem)] w-[calc(100%-3rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain border border-white/45 bg-white/30 text-white shadow-2xl outline-none backdrop-blur-xl data-[state=closed]:animate-dialog-content-out data-[state=open]:animate-dialog-content-in",
+              className,
+            )}
+            onInteractOutside={(event) => {
+              const target = event.target;
+              if (
+                target instanceof Element &&
+                target.closest("[data-settings-drawer]")
+              ) {
+                event.preventDefault();
+                return;
+              }
+
+              onInteractOutside?.();
+            }}
+          >
+            {children}
+          </RadixDialog.Content>
+        </RadixDialog.Portal>
+      ) : null}
     </RadixDialog.Root>
   );
 }

@@ -4,7 +4,6 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type ReactNode,
 } from "react";
 
 const WALLPAPER_FADE_DURATION_MS = 520;
@@ -20,10 +19,8 @@ function getWallpaperLayerStyle(wallpaperUrl: string): CSSProperties {
 }
 
 export function Wallpaper({
-  children,
   wallpaperUrl: selectedWallpaperUrl,
 }: {
-  children: ReactNode;
   wallpaperUrl: string | null;
 }) {
   const [activeWallpaperUrl, setActiveWallpaperUrl] = useState<string | null>(
@@ -83,17 +80,17 @@ export function Wallpaper({
   }, [isPendingWallpaperVisible, pendingWallpaperUrl]);
 
   return (
-    <main className="relative min-h-screen min-w-80 overflow-hidden font-sans text-white">
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
       {activeWallpaperUrl ? (
         <div
-          className="pointer-events-none absolute inset-0 bg-cover bg-center"
+          className="absolute inset-0 bg-cover bg-center"
           style={getWallpaperLayerStyle(activeWallpaperUrl)}
         />
       ) : null}
 
       {pendingWallpaperUrl ? (
         <div
-          className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-0 transition-opacity ease-out"
+          className="absolute inset-0 bg-cover bg-center opacity-0 transition-opacity ease-out"
           style={{
             ...getWallpaperLayerStyle(pendingWallpaperUrl),
             opacity: isPendingWallpaperVisible ? 1 : 0,
@@ -104,10 +101,8 @@ export function Wallpaper({
       ) : null}
 
       {activeWallpaperUrl || pendingWallpaperUrl ? (
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.2),transparent_28%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.2),transparent_28%)]" />
       ) : null}
-
-      {children}
-    </main>
+    </div>
   );
 }

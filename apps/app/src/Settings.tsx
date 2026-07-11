@@ -1,4 +1,4 @@
-import { useCallback, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Download, X } from "lucide-react";
 import { importBrowserBookmarksWithToast } from "./browserBookmarks";
 import { normalizeImageUrl } from "./wallpapers";
@@ -209,34 +209,61 @@ export function SettingsPanel({
   onClearWallpaper: () => void;
   onChangeLauncherSettings: (settings: LauncherSettings) => void;
 }) {
-  if (!isOpen) {
-    return null;
-  }
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
 
   return (
-    <aside className="fixed right-4 top-20 z-50 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-3xl border border-white/35 bg-slate-950/65 text-white shadow-2xl backdrop-blur-xl sm:right-8">
-      <div className="flex items-center justify-between gap-3 border-b border-white/15 px-4 py-3">
-        <h2 className="text-base font-bold">设置</h2>
-        <button
-          className="hover:bg-white/18 grid size-9 place-items-center rounded-full bg-white/10 outline-none transition focus-visible:ring-4 focus-visible:ring-white/60"
-          type="button"
-          onClick={onClose}
-          aria-label="关闭设置"
-        >
-          <X aria-hidden="true" className="size-5" />
-        </button>
-      </div>
+    <div
+      className="relative z-[110] shrink-0 overflow-hidden transition-[width] duration-300 ease-out"
+      style={{ width: isOpen ? "min(100vw, 26rem)" : 0 }}
+      aria-hidden={!isOpen}
+    >
+      <aside
+        data-settings-drawer=""
+        className={`absolute inset-y-0 right-0 flex w-[min(100vw,26rem)] flex-col overflow-hidden border-l border-white/30 bg-slate-950/90 text-white shadow-[-24px_0_70px_rgba(15,23,42,0.35)] backdrop-blur-xl transition-transform duration-300 ease-out ${
+          isOpen
+            ? "translate-x-0"
+            : "pointer-events-none translate-x-full"
+        }`}
+        role="dialog"
+        aria-modal="false"
+        aria-labelledby="settings-drawer-title"
+      >
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/15 px-5 py-4">
+          <h2 id="settings-drawer-title" className="text-base font-bold">
+            设置
+          </h2>
+          <button
+            className="grid size-9 place-items-center rounded-full bg-white/10 outline-none transition hover:bg-white/20 focus-visible:ring-4 focus-visible:ring-white/60"
+            type="button"
+            onClick={onClose}
+            aria-label="关闭设置"
+          >
+            <X aria-hidden="true" className="size-5" />
+          </button>
+        </div>
 
-      <BrowserBookmarksImportSettings />
-      <LauncherSizeSettings
-        settings={launcherSettings}
-        onChange={onChangeLauncherSettings}
-      />
-      <WallpaperSettingsSection
-        selectedWallpaperUrl={selectedWallpaperUrl}
-        onSelectWallpaper={onSelectWallpaper}
-        onClearWallpaper={onClearWallpaper}
-      />
-    </aside>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)]">
+          <BrowserBookmarksImportSettings />
+          <LauncherSizeSettings
+            settings={launcherSettings}
+            onChange={onChangeLauncherSettings}
+          />
+          <WallpaperSettingsSection
+            selectedWallpaperUrl={selectedWallpaperUrl}
+            onSelectWallpaper={onSelectWallpaper}
+            onClearWallpaper={onClearWallpaper}
+          />
+        </div>
+      </aside>
+    </div>
   );
 }
