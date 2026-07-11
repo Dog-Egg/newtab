@@ -954,7 +954,7 @@ export function Launcher() {
               disabled={isImportingBookmarks}
               onClick={() => void handleImportBrowserBookmarks()}
             >
-              {isImportingBookmarks ? "正在导入…" : "导入浏览器收藏夹"}
+              导入浏览器收藏夹
             </button>
           </div>
         ) : (
