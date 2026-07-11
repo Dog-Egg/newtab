@@ -95,7 +95,7 @@ export function Dialog({
         <RadixDialog.Content
           ref={contentRef}
           className={clsx(
-            "fixed left-1/2 top-1/2 z-[60] w-[calc(100vw-3rem)] -translate-x-1/2 -translate-y-1/2 border border-white/45 bg-white/30 text-white shadow-2xl outline-none backdrop-blur-xl data-[state=closed]:animate-dialog-content-out data-[state=open]:animate-dialog-content-in",
+            "fixed left-1/2 top-1/2 z-[60] max-h-[calc(100dvh-3rem)] w-[calc(100vw-3rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain border border-white/45 bg-white/30 text-white shadow-2xl outline-none backdrop-blur-xl data-[state=closed]:animate-dialog-content-out data-[state=open]:animate-dialog-content-in",
             className,
           )}
           onInteractOutside={onInteractOutside}
