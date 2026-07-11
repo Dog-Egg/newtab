@@ -265,9 +265,7 @@ export async function importBrowserBookmarks(): Promise<BrowserBookmarksImportRe
 
 export async function importBrowserBookmarksWithToast() {
   try {
-    // 动态加载平台适配层，避免与调用本文件的扩展适配层形成静态循环依赖。
-    const { platform } = await import("@platform");
-    const result = await platform.browserBookmarks.import();
+    const result = await importBrowserBookmarks();
 
     if (result.unsupported) {
       toast.error("当前环境无法读取浏览器收藏夹", {
