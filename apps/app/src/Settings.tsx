@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import { Download, X } from "lucide-react";
 import { importBrowserBookmarksWithToast } from "./browserBookmarks";
 import { normalizeImageUrl } from "./wallpapers";
@@ -243,8 +249,12 @@ export function SettingsPanel({
   onClearWallpaper: () => void;
   onChangeLauncherSettings: (settings: LauncherSettings) => void;
 }) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     if (!isOpen) return;
+
+    closeButtonRef.current?.focus();
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
@@ -259,6 +269,7 @@ export function SettingsPanel({
       className="relative z-[110] shrink-0 overflow-hidden transition-[width] duration-300 ease-out"
       style={{ width: isOpen ? "min(100vw, 26rem)" : 0 }}
       aria-hidden={!isOpen}
+      inert={!isOpen}
     >
       <aside
         data-settings-drawer=""
@@ -274,6 +285,7 @@ export function SettingsPanel({
             设置
           </h2>
           <button
+            ref={closeButtonRef}
             className="grid size-9 place-items-center rounded-full bg-white/10 outline-none transition hover:bg-white/20 focus-visible:ring-4 focus-visible:ring-white/60"
             type="button"
             onClick={onClose}

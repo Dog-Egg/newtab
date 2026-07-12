@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Toaster } from "sonner";
 import clsx from "clsx";
 import { Settings } from "lucide-react";
@@ -16,6 +16,7 @@ import {
 
 export function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const [wallpaperUrl, setWallpaperUrl] = useState<string | null>(null);
   const [launcherSettings, setLauncherSettings] = useState<LauncherSettings>(
     () => normalizeLauncherSettings(undefined),
@@ -57,6 +58,11 @@ export function App() {
     void platform.launcherSettings.save(normalizedSettings);
   }, []);
 
+  const closeSettings = useCallback(() => {
+    settingsButtonRef.current?.focus();
+    setIsSettingsOpen(false);
+  }, []);
+
   return (
     <div className="relative flex min-h-screen min-w-80 overflow-hidden font-sans text-white">
       <main className="relative min-h-screen min-w-0 flex-1 overflow-hidden">
@@ -79,6 +85,7 @@ export function App() {
 
         {/* settings button */}
         <button
+          ref={settingsButtonRef}
           className={clsx(
             "absolute right-4 top-4 z-50 grid size-11 place-items-center rounded-full border border-white/35 bg-slate-950/35 text-white shadow-xl outline-none backdrop-blur-md transition-opacity hover:bg-slate-950/45 focus-visible:ring-4 focus-visible:ring-white/70 sm:right-8 sm:top-6",
             isSettingsOpen && "opacity-0",
@@ -107,7 +114,7 @@ export function App() {
         isOpen={isSettingsOpen}
         selectedWallpaperUrl={wallpaperUrl}
         launcherSettings={launcherSettings}
-        onClose={() => setIsSettingsOpen(false)}
+        onClose={closeSettings}
         onSelectWallpaper={saveWallpaper}
         onClearWallpaper={() => saveWallpaper(null)}
         onChangeLauncherSettings={saveLauncherSettings}
