@@ -34,7 +34,13 @@ import { move } from "@dnd-kit/helpers";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import clsx from "clsx";
-import { EllipsisVertical, FolderOpen, Pencil, Trash2 } from "lucide-react";
+import {
+  EllipsisVertical,
+  FolderOpen,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { platform } from "@platform";
 import {
   createShortcutSortableGroups,
@@ -747,7 +753,7 @@ function EditItemDialog({
           />
         </label>
         <label className="block space-y-2 text-sm font-medium">
-          <span>URL</span>
+          <span>网址</span>
           <input
             type="url"
             required
@@ -776,6 +782,102 @@ function EditItemDialog({
   );
 }
 
+function AddItemDialog({
+  onClose,
+  onSave,
+}: {
+  onClose: () => void;
+  onSave: (title: string, url: string) => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [url, setUrl] = useState("");
+
+  return (
+    <Dialog
+      onClose={onClose}
+      className="max-w-md rounded-[28px] border-white/20 bg-slate-900/90 p-7 backdrop-blur-2xl"
+    >
+      <DialogTitle className="mb-6 text-xl font-bold">添加快捷方式</DialogTitle>
+      <form
+        className="space-y-5"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const nextUrl = url.trim();
+          if (!nextUrl) return;
+
+          const nextTitle = title.trim() || new URL(nextUrl).hostname;
+          onSave(nextTitle, nextUrl);
+        }}
+      >
+        <label className="block space-y-2 text-sm font-medium">
+          <span>名称</span>
+          <input
+            autoFocus
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            className="w-full rounded-xl bg-white/10 px-4 py-3 outline-none ring-1 ring-white/20 focus:ring-2 focus:ring-white/60"
+          />
+        </label>
+        <label className="block space-y-2 text-sm font-medium">
+          <span>网址</span>
+          <input
+            type="url"
+            required
+            value={url}
+            onChange={(event) => setUrl(event.target.value)}
+            className="w-full rounded-xl bg-white/10 px-4 py-3 outline-none ring-1 ring-white/20 focus:ring-2 focus:ring-white/60"
+          />
+        </label>
+        <div className="flex justify-end gap-3 pt-1">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl px-4 py-2.5 font-semibold transition hover:bg-white/10"
+          >
+            取消
+          </button>
+          <button
+            type="submit"
+            className="rounded-xl bg-white px-4 py-2.5 font-semibold text-slate-900 transition hover:bg-slate-100"
+          >
+            完成
+          </button>
+        </div>
+      </form>
+    </Dialog>
+  );
+}
+
+function AddShortcutButton({ onClick }: { onClick: () => void }) {
+  const { nodeScale } = useLauncherSettings();
+
+  return (
+    <li className="group rounded-[30px]">
+      <button
+        type="button"
+        aria-label="添加快捷方式"
+        onClick={onClick}
+        className="flex w-full flex-col items-center rounded-[30px] px-1 py-2 text-center text-white outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
+        style={{ width: 88 * nodeScale, gap: 8 * nodeScale }}
+      >
+        <span
+          className="grid place-items-center border border-dashed border-white/55 bg-white/10 text-white/85 shadow-[0_18px_35px_rgba(15,23,42,0.16)] backdrop-blur-md transition duration-200 group-hover:border-white/80 group-hover:bg-white/20 group-hover:text-white"
+          style={{
+            width: 64 * nodeScale,
+            height: 64 * nodeScale,
+            borderRadius: 18 * nodeScale,
+          }}
+        >
+          <Plus
+            strokeWidth={1.75}
+            style={{ width: 30 * nodeScale, height: 30 * nodeScale }}
+          />
+        </span>
+      </button>
+    </li>
+  );
+}
+
 export function Launcher() {
   const { nodeScale } = useLauncherSettings();
   const [shortcuts, setShortcuts] = useState<ShortcutNode[]>([]);
@@ -784,6 +886,7 @@ export function Launcher() {
   const [activeNode, setActiveNode] = useState<ShortcutNode | null>(null);
   const [renameFolderId, setRenameFolderId] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<ShortcutItem | null>(null);
+  const [isAddingItem, setIsAddingItem] = useState(false);
 
   const [openFolderId, setOpenFolderId] = useState<string | null>(null);
   // 越界后业务数据会立即迁移到 root；这份不含拖拽项的快照仅用于
@@ -1013,7 +1116,8 @@ export function Launcher() {
     >
       <section className="relative z-10 mx-auto flex w-full max-w-6xl flex-col px-6 pb-8 pt-20 sm:px-10 sm:pb-8">
         {shortcuts.length === 0 ? (
-          <div className="grid flex-1 place-items-center">
+          <div className="flex flex-1 flex-col items-center justify-center gap-5">
+            <AddShortcutButton onClick={() => setIsAddingItem(true)} />
             <button
               type="button"
               className="rounded-2xl bg-white/20 px-6 py-3 text-base font-semibold text-white shadow-lg backdrop-blur-md transition hover:bg-white/30 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-60"
@@ -1068,6 +1172,7 @@ export function Launcher() {
                 }}
               />
             ))}
+            <AddShortcutButton onClick={() => setIsAddingItem(true)} />
           </ul>
         )}
       </section>
@@ -1156,6 +1261,26 @@ export function Launcher() {
               return nextShortcuts;
             });
             setEditingItem(null);
+          }}
+        />
+      ) : null}
+      {isAddingItem ? (
+        <AddItemDialog
+          onClose={() => setIsAddingItem(false)}
+          onSave={(title, url) => {
+            const item: ShortcutItem = {
+              type: "item",
+              id: `shortcut:${crypto.randomUUID()}`,
+              title,
+              url,
+              createdAt: Date.now(),
+            };
+            setShortcuts((currentShortcuts) => {
+              const nextShortcuts = [...currentShortcuts, item];
+              void platform.shortcuts.save(nextShortcuts);
+              return nextShortcuts;
+            });
+            setIsAddingItem(false);
           }}
         />
       ) : null}
