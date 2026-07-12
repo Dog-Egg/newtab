@@ -14,11 +14,11 @@ const { url } = Astro.props;
     class="w-[800px] min-w-[min(100%,45vw)] max-w-full"
     bodyClass="overflow-hidden p-0"
   >
-    <div class="h-[450px] w-full overflow-hidden">
+    <div class="relative h-[450px] w-full overflow-hidden">
       <iframe
         src={url}
         title={url}
-        class="block h-[720px] w-[1280px] max-w-none origin-top-left scale-[0.625] border-0"
+        class="absolute left-0 top-0 block h-[720px] w-[1280px] max-w-none origin-top-left scale-[0.625] border-0"
       ></iframe>
     </div>
   </BrowserWindow>
