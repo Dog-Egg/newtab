@@ -4,8 +4,11 @@ import { importBrowserBookmarksWithToast } from "./browserBookmarks";
 import { normalizeImageUrl } from "./wallpapers";
 import {
   LAUNCHER_NODE_SCALE_STEP,
+  MAX_WALLPAPER_OVERLAY_OPACITY,
   MAX_LAUNCHER_NODE_SCALE,
+  MIN_WALLPAPER_OVERLAY_OPACITY,
   MIN_LAUNCHER_NODE_SCALE,
+  WALLPAPER_OVERLAY_OPACITY_STEP,
   type LauncherSettings,
 } from "./launcherSettings";
 
@@ -64,12 +67,6 @@ function LauncherSizeSettings({
         <label className="text-sm font-bold" htmlFor="launcher-node-size">
           快捷方式大小
         </label>
-        <output
-          className="text-xs font-semibold tabular-nums text-white/70"
-          htmlFor="launcher-node-size"
-        >
-          {Math.round(settings.nodeScale * 100)}%
-        </output>
       </div>
       <div>
         <input
@@ -82,7 +79,10 @@ function LauncherSizeSettings({
           value={settings.nodeScale}
           aria-label="快捷方式大小"
           onChange={(event) =>
-            onChange({ nodeScale: Number(event.currentTarget.value) })
+            onChange({
+              ...settings,
+              nodeScale: Number(event.currentTarget.value),
+            })
           }
         />
         <div className="flex justify-between text-xs font-semibold text-white/55">
@@ -96,12 +96,16 @@ function LauncherSizeSettings({
 
 function WallpaperSettingsSection({
   selectedWallpaperUrl,
+  settings,
   onSelectWallpaper,
   onClearWallpaper,
+  onChangeSettings,
 }: {
   selectedWallpaperUrl: string | null;
+  settings: LauncherSettings;
   onSelectWallpaper: (wallpaperUrl: string) => void;
   onClearWallpaper: () => void;
+  onChangeSettings: (settings: LauncherSettings) => void;
 }) {
   const [customImageUrl, setCustomImageUrl] = useState("");
   const [customImageError, setCustomImageError] = useState("");
@@ -138,6 +142,36 @@ function WallpaperSettingsSection({
 
   return (
     <>
+      <section className="space-y-3 border-b border-white/10 px-4 py-4">
+        <div className="flex items-center justify-between gap-3">
+          <label className="text-sm font-bold" htmlFor="wallpaper-overlay">
+            壁纸遮罩
+          </label>
+        </div>
+        <div>
+          <input
+            id="wallpaper-overlay"
+            className="w-full cursor-pointer accent-white"
+            type="range"
+            min={MIN_WALLPAPER_OVERLAY_OPACITY}
+            max={MAX_WALLPAPER_OVERLAY_OPACITY}
+            step={WALLPAPER_OVERLAY_OPACITY_STEP}
+            value={settings.wallpaperOverlayOpacity}
+            aria-label="壁纸遮罩强度"
+            onChange={(event) =>
+              onChangeSettings({
+                ...settings,
+                wallpaperOverlayOpacity: Number(event.currentTarget.value),
+              })
+            }
+          />
+          <div className="flex justify-between text-xs font-semibold text-white/55">
+            <span>清晰</span>
+            <span>深色</span>
+          </div>
+        </div>
+      </section>
+
       <form className="space-y-2 px-4 py-3" onSubmit={applyCustomWallpaper}>
         <label
           className="block text-xs font-bold text-white/70"
@@ -229,9 +263,7 @@ export function SettingsPanel({
       <aside
         data-settings-drawer=""
         className={`absolute inset-y-0 right-0 flex w-[min(100vw,26rem)] flex-col overflow-hidden border-l border-white/30 bg-slate-950/90 text-white shadow-[-24px_0_70px_rgba(15,23,42,0.35)] backdrop-blur-xl transition-transform duration-300 ease-out ${
-          isOpen
-            ? "translate-x-0"
-            : "pointer-events-none translate-x-full"
+          isOpen ? "translate-x-0" : "pointer-events-none translate-x-full"
         }`}
         role="dialog"
         aria-modal="false"
@@ -259,8 +291,10 @@ export function SettingsPanel({
           />
           <WallpaperSettingsSection
             selectedWallpaperUrl={selectedWallpaperUrl}
+            settings={launcherSettings}
             onSelectWallpaper={onSelectWallpaper}
             onClearWallpaper={onClearWallpaper}
+            onChangeSettings={onChangeLauncherSettings}
           />
         </div>
       </aside>

@@ -12,7 +12,7 @@ const DEFAULT_WALLPAPER_URL =
 
 function getWallpaperLayerStyle(wallpaperUrl: string): CSSProperties {
   return {
-    backgroundImage: `linear-gradient(180deg, rgba(15,23,42,0.34), rgba(15,23,42,0.5)), url("${wallpaperUrl}")`,
+    backgroundImage: `url("${wallpaperUrl}")`,
     backgroundPosition: "center",
     backgroundSize: "cover",
   };
@@ -20,8 +20,10 @@ function getWallpaperLayerStyle(wallpaperUrl: string): CSSProperties {
 
 export function Wallpaper({
   wallpaperUrl: selectedWallpaperUrl,
+  overlayOpacity,
 }: {
   wallpaperUrl: string | null;
+  overlayOpacity: number;
 }) {
   const [activeWallpaperUrl, setActiveWallpaperUrl] = useState<string | null>(
     null,
@@ -103,6 +105,10 @@ export function Wallpaper({
       {activeWallpaperUrl || pendingWallpaperUrl ? (
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.2),transparent_28%)]" />
       ) : null}
+      <div
+        className="absolute inset-0 bg-black transition-opacity duration-200"
+        style={{ opacity: overlayOpacity }}
+      />
     </div>
   );
 }
