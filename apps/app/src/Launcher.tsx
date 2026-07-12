@@ -661,7 +661,7 @@ function NodeMenu({
           <button
             type="button"
             aria-label={`${node.title}的更多操作`}
-            className="pointer-events-auto absolute right-0 top-0 grid size-6 -translate-y-1/3 translate-x-1/3 place-items-center rounded-full bg-slate-900/75 text-white opacity-0 shadow-lg outline-none backdrop-blur transition-opacity delay-0 hover:bg-slate-800 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-white group-hover:opacity-100 group-hover:delay-500 data-[state=open]:opacity-100"
+            className="pointer-events-auto invisible absolute right-0 top-0 grid size-6 -translate-y-1/3 translate-x-1/3 place-items-center rounded-full bg-slate-900/75 text-white opacity-0 shadow-lg outline-none backdrop-blur transition-[opacity,visibility] delay-0 hover:bg-slate-800 focus-visible:visible focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-white group-hover:visible group-hover:opacity-100 group-hover:delay-500 data-[state=open]:visible data-[state=open]:opacity-100"
             onClick={(event) => event.stopPropagation()}
             onPointerDown={(event) => event.stopPropagation()}
           >
