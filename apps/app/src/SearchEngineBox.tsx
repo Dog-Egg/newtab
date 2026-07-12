@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import * as Popover from "@radix-ui/react-popover";
 import clsx from "clsx";
 import { ChevronDown, Plus } from "lucide-react";
 import { platform } from "@platform";
@@ -120,7 +121,6 @@ export function SearchEngineBox() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [customEngineDraft, setCustomEngineDraft] =
     useState(EMPTY_CUSTOM_ENGINE);
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   const customEngines = useMemo(
     () => normalizeCustomEngines(storedSettings.customEngines),
@@ -169,29 +169,6 @@ export function SearchEngineBox() {
     void platform.searchEngineSettings.save(storedSettings);
   }, [isSettingsLoaded, storedSettings]);
 
-  useEffect(() => {
-    function handlePointerDown(event: PointerEvent) {
-      if (!dropdownRef.current?.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
-      }
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setIsDropdownOpen(false);
-        setIsAddDialogOpen(false);
-      }
-    }
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
-
   function selectSearchEngine(engineId: string) {
     setStoredSettings((currentSettings) => ({
       ...currentSettings,
@@ -203,7 +180,7 @@ export function SearchEngineBox() {
   function openAddDialog() {
     setCustomEngineDraft(EMPTY_CUSTOM_ENGINE);
     setIsDropdownOpen(false);
-    setIsAddDialogOpen(true);
+    window.setTimeout(() => setIsAddDialogOpen(true), 0);
   }
 
   function handleAddCustomEngine(event: FormEvent<HTMLFormElement>) {
@@ -247,63 +224,65 @@ export function SearchEngineBox() {
 
   return (
     <>
-      <div
-        className="relative mx-auto w-full max-w-[526px]"
-        ref={dropdownRef}
-        role="search"
-      >
+      <div className="relative mx-auto w-full max-w-[526px]" role="search">
         <div className="flex h-12 items-center rounded-2xl border border-white/50 bg-white/75 px-3 shadow-[0_18px_45px_rgba(15,23,42,0.12)] backdrop-blur-md transition focus-within:border-white/80 focus-within:bg-white/85 focus-within:shadow-[0_20px_55px_rgba(15,23,42,0.18)] sm:h-[52px]">
-          <button
-            className="flex h-9 shrink-0 items-center gap-1.5 rounded-full px-2 text-slate-600 outline-none transition hover:bg-slate-900/5 focus-visible:ring-4 focus-visible:ring-blue-300/50"
-            type="button"
-            onClick={() => setIsDropdownOpen((isOpen) => !isOpen)}
-            aria-expanded={isDropdownOpen}
-            aria-haspopup="listbox"
-            aria-label={`选择搜索引擎，当前为${selectedEngine.name}`}
-            title={selectedEngine.name}
-          >
-            <SearchEngineGlyph engine={selectedEngine} size="small" />
-            <ChevronDown aria-hidden="true" className="size-4" />
-          </button>
-
-          {isDropdownOpen ? (
-            <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-30 overflow-hidden rounded-2xl border border-white/70 bg-white/95 p-2 text-slate-700 shadow-[0_24px_60px_rgba(15,23,42,0.22)] backdrop-blur-xl">
-              <div
-                className="flex items-center gap-2 overflow-x-auto p-1"
-                role="listbox"
+          <Popover.Root open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+            <Popover.Trigger asChild>
+              <button
+                className="flex h-9 shrink-0 items-center gap-1.5 rounded-full px-2 text-slate-600 outline-none transition hover:bg-slate-900/5 focus-visible:ring-4 focus-visible:ring-blue-300/50"
+                type="button"
+                aria-label={`选择搜索引擎，当前为${selectedEngine.name}`}
+                title={selectedEngine.name}
               >
-                {searchEngines.map((engine) => (
-                  <button
-                    key={engine.id}
-                    className={clsx(
-                      "flex h-16 min-w-[88px] shrink-0 flex-col items-center justify-center gap-1 rounded-xl px-3 text-center transition hover:bg-slate-100 focus-visible:bg-slate-100 focus-visible:outline-none",
-                      engine.id === selectedEngine.id &&
-                        "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
-                    )}
-                    type="button"
-                    role="option"
-                    aria-selected={engine.id === selectedEngine.id}
-                    onClick={() => selectSearchEngine(engine.id)}
-                  >
-                    <SearchEngineGlyph engine={engine} />
-                    <span className="w-full truncate text-xs font-semibold">
-                      {engine.name}
-                    </span>
-                  </button>
-                ))}
-                <button
-                  className="flex h-16 min-w-[104px] shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-blue-200 bg-blue-50/70 px-3 text-xs font-semibold text-blue-600 transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300/40"
-                  type="button"
-                  onClick={openAddDialog}
+                <SearchEngineGlyph engine={selectedEngine} size="small" />
+                <ChevronDown aria-hidden="true" className="size-4" />
+              </button>
+            </Popover.Trigger>
+
+            <Popover.Portal>
+              <Popover.Content
+                className="z-30 w-[calc(100vw-2rem)] max-w-[526px] overflow-hidden rounded-2xl border border-white/70 bg-white/95 p-2 text-slate-700 shadow-[0_24px_60px_rgba(15,23,42,0.22)] backdrop-blur-xl"
+                sideOffset={16}
+                align="start"
+                alignOffset={-12}
+              >
+                <div
+                  className="flex items-center gap-2 overflow-x-auto p-1"
+                  role="group"
+                  aria-label="搜索引擎"
                 >
-                  <span className="grid size-7 place-items-center rounded-full bg-white text-blue-600 shadow-sm">
-                    <Plus aria-hidden="true" className="size-4" />
-                  </span>
-                  新增
-                </button>
-              </div>
-            </div>
-          ) : null}
+                  {searchEngines.map((engine) => (
+                    <button
+                      key={engine.id}
+                      className={clsx(
+                        "flex h-16 min-w-[88px] shrink-0 flex-col items-center justify-center gap-1 rounded-xl px-3 text-center outline-none transition hover:bg-slate-100 focus-visible:bg-slate-100 focus-visible:ring-4 focus-visible:ring-blue-300/40",
+                        engine.id === selectedEngine.id &&
+                          "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+                      )}
+                      type="button"
+                      aria-pressed={engine.id === selectedEngine.id}
+                      onClick={() => selectSearchEngine(engine.id)}
+                    >
+                      <SearchEngineGlyph engine={engine} />
+                      <span className="w-full truncate text-xs font-semibold">
+                        {engine.name}
+                      </span>
+                    </button>
+                  ))}
+                  <button
+                    className="flex h-16 min-w-[104px] shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-blue-200 bg-blue-50/70 px-3 text-xs font-semibold text-blue-600 outline-none transition hover:bg-blue-100 focus-visible:bg-blue-100 focus-visible:ring-4 focus-visible:ring-blue-300/40"
+                    type="button"
+                    onClick={openAddDialog}
+                  >
+                    <span className="grid size-7 place-items-center rounded-full bg-white text-blue-600 shadow-sm">
+                      <Plus aria-hidden="true" className="size-4" />
+                    </span>
+                    新增
+                  </button>
+                </div>
+              </Popover.Content>
+            </Popover.Portal>
+          </Popover.Root>
 
           <div className="mx-1 h-6 w-px shrink-0 bg-slate-900/10" />
 
