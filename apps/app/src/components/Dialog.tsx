@@ -25,7 +25,7 @@ export function Dialog({
   onClose,
   onInteractOutside,
 }: {
-  children: ReactNode;
+  children: ReactNode | ((close: () => void) => ReactNode);
   className?: string;
   contentRef?: Ref<HTMLDivElement>;
   isClosing?: boolean;
@@ -33,8 +33,9 @@ export function Dialog({
   onInteractOutside?: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(true);
-  const [portalContainer, setPortalContainer] =
-    useState<HTMLElement | null>(null);
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(
+    null,
+  );
   const onCloseRef = useRef(onClose);
   const closeTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(
     null,
@@ -100,6 +101,11 @@ export function Dialog({
     }
   }
 
+  const content =
+    typeof children === "function"
+      ? children(() => handleOpenChange(false))
+      : children;
+
   return (
     <RadixDialog.Root
       modal={false}
@@ -136,7 +142,7 @@ export function Dialog({
               onInteractOutside?.();
             }}
           >
-            {children}
+            {content}
           </RadixDialog.Content>
         </RadixDialog.Portal>
       ) : null}

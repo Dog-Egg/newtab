@@ -541,57 +541,64 @@ function FolderDialog({
       onClose={onClose}
       className="max-w-xl rounded-[32px] border-white/20 bg-slate-900/80 p-7 backdrop-blur-2xl"
     >
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <DialogTitle className="text-xl font-bold text-white">
-          {isEditingTitle ? (
-            <input
-              ref={titleInputRef}
-              className="min-w-0 rounded-lg bg-white/10 px-2 py-1 text-inherit outline-none ring-2 ring-white/60 [font:inherit]"
-              value={title}
-              aria-label="文件夹标题"
-              onChange={(event) => setTitle(event.target.value)}
-              onBlur={commitTitle}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  event.currentTarget.blur();
-                } else if (event.key === "Escape") {
-                  event.preventDefault();
-                  setTitle(folder.title);
-                  setIsEditingTitle(false);
-                }
-              }}
-            />
-          ) : (
-            <button
-              type="button"
-              className="rounded-lg px-2 py-1 text-left outline-none transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/60"
-              onClick={() => {
-                setIsEditingTitle(true);
-                requestAnimationFrame(() => {
-                  titleInputRef.current?.focus();
-                  titleInputRef.current?.select();
-                });
-              }}
-            >
-              {folder.title}
-            </button>
-          )}
-        </DialogTitle>
-      </div>
-      <ul className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-x-5 gap-y-7">
-        {folder.children.map((item, index) => (
-          <FolderSortableItem
-            key={item.id}
-            folderId={folder.id}
-            item={item}
-            index={index}
-            folderPanelRef={panelRef}
-            onEdit={() => onEditItem(item)}
-            onDelete={() => onDeleteItem(item)}
-          />
-        ))}
-      </ul>
+      {(close) => (
+        <>
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <DialogTitle className="text-xl font-bold text-white">
+              {isEditingTitle ? (
+                <input
+                  ref={titleInputRef}
+                  className="min-w-0 rounded-lg bg-white/10 px-2 py-1 text-inherit outline-none ring-2 ring-white/60 [font:inherit]"
+                  value={title}
+                  aria-label="文件夹标题"
+                  onChange={(event) => setTitle(event.target.value)}
+                  onBlur={commitTitle}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      event.currentTarget.blur();
+                    } else if (event.key === "Escape") {
+                      event.preventDefault();
+                      setTitle(folder.title);
+                      setIsEditingTitle(false);
+                    }
+                  }}
+                />
+              ) : (
+                <button
+                  type="button"
+                  className="rounded-lg px-2 py-1 text-left outline-none transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/60"
+                  onClick={() => {
+                    setIsEditingTitle(true);
+                    requestAnimationFrame(() => {
+                      titleInputRef.current?.focus();
+                      titleInputRef.current?.select();
+                    });
+                  }}
+                >
+                  {folder.title}
+                </button>
+              )}
+            </DialogTitle>
+          </div>
+          <ul className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-x-5 gap-y-7">
+            {folder.children.map((item, index) => (
+              <FolderSortableItem
+                key={item.id}
+                folderId={folder.id}
+                item={item}
+                index={index}
+                folderPanelRef={panelRef}
+                onEdit={() => onEditItem(item)}
+                onDelete={() => {
+                  onDeleteItem(item);
+                  if (folder.children.length === 1) close();
+                }}
+              />
+            ))}
+          </ul>
+        </>
+      )}
     </Dialog>
   );
 }
@@ -731,53 +738,62 @@ function EditItemDialog({
       onClose={onClose}
       className="max-w-md rounded-[28px] border-white/20 bg-slate-900/90 p-7 backdrop-blur-2xl"
     >
-      <DialogTitle className="mb-6 text-xl font-bold">编辑快捷方式</DialogTitle>
-      <form
-        className="space-y-5"
-        onSubmit={(event) => {
-          event.preventDefault();
-          const nextTitle = title.trim();
-          const nextUrl = url.trim();
-          if (nextTitle && nextUrl) onSave(nextTitle, nextUrl);
-        }}
-      >
-        <label className="block space-y-2 text-sm font-medium">
-          <span>名称</span>
-          <input
-            ref={titleInputRef}
-            autoFocus
-            required
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            className="w-full rounded-xl bg-white/10 px-4 py-3 outline-none ring-1 ring-white/20 focus:ring-2 focus:ring-white/60"
-          />
-        </label>
-        <label className="block space-y-2 text-sm font-medium">
-          <span>网址</span>
-          <input
-            type="url"
-            required
-            value={url}
-            onChange={(event) => setUrl(event.target.value)}
-            className="w-full rounded-xl bg-white/10 px-4 py-3 outline-none ring-1 ring-white/20 focus:ring-2 focus:ring-white/60"
-          />
-        </label>
-        <div className="flex justify-end gap-3 pt-1">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl px-4 py-2.5 font-semibold transition hover:bg-white/10"
+      {(close) => (
+        <>
+          <DialogTitle className="mb-6 text-xl font-bold">
+            编辑快捷方式
+          </DialogTitle>
+          <form
+            className="space-y-5"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const nextTitle = title.trim();
+              const nextUrl = url.trim();
+              if (nextTitle && nextUrl) {
+                onSave(nextTitle, nextUrl);
+                close();
+              }
+            }}
           >
-            取消
-          </button>
-          <button
-            type="submit"
-            className="rounded-xl bg-white px-4 py-2.5 font-semibold text-slate-900 transition hover:bg-slate-100"
-          >
-            保存
-          </button>
-        </div>
-      </form>
+            <label className="block space-y-2 text-sm font-medium">
+              <span>名称</span>
+              <input
+                ref={titleInputRef}
+                autoFocus
+                required
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                className="w-full rounded-xl bg-white/10 px-4 py-3 outline-none ring-1 ring-white/20 focus:ring-2 focus:ring-white/60"
+              />
+            </label>
+            <label className="block space-y-2 text-sm font-medium">
+              <span>网址</span>
+              <input
+                type="url"
+                required
+                value={url}
+                onChange={(event) => setUrl(event.target.value)}
+                className="w-full rounded-xl bg-white/10 px-4 py-3 outline-none ring-1 ring-white/20 focus:ring-2 focus:ring-white/60"
+              />
+            </label>
+            <div className="flex justify-end gap-3 pt-1">
+              <button
+                type="button"
+                onClick={close}
+                className="rounded-xl px-4 py-2.5 font-semibold transition hover:bg-white/10"
+              >
+                取消
+              </button>
+              <button
+                type="submit"
+                className="rounded-xl bg-white px-4 py-2.5 font-semibold text-slate-900 transition hover:bg-slate-100"
+              >
+                保存
+              </button>
+            </div>
+          </form>
+        </>
+      )}
     </Dialog>
   );
 }
@@ -797,53 +813,60 @@ function AddItemDialog({
       onClose={onClose}
       className="max-w-md rounded-[28px] border-white/20 bg-slate-900/90 p-7 backdrop-blur-2xl"
     >
-      <DialogTitle className="mb-6 text-xl font-bold">添加快捷方式</DialogTitle>
-      <form
-        className="space-y-5"
-        onSubmit={(event) => {
-          event.preventDefault();
-          const nextUrl = url.trim();
-          if (!nextUrl) return;
+      {(close) => (
+        <>
+          <DialogTitle className="mb-6 text-xl font-bold">
+            添加快捷方式
+          </DialogTitle>
+          <form
+            className="space-y-5"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const nextUrl = url.trim();
+              if (!nextUrl) return;
 
-          const nextTitle = title.trim() || new URL(nextUrl).hostname;
-          onSave(nextTitle, nextUrl);
-        }}
-      >
-        <label className="block space-y-2 text-sm font-medium">
-          <span>名称</span>
-          <input
-            autoFocus
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            className="w-full rounded-xl bg-white/10 px-4 py-3 outline-none ring-1 ring-white/20 focus:ring-2 focus:ring-white/60"
-          />
-        </label>
-        <label className="block space-y-2 text-sm font-medium">
-          <span>网址</span>
-          <input
-            type="url"
-            required
-            value={url}
-            onChange={(event) => setUrl(event.target.value)}
-            className="w-full rounded-xl bg-white/10 px-4 py-3 outline-none ring-1 ring-white/20 focus:ring-2 focus:ring-white/60"
-          />
-        </label>
-        <div className="flex justify-end gap-3 pt-1">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl px-4 py-2.5 font-semibold transition hover:bg-white/10"
+              const nextTitle = title.trim() || new URL(nextUrl).hostname;
+              onSave(nextTitle, nextUrl);
+              close();
+            }}
           >
-            取消
-          </button>
-          <button
-            type="submit"
-            className="rounded-xl bg-white px-4 py-2.5 font-semibold text-slate-900 transition hover:bg-slate-100"
-          >
-            完成
-          </button>
-        </div>
-      </form>
+            <label className="block space-y-2 text-sm font-medium">
+              <span>名称</span>
+              <input
+                autoFocus
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                className="w-full rounded-xl bg-white/10 px-4 py-3 outline-none ring-1 ring-white/20 focus:ring-2 focus:ring-white/60"
+              />
+            </label>
+            <label className="block space-y-2 text-sm font-medium">
+              <span>网址</span>
+              <input
+                type="url"
+                required
+                value={url}
+                onChange={(event) => setUrl(event.target.value)}
+                className="w-full rounded-xl bg-white/10 px-4 py-3 outline-none ring-1 ring-white/20 focus:ring-2 focus:ring-white/60"
+              />
+            </label>
+            <div className="flex justify-end gap-3 pt-1">
+              <button
+                type="button"
+                onClick={close}
+                className="rounded-xl px-4 py-2.5 font-semibold transition hover:bg-white/10"
+              >
+                取消
+              </button>
+              <button
+                type="submit"
+                className="rounded-xl bg-white px-4 py-2.5 font-semibold text-slate-900 transition hover:bg-slate-100"
+              >
+                完成
+              </button>
+            </div>
+          </form>
+        </>
+      )}
     </Dialog>
   );
 }
@@ -1212,11 +1235,6 @@ export function Launcher() {
               void platform.shortcuts.save(nextShortcuts);
               return nextShortcuts;
             });
-            if (displayedFolder.children.length === 1) {
-              setClosingFolder(null);
-              setRenameFolderId(null);
-              setOpenFolderId(null);
-            }
           }}
           onRename={(title) => {
             if (closingFolder) return;
@@ -1260,7 +1278,6 @@ export function Launcher() {
               void platform.shortcuts.save(nextShortcuts);
               return nextShortcuts;
             });
-            setEditingItem(null);
           }}
         />
       ) : null}
@@ -1280,7 +1297,6 @@ export function Launcher() {
               void platform.shortcuts.save(nextShortcuts);
               return nextShortcuts;
             });
-            setIsAddingItem(false);
           }}
         />
       ) : null}

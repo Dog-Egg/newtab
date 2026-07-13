@@ -206,7 +206,6 @@ export function SearchEngineBox() {
         nextCustomEngine,
       ],
     }));
-    setIsAddDialogOpen(false);
   }
 
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
@@ -303,58 +302,66 @@ export function SearchEngineBox() {
           className="max-w-xl rounded-2xl bg-white p-6 text-slate-800 sm:p-8"
           onClose={() => setIsAddDialogOpen(false)}
         >
-          <form onSubmit={handleAddCustomEngine} aria-label="新增搜索引擎">
-            <DialogTitle className="text-2xl font-semibold">
-              新增搜索引擎
-            </DialogTitle>
+          {(close) => (
+            <form
+              onSubmit={(event) => {
+                handleAddCustomEngine(event);
+                if (canSaveCustomEngine) close();
+              }}
+              aria-label="新增搜索引擎"
+            >
+              <DialogTitle className="text-2xl font-semibold">
+                新增搜索引擎
+              </DialogTitle>
 
-            <label className="mt-7 block text-sm font-semibold text-slate-600">
-              名称
-              <input
-                className="mt-2 h-14 w-full rounded-xl border-0 bg-slate-100 px-4 text-lg font-semibold text-slate-800 outline-none ring-1 ring-transparent transition placeholder:text-slate-400 focus:bg-white focus:ring-blue-300"
-                value={customEngineDraft.name}
-                onChange={(event) =>
-                  setCustomEngineDraft((draft) => ({
-                    ...draft,
-                    name: event.target.value,
-                  }))
-                }
-                placeholder="搜狗"
-              />
-            </label>
+              <label className="mt-7 block text-sm font-semibold text-slate-600">
+                名称
+                <input
+                  className="mt-2 h-14 w-full rounded-xl border-0 bg-slate-100 px-4 text-lg font-semibold text-slate-800 outline-none ring-1 ring-transparent transition placeholder:text-slate-400 focus:bg-white focus:ring-blue-300"
+                  value={customEngineDraft.name}
+                  onChange={(event) =>
+                    setCustomEngineDraft((draft) => ({
+                      ...draft,
+                      name: event.target.value,
+                    }))
+                  }
+                  placeholder="搜狗"
+                />
+              </label>
 
-            <label className="mt-5 block text-sm font-semibold text-slate-600">
-              网址格式（用“%s”代替搜索字词）
-              <input
-                className="mt-2 h-14 w-full rounded-xl border-0 bg-slate-100 px-4 text-base font-semibold text-slate-800 outline-none ring-1 ring-transparent transition placeholder:text-slate-400 focus:bg-white focus:ring-blue-300"
-                value={customEngineDraft.urlFormat}
-                onChange={(event) =>
-                  setCustomEngineDraft((draft) => ({
-                    ...draft,
-                    urlFormat: event.target.value,
-                  }))
-                }
-                placeholder="https://www.sogou.com/web?query=%s"
-              />
-            </label>
+              <label className="mt-5 block text-sm font-semibold text-slate-600">
+                网址格式（用“%s”代替搜索字词）
+                <input
+                  className="mt-2 h-14 w-full rounded-xl border-0 bg-slate-100 px-4 text-base font-semibold text-slate-800 outline-none ring-1 ring-transparent transition placeholder:text-slate-400 focus:bg-white focus:ring-blue-300"
+                  value={customEngineDraft.urlFormat}
+                  onChange={(event) =>
+                    setCustomEngineDraft((draft) => ({
+                      ...draft,
+                      urlFormat: event.target.value,
+                    }))
+                  }
+                  placeholder="https://www.sogou.com/web?query=%s"
+                />
+              </label>
 
-            <div className="mt-8 flex justify-end gap-3">
-              <button
-                className="h-12 rounded-full border border-blue-200 px-8 text-base font-semibold text-blue-600 transition hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300/40"
-                type="button"
-                onClick={() => setIsAddDialogOpen(false)}
-              >
-                取消
-              </button>
-              <button
-                className="h-12 rounded-full bg-blue-600 px-9 text-base font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300/50 disabled:cursor-not-allowed disabled:bg-blue-300"
-                type="submit"
-                disabled={!canSaveCustomEngine}
-              >
-                保存
-              </button>
-            </div>
-          </form>
+              <div className="mt-8 flex justify-end gap-3">
+                <button
+                  className="h-12 rounded-full border border-blue-200 px-8 text-base font-semibold text-blue-600 transition hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300/40"
+                  type="button"
+                  onClick={close}
+                >
+                  取消
+                </button>
+                <button
+                  className="h-12 rounded-full bg-blue-600 px-9 text-base font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300/50 disabled:cursor-not-allowed disabled:bg-blue-300"
+                  type="submit"
+                  disabled={!canSaveCustomEngine}
+                >
+                  保存
+                </button>
+              </div>
+            </form>
+          )}
         </Dialog>
       ) : null}
     </>
