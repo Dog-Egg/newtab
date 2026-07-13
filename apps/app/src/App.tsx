@@ -87,7 +87,7 @@ export function App() {
         <button
           ref={settingsButtonRef}
           className={clsx(
-            "absolute right-4 top-4 z-50 grid size-11 place-items-center rounded-full border border-white/35 bg-slate-950/35 text-white shadow-xl outline-none backdrop-blur-md transition-opacity hover:bg-slate-950/45 focus-visible:ring-4 focus-visible:ring-white/70 sm:right-8 sm:top-6",
+            "absolute right-4 top-4 z-50 grid size-11 place-items-center rounded-full text-white/80 outline-none transition-opacity hover:text-white focus-visible:ring-2 focus-visible:ring-white/70 sm:right-8 sm:top-6",
             isSettingsOpen && "opacity-0",
           )}
           type="button"

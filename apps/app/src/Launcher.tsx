@@ -18,6 +18,7 @@ import {
   type CSSProperties,
   type Ref,
   type RefObject,
+  type ReactNode,
 } from "react";
 import {
   DragDropProvider,
@@ -250,14 +251,44 @@ const mergeCollisionDetector: SortableCollisionDetector = ({
   return null;
 };
 
+function MergeTargetFrame({
+  active,
+  children,
+}: {
+  active: boolean;
+  children: ReactNode;
+}) {
+  const { nodeScale } = useLauncherSettings();
+
+  return (
+    <div
+      className="relative shrink-0"
+      style={{ width: 64 * nodeScale, height: 64 * nodeScale }}
+    >
+      <div
+        aria-hidden="true"
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/25 shadow-[0_18px_35px_rgba(15,23,42,0.22)] backdrop-blur-md transition-all duration-200 ease-out"
+        style={{
+          width: (active ? 72 : 64) * nodeScale,
+          height: (active ? 72 : 64) * nodeScale,
+          borderRadius: (active ? 22 : 18) * nodeScale,
+        }}
+      />
+      <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function ShortcutPreview({
   shortcut,
   hideTitle = false,
-  iconClassName,
+  isMergeTarget = false,
 }: {
   shortcut: ShortcutItem;
   hideTitle?: boolean;
-  iconClassName?: string;
+  isMergeTarget?: boolean;
 }) {
   const { nodeScale } = useLauncherSettings();
   const previewStyle: CSSProperties = {
@@ -276,16 +307,15 @@ function ShortcutPreview({
       className="flex flex-col items-center text-center"
       style={previewStyle}
     >
-      <SiteIcon
-        title={shortcut.title}
-        url={shortcut.url}
-        seed={shortcut.id}
-        className={clsx(
-          "font-bold shadow-[0_18px_35px_rgba(15,23,42,0.22)] transition-all duration-200 ease-out",
-          iconClassName,
-        )}
-        style={iconStyle}
-      />
+      <MergeTargetFrame active={isMergeTarget}>
+        <SiteIcon
+          title={shortcut.title}
+          url={shortcut.url}
+          seed={shortcut.id}
+          className="font-bold shadow-[0_18px_35px_rgba(15,23,42,0.22)]"
+          style={iconStyle}
+        />
+      </MergeTargetFrame>
       <span
         className={clsx(
           "line-clamp-2 min-h-10 w-full text-balance text-sm font-semibold leading-5 text-white drop-shadow-[0_1px_2px_rgba(15,23,42,0.45)]",
@@ -303,13 +333,13 @@ function ShortcutLink({
   dragHandleRef,
   isDragging,
   className,
-  iconClassName,
+  isMergeTarget,
 }: {
   shortcut: ShortcutItem;
   dragHandleRef: Ref<HTMLAnchorElement>;
   isDragging: boolean;
   className?: string;
-  iconClassName?: string;
+  isMergeTarget?: boolean;
 }) {
   return (
     <a
@@ -325,7 +355,7 @@ function ShortcutLink({
       <ShortcutPreview
         shortcut={shortcut}
         hideTitle={isDragging}
-        iconClassName={iconClassName}
+        isMergeTarget={isMergeTarget}
       />
     </a>
   );
@@ -334,11 +364,11 @@ function ShortcutLink({
 function FolderPreview({
   folder,
   hideTitle = false,
-  iconClassName,
+  isMergeTarget = false,
 }: {
   folder: ShortcutFolder;
   hideTitle?: boolean;
-  iconClassName?: string;
+  isMergeTarget?: boolean;
 }) {
   const { nodeScale } = useLauncherSettings();
   const previewStyle: CSSProperties = {
@@ -358,27 +388,23 @@ function FolderPreview({
       className="flex flex-col items-center text-center"
       style={previewStyle}
     >
-      <div
-        className={clsx(
-          "grid grid-cols-2 grid-rows-2 bg-white/25 shadow-[0_18px_35px_rgba(15,23,42,0.22)] backdrop-blur-md transition-all duration-200 ease-out",
-          iconClassName,
-        )}
-        style={iconStyle}
-      >
-        {folder.children.slice(0, 4).map((item) => (
-          <SiteIcon
-            key={item.id}
-            title={item.title}
-            url={item.url}
-            seed={item.id}
-            className="size-full min-h-0 min-w-0 font-bold shadow-sm"
-            style={{
-              borderRadius: 8 * nodeScale,
-              fontSize: 10 * nodeScale,
-            }}
-          />
-        ))}
-      </div>
+      <MergeTargetFrame active={isMergeTarget}>
+        <div className="grid grid-cols-2 grid-rows-2" style={iconStyle}>
+          {folder.children.slice(0, 4).map((item) => (
+            <SiteIcon
+              key={item.id}
+              title={item.title}
+              url={item.url}
+              seed={item.id}
+              className="size-full min-h-0 min-w-0 font-bold shadow-sm"
+              style={{
+                borderRadius: 8 * nodeScale,
+                fontSize: 10 * nodeScale,
+              }}
+            />
+          ))}
+        </div>
+      </MergeTargetFrame>
       <span
         className={clsx(
           "line-clamp-2 min-h-10 w-full text-balance text-sm font-semibold leading-5 text-white drop-shadow-[0_1px_2px_rgba(15,23,42,0.45)]",
@@ -467,7 +493,7 @@ function SortableNode({
           dragHandleRef={handleRef}
           isDragging={isDragging}
           className="w-full"
-          iconClassName={isMergeTarget ? "ring-8 ring-slate-100/75" : undefined}
+          isMergeTarget={isMergeTarget}
         />
       ) : (
         <button
@@ -479,9 +505,7 @@ function SortableNode({
           <FolderPreview
             folder={node}
             hideTitle={isDragging}
-            iconClassName={
-              isMergeTarget ? "ring-8 ring-slate-100/75" : undefined
-            }
+            isMergeTarget={isMergeTarget}
           />
         </button>
       )}
