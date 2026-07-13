@@ -11,6 +11,8 @@
  */
 
 import {
+  createContext,
+  useContext,
   useCallback,
   useEffect,
   useRef,
@@ -37,12 +39,12 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import clsx from "clsx";
 import {
   EllipsisVertical,
+  FolderInput,
   FolderOpen,
   Pencil,
   Plus,
   Trash2,
 } from "lucide-react";
-import { platform } from "@platform";
 import {
   createShortcutSortableGroups,
   mergeShortcutIntoNode,
@@ -50,10 +52,11 @@ import {
   type ShortcutFolder,
   type ShortcutItem,
   type ShortcutNode,
-} from "./shortcuts";
-import { Dialog, DialogTitle } from "./components/Dialog";
-import { importBrowserBookmarksWithToast } from "./browserBookmarks";
-import { SiteIcon } from "./components/SiteIcon";
+  type ShortcutCategory,
+} from "./launcher";
+import { Dialog, DialogTitle } from "../components/Dialog";
+import { importBrowserBookmarksWithToast } from "../browserBookmarks";
+import { SiteIcon } from "../components/SiteIcon";
 import { useLauncherSettings } from "./launcherSettings";
 
 type SortableCollisionDetector = NonNullable<
@@ -62,6 +65,11 @@ type SortableCollisionDetector = NonNullable<
 const MERGE_TARGET_PREFIX = "merge:";
 // dnd-kit 用 group 区分多个 sortable 容器：首页是 root，每个 Folder 使用自身 ID。
 const ROOT_SORTABLE_GROUP = "root";
+
+const ShortcutCategoriesContext = createContext<{
+  categories: ShortcutCategory[];
+  categoryId: string;
+}>({ categories: [], categoryId: "" });
 
 type ShortcutContainer =
   | { type: "root"; id: typeof ROOT_SORTABLE_GROUP }
@@ -332,22 +340,17 @@ function ShortcutLink({
   shortcut,
   dragHandleRef,
   isDragging,
-  className,
   isMergeTarget,
 }: {
   shortcut: ShortcutItem;
   dragHandleRef: Ref<HTMLAnchorElement>;
   isDragging: boolean;
-  className?: string;
   isMergeTarget?: boolean;
 }) {
   return (
     <a
       ref={dragHandleRef}
-      className={clsx(
-        "flex touch-none select-none justify-center rounded-[30px] px-1 py-2 outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70",
-        className,
-      )}
+      className="flex touch-none select-none justify-center rounded-[30px] outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
       href={shortcut.url}
       target={import.meta.env.MODE === "web" ? "_parent" : undefined}
       rel={import.meta.env.MODE === "web" ? "noreferrer" : undefined}
@@ -438,6 +441,7 @@ function SortableNode({
   onExpandFolder,
   onEdit,
   onDelete,
+  onMove,
 }: {
   node: ShortcutNode;
   index: number;
@@ -445,6 +449,7 @@ function SortableNode({
   onExpandFolder: (folder: ShortcutFolder) => void;
   onEdit: (node: ShortcutNode) => void;
   onDelete: (node: ShortcutNode) => void;
+  onMove: (node: ShortcutNode, categoryId: string) => void;
 }) {
   const dndData: ShortcutDndData = {
     node,
@@ -486,20 +491,20 @@ function SortableNode({
         }
         onEdit={() => onEdit(node)}
         onDelete={() => onDelete(node)}
+        onMove={(categoryId) => onMove(node, categoryId)}
       />
       {node.type === "item" ? (
         <ShortcutLink
           shortcut={node}
           dragHandleRef={handleRef}
           isDragging={isDragging}
-          className="w-full"
           isMergeTarget={isMergeTarget}
         />
       ) : (
         <button
           ref={handleRef}
           type="button"
-          className="flex w-full touch-none select-none justify-center rounded-[30px] px-1 py-2 outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
+          className="flex touch-none select-none justify-center rounded-[30px] outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
           onClick={() => onOpenFolder(node)}
         >
           <FolderPreview
@@ -521,6 +526,7 @@ function FolderDialog({
   editTitleInitially,
   onEditItem,
   onDeleteItem,
+  onMoveItem,
   panelRef,
 }: {
   folder: ShortcutFolder;
@@ -530,6 +536,7 @@ function FolderDialog({
   editTitleInitially: boolean;
   onEditItem: (item: ShortcutItem) => void;
   onDeleteItem: (item: ShortcutItem) => void;
+  onMoveItem: (item: ShortcutItem, categoryId: string) => void;
   panelRef: RefObject<HTMLDivElement | null>;
 }) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -618,6 +625,10 @@ function FolderDialog({
                   onDeleteItem(item);
                   if (folder.children.length === 1) close();
                 }}
+                onMove={(categoryId) => {
+                  onMoveItem(item, categoryId);
+                  if (folder.children.length === 1) close();
+                }}
               />
             ))}
           </ul>
@@ -634,6 +645,7 @@ function FolderSortableItem({
   folderPanelRef,
   onEdit,
   onDelete,
+  onMove,
 }: {
   folderId: string;
   item: ShortcutItem;
@@ -641,6 +653,7 @@ function FolderSortableItem({
   folderPanelRef: RefObject<HTMLDivElement | null>;
   onEdit: () => void;
   onDelete: () => void;
+  onMove: (categoryId: string) => void;
 }) {
   // group/index 是 dnd-kit 管理跨容器排序的核心数据。子项沿用自身 ID；移到
   // root 后，顶层 SortableNode 会用相同 ID 重新注册并接续当前 operation。
@@ -665,7 +678,12 @@ function FolderSortableItem({
         isDragging && "opacity-30",
       )}
     >
-      <NodeMenu node={item} onEdit={onEdit} onDelete={onDelete} />
+      <NodeMenu
+        node={item}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onMove={onMove}
+      />
       <ShortcutLink
         shortcut={item}
         dragHandleRef={handleRef}
@@ -680,17 +698,20 @@ function NodeMenu({
   onExpand,
   onEdit,
   onDelete,
+  onMove,
 }: {
   node: ShortcutNode;
   onExpand?: () => void;
   onEdit: () => void;
   onDelete?: () => void;
+  onMove?: (categoryId: string) => void;
 }) {
   const { nodeScale } = useLauncherSettings();
+  const { categories, categoryId } = useContext(ShortcutCategoriesContext);
 
   return (
     <div
-      className="pointer-events-none absolute left-1/2 top-2 z-20 -translate-x-1/2"
+      className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2"
       style={{ width: 64 * nodeScale, height: 64 * nodeScale }}
     >
       <DropdownMenu.Root>
@@ -727,6 +748,33 @@ function NodeMenu({
                 <FolderOpen className="size-4" />
                 展开文件夹
               </DropdownMenu.Item>
+            ) : null}
+            {onMove && categories.length > 1 ? (
+              <DropdownMenu.Sub>
+                <DropdownMenu.SubTrigger className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-white/15 data-[state=open]:bg-white/15">
+                  <FolderInput className="size-4" />
+                  移动到其他分类
+                </DropdownMenu.SubTrigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.SubContent
+                    sideOffset={6}
+                    alignOffset={-6}
+                    className="data-[state=closed]:animate-out data-[state=open]:animate-in z-[90] min-w-32 rounded-xl border border-white/20 bg-slate-900/95 p-1.5 text-sm text-white shadow-2xl backdrop-blur-xl"
+                  >
+                    {categories
+                      .filter((category) => category.id !== categoryId)
+                      .map((category) => (
+                        <DropdownMenu.Item
+                          key={category.id}
+                          className="cursor-default select-none rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-white/15"
+                          onSelect={() => onMove(category.id)}
+                        >
+                          {category.name}
+                        </DropdownMenu.Item>
+                      ))}
+                  </DropdownMenu.SubContent>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Sub>
             ) : null}
             {onDelete ? (
               <DropdownMenu.Item
@@ -899,42 +947,56 @@ function AddShortcutButton({ onClick }: { onClick: () => void }) {
   const { nodeScale } = useLauncherSettings();
 
   return (
-    <li className="group rounded-[30px]">
-      <button
-        type="button"
-        aria-label="添加快捷方式"
-        onClick={onClick}
-        className="flex w-full flex-col items-center rounded-[30px] px-1 py-2 text-center text-white outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
-        style={{ width: 88 * nodeScale, gap: 8 * nodeScale }}
+    <button
+      type="button"
+      aria-label="添加快捷方式"
+      onClick={onClick}
+      className="flex w-full flex-col items-center rounded-[30px] px-1 py-2 text-center text-white outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
+      style={{ width: 88 * nodeScale, gap: 8 * nodeScale }}
+    >
+      <span
+        className="grid place-items-center border border-dashed border-white/55 bg-white/10 text-white/85 shadow-[0_18px_35px_rgba(15,23,42,0.16)] backdrop-blur-md transition duration-200 group-hover:border-white/80 group-hover:bg-white/20 group-hover:text-white"
+        style={{
+          width: 64 * nodeScale,
+          height: 64 * nodeScale,
+          borderRadius: 18 * nodeScale,
+        }}
       >
-        <span
-          className="grid place-items-center border border-dashed border-white/55 bg-white/10 text-white/85 shadow-[0_18px_35px_rgba(15,23,42,0.16)] backdrop-blur-md transition duration-200 group-hover:border-white/80 group-hover:bg-white/20 group-hover:text-white"
-          style={{
-            width: 64 * nodeScale,
-            height: 64 * nodeScale,
-            borderRadius: 18 * nodeScale,
-          }}
-        >
-          <Plus
-            strokeWidth={1.75}
-            style={{ width: 30 * nodeScale, height: 30 * nodeScale }}
-          />
-        </span>
-      </button>
-    </li>
+        <Plus
+          strokeWidth={1.75}
+          style={{ width: 30 * nodeScale, height: 30 * nodeScale }}
+        />
+      </span>
+    </button>
   );
 }
 
-export function Launcher() {
+export function ShortcutPage({
+  categoryId,
+  shortcuts: storedShortcuts,
+  categories,
+  onChange,
+  onMove,
+}: {
+  categoryId: string;
+  shortcuts: ShortcutNode[];
+  categories: ShortcutCategory[];
+  onChange: (shortcuts: ShortcutNode[]) => void;
+  onMove: (
+    sourceShortcuts: ShortcutNode[],
+    shortcut: ShortcutNode,
+    targetCategoryId: string,
+  ) => void;
+}) {
   const { nodeScale } = useLauncherSettings();
-  const [shortcuts, setShortcuts] = useState<ShortcutNode[]>([]);
+  const [shortcuts, setShortcuts] = useState(storedShortcuts);
+  const shortcutsRef = useRef(storedShortcuts);
   const [isImportingBookmarks, setIsImportingBookmarks] = useState(false);
   // 预览直接使用 draggable.data.node，不再用 ID 回到业务数组做二次查找。
   const [activeNode, setActiveNode] = useState<ShortcutNode | null>(null);
   const [renameFolderId, setRenameFolderId] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<ShortcutItem | null>(null);
   const [isAddingItem, setIsAddingItem] = useState(false);
-
   const [openFolderId, setOpenFolderId] = useState<string | null>(null);
   // 越界后业务数据会立即迁移到 root；这份不含拖拽项的快照仅用于
   // 让 Dialog 播完关闭动画，也覆盖空 Folder 已被业务数据删除的情况。
@@ -948,30 +1010,19 @@ export function Launcher() {
   // 同一轮 dragover 可能重复报告 root target，只投影一次容器切换。
   const projectedToRootItemIdRef = useRef<string | null>(null);
 
-  const saveShortcuts = useCallback((nextShortcuts: ShortcutNode[]) => {
-    setShortcuts(nextShortcuts);
-    void platform.shortcuts.save(nextShortcuts);
-  }, []);
+  const saveShortcuts = useCallback(
+    (nextShortcuts: ShortcutNode[]) => {
+      shortcutsRef.current = nextShortcuts;
+      setShortcuts(nextShortcuts);
+      onChange(nextShortcuts);
+    },
+    [onChange],
+  );
 
   useEffect(() => {
-    let isCurrent = true;
-    const applyShortcuts = (storedShortcuts: ShortcutNode[]) => {
-      setShortcuts(storedShortcuts);
-    };
-
-    void platform.shortcuts.read().then(
-      (storedShortcuts) => {
-        if (isCurrent) applyShortcuts(storedShortcuts);
-      },
-      () => {},
-    );
-
-    const unsubscribe = platform.shortcuts.subscribe(applyShortcuts);
-    return () => {
-      isCurrent = false;
-      unsubscribe();
-    };
-  }, []);
+    shortcutsRef.current = storedShortcuts;
+    setShortcuts(storedShortcuts);
+  }, [storedShortcuts]);
 
   function handleDragStart(event: DragStartEvent) {
     const source = event.operation.source;
@@ -1010,10 +1061,11 @@ export function Launcher() {
       createShortcutSortableGroups(shortcuts, ROOT_SORTABLE_GROUP),
       event,
     );
-    const projectedShortcuts = resolveShortcutSortableGroups(
+    const projectedShortcuts: ShortcutNode[] = resolveShortcutSortableGroups(
       projectedGroups,
       ROOT_SORTABLE_GROUP,
     );
+    shortcutsRef.current = projectedShortcuts;
     setShortcuts(projectedShortcuts);
 
     const projectedFolder = projectedShortcuts.find(
@@ -1048,7 +1100,9 @@ export function Launcher() {
     if (event.canceled) {
       // 跨 group 的投影尚未写入存储，取消时恢复 DragStart 的 React 快照即可。
       if (projectedToRootItemIdRef.current) {
-        setShortcuts(dragStartShortcutsRef.current ?? shortcuts);
+        const restoredShortcuts = dragStartShortcutsRef.current ?? shortcuts;
+        shortcutsRef.current = restoredShortcuts;
+        setShortcuts(restoredShortcuts);
       }
       return;
     }
@@ -1059,13 +1113,15 @@ export function Launcher() {
       targetData
     ) {
       // 合并双方都直接来自 dnd operation.data；ID 仅作为持久化层的节点键。
-      const nextShortcuts = mergeShortcutIntoNode(
+      const nextCategoryShortcuts = mergeShortcutIntoNode(
         shortcuts,
         sourceData.node.id,
         targetData.node.id,
         `folder:${crypto.randomUUID()}`,
       );
-      if (nextShortcuts !== shortcuts) saveShortcuts(nextShortcuts);
+      if (nextCategoryShortcuts !== shortcuts) {
+        saveShortcuts(nextCategoryShortcuts);
+      }
       return;
     }
 
@@ -1079,54 +1135,45 @@ export function Launcher() {
       source.initialGroup === source.group
     ) {
       const folderId = sourceData.container.id;
-      setShortcuts((currentShortcuts) => {
-        const nextShortcuts = currentShortcuts.map((node) => {
-          if (node.type !== "folder" || node.id !== folderId) return node;
+      const nextShortcuts = shortcutsRef.current.map((node) => {
+        if (node.type !== "folder" || node.id !== folderId) return node;
 
-          const children = [...node.children];
-          const sourceIndex = children.findIndex(
-            (item) => item.id === sourceData.node.id,
-          );
-          if (sourceIndex < 0) return node;
+        const children = [...node.children];
+        const sourceIndex = children.findIndex(
+          (item) => item.id === sourceData.node.id,
+        );
+        if (sourceIndex < 0) return node;
 
-          const [item] = children.splice(sourceIndex, 1);
-          if (!item) return node;
-          children.splice(source.index, 0, item);
-          return { ...node, children };
-        });
-
-        void platform.shortcuts.save(nextShortcuts);
-        return nextShortcuts;
+        const [item] = children.splice(sourceIndex, 1);
+        if (!item) return node;
+        children.splice(source.index, 0, item);
+        return { ...node, children };
       });
+      saveShortcuts(nextShortcuts);
       return;
     }
 
     // Folder Item 跨到 root 时，onDragOver 已经把最终结构投影进 React state；
     // 此处只持久化该结构，不能再对同一个 event 执行一次 move()。
     if (projectedToRootItemIdRef.current) {
-      setShortcuts((currentShortcuts) => {
-        void platform.shortcuts.save(currentShortcuts);
-        return currentShortcuts;
-      });
+      saveShortcuts(shortcutsRef.current);
       return;
     }
 
     // Root 内的 optimistic sorting 已经把 source.index 推进到最终占位，不能再对
     // 同一个 event 调用 move()，否则会把已完成的移动重复应用并保存成旧顺序。
     // 业务 state 尚未参与 optimistic sorting，因此按节点 ID 和最终 index 明确重排。
-    setShortcuts((currentShortcuts) => {
-      const sourceIndex = currentShortcuts.findIndex(
-        (node) => node.id === sourceData?.node.id,
-      );
-      if (sourceIndex < 0) return currentShortcuts;
+    const currentShortcuts = shortcutsRef.current;
+    const sourceIndex = currentShortcuts.findIndex(
+      (node) => node.id === sourceData?.node.id,
+    );
+    if (sourceIndex < 0) return;
 
-      const nextShortcuts = [...currentShortcuts];
-      const [node] = nextShortcuts.splice(sourceIndex, 1);
-      if (!node) return currentShortcuts;
-      nextShortcuts.splice(source.index, 0, node);
-      void platform.shortcuts.save(nextShortcuts);
-      return nextShortcuts;
-    });
+    const nextShortcuts = [...currentShortcuts];
+    const [node] = nextShortcuts.splice(sourceIndex, 1);
+    if (!node) return;
+    nextShortcuts.splice(source.index, 0, node);
+    saveShortcuts(nextShortcuts);
   }
 
   const openFolder = openFolderId
@@ -1147,99 +1194,115 @@ export function Launcher() {
   }
 
   return (
-    <DragDropProvider
-      sensors={(defaults) => [
-        ...defaults.filter((sensor) => sensor !== PointerSensor),
-        PointerSensor.configure({
-          activationConstraints: [
-            // 移动超过 8px 才开始拖拽，避免普通单击被识别为拖拽。
-            new PointerActivationConstraints.Distance({ value: 8 }),
-          ],
-        }),
-      ]}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-    >
-      <section className="relative z-10 mx-auto flex w-full max-w-6xl flex-col px-6 pb-8 pt-20 sm:px-10 sm:pb-8">
-        {shortcuts.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-5">
-            <AddShortcutButton onClick={() => setIsAddingItem(true)} />
-            <button
-              type="button"
-              className="rounded-2xl bg-white/20 px-6 py-3 text-base font-semibold text-white shadow-lg backdrop-blur-md transition hover:bg-white/30 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-60"
-              disabled={isImportingBookmarks}
-              onClick={() => void handleImportBrowserBookmarks()}
+    <ShortcutCategoriesContext.Provider value={{ categories, categoryId }}>
+      <DragDropProvider
+        sensors={(defaults) => [
+          ...defaults.filter((sensor) => sensor !== PointerSensor),
+          PointerSensor.configure({
+            activationConstraints: [
+              // 移动超过 8px 才开始拖拽，避免普通单击被识别为拖拽。
+              new PointerActivationConstraints.Distance({ value: 8 }),
+            ],
+          }),
+        ]}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
+        <section className="relative z-10 mx-auto flex w-full max-w-6xl flex-col px-6 pb-8 pt-3 sm:px-10 sm:pb-8">
+          {shortcuts.length === 0 ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-5">
+              <AddShortcutButton onClick={() => setIsAddingItem(true)} />
+              {categories.every(
+                (category) => category.shortcuts.length === 0,
+              ) ? (
+                <button
+                  type="button"
+                  className="rounded-2xl bg-white/20 px-6 py-3 text-base font-semibold text-white shadow-lg backdrop-blur-md transition hover:bg-white/30 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-60"
+                  disabled={isImportingBookmarks}
+                  onClick={() => void handleImportBrowserBookmarks()}
+                >
+                  导入浏览器收藏夹
+                </button>
+              ) : null}
+            </div>
+          ) : (
+            <ul
+              className="grid justify-center gap-x-3 gap-y-5 sm:gap-x-4"
+              style={{
+                gridTemplateColumns: `repeat(auto-fit, ${Math.round(88 * nodeScale)}px)`,
+              }}
             >
-              导入浏览器收藏夹
-            </button>
-          </div>
-        ) : (
-          <ul
-            className="grid justify-center gap-x-3 gap-y-5 sm:gap-x-4"
-            style={{
-              gridTemplateColumns: `repeat(auto-fit, ${Math.round(88 * nodeScale)}px)`,
-            }}
-          >
-            {shortcuts.map((node, index) => (
-              <SortableNode
-                key={node.id}
-                node={node}
-                index={index}
-                onOpenFolder={(folder) => {
-                  setClosingFolder(null);
-                  setRenameFolderId(null);
-                  setOpenFolderId(folder.id);
-                }}
-                onExpandFolder={(folder) => {
-                  saveShortcuts(
-                    shortcuts.flatMap((node) =>
-                      node.id === folder.id ? folder.children : [node],
-                    ),
-                  );
-                  if (openFolderId === folder.id) {
+              {shortcuts.map((node, index) => (
+                <SortableNode
+                  key={node.id}
+                  node={node}
+                  index={index}
+                  onOpenFolder={(folder) => {
                     setClosingFolder(null);
                     setRenameFolderId(null);
-                    setOpenFolderId(null);
-                  }
-                }}
-                onEdit={(selectedNode) => {
-                  if (selectedNode.type === "folder") {
-                    setClosingFolder(null);
-                    setRenameFolderId(selectedNode.id);
-                    setOpenFolderId(selectedNode.id);
-                  } else {
-                    setEditingItem(selectedNode);
-                  }
-                }}
-                onDelete={(selectedNode) => {
-                  saveShortcuts(
-                    shortcuts.filter((node) => node.id !== selectedNode.id),
-                  );
-                }}
-              />
-            ))}
-            <AddShortcutButton onClick={() => setIsAddingItem(true)} />
-          </ul>
-        )}
-      </section>
-      {/* 使用独立浮层展示拖拽项，避免受到列表布局和透明度样式影响。 */}
-      <DragOverlay>
-        {activeNode ? (
-          <div className="rotate-1 scale-105 drop-shadow-2xl">
-            <NodePreview node={activeNode} hideTitle />
-          </div>
-        ) : null}
-      </DragOverlay>
-      {displayedFolder ? (
-        <FolderDialog
-          folder={displayedFolder}
-          isClosing={closingFolder !== null}
-          editTitleInitially={renameFolderId === displayedFolder.id}
-          onEditItem={setEditingItem}
-          onDeleteItem={(item) => {
-            setShortcuts((currentShortcuts) => {
-              const nextShortcuts = currentShortcuts
+                    setOpenFolderId(folder.id);
+                  }}
+                  onExpandFolder={(folder) => {
+                    saveShortcuts(
+                      shortcuts.flatMap((candidate) =>
+                        candidate.id === folder.id
+                          ? folder.children
+                          : [candidate],
+                      ),
+                    );
+                    if (openFolderId === folder.id) {
+                      setClosingFolder(null);
+                      setRenameFolderId(null);
+                      setOpenFolderId(null);
+                    }
+                  }}
+                  onEdit={(selectedNode) => {
+                    if (selectedNode.type === "folder") {
+                      setClosingFolder(null);
+                      setRenameFolderId(selectedNode.id);
+                      setOpenFolderId(selectedNode.id);
+                    } else {
+                      setEditingItem(selectedNode);
+                    }
+                  }}
+                  onDelete={(selectedNode) => {
+                    saveShortcuts(
+                      shortcuts.filter(
+                        (candidate) => candidate.id !== selectedNode.id,
+                      ),
+                    );
+                  }}
+                  onMove={(selectedNode, categoryId) => {
+                    const sourceShortcuts = shortcuts.filter(
+                      (candidate) => candidate.id !== selectedNode.id,
+                    );
+                    shortcutsRef.current = sourceShortcuts;
+                    setShortcuts(sourceShortcuts);
+                    onMove(sourceShortcuts, selectedNode, categoryId);
+                  }}
+                />
+              ))}
+              <AddShortcutButton onClick={() => setIsAddingItem(true)} />
+            </ul>
+          )}
+        </section>
+        {/* 使用独立浮层展示拖拽项，避免受到列表布局和透明度样式影响。 */}
+        <DragOverlay>
+          {activeNode ? (
+            <div className="rotate-1 scale-105 drop-shadow-2xl">
+              <NodePreview node={activeNode} hideTitle />
+            </div>
+          ) : null}
+        </DragOverlay>
+        {displayedFolder ? (
+          <FolderDialog
+            folder={displayedFolder}
+            isClosing={closingFolder !== null}
+            editTitleInitially={renameFolderId === displayedFolder.id}
+            onEditItem={setEditingItem}
+            onDeleteItem={(item) => {
+              const nextShortcuts = shortcutsRef.current
                 .filter(
                   (node) =>
                     node.type !== "folder" ||
@@ -1256,37 +1319,50 @@ export function Launcher() {
                       }
                     : node,
                 );
-              void platform.shortcuts.save(nextShortcuts);
-              return nextShortcuts;
-            });
-          }}
-          onRename={(title) => {
-            if (closingFolder) return;
-            setShortcuts((currentShortcuts) => {
-              const nextShortcuts = currentShortcuts.map((node) =>
+              saveShortcuts(nextShortcuts);
+            }}
+            onMoveItem={(item, categoryId) => {
+              const nextShortcuts = shortcutsRef.current.flatMap<ShortcutNode>(
+                (node) => {
+                  if (
+                    node.type !== "folder" ||
+                    node.id !== displayedFolder.id
+                  ) {
+                    return [node];
+                  }
+                  const children = node.children.filter(
+                    (child) => child.id !== item.id,
+                  );
+                  return children.length ? [{ ...node, children }] : [];
+                },
+              );
+              shortcutsRef.current = nextShortcuts;
+              setShortcuts(nextShortcuts);
+              onMove(nextShortcuts, item, categoryId);
+            }}
+            onRename={(title) => {
+              if (closingFolder) return;
+              const nextShortcuts = shortcutsRef.current.map((node) =>
                 node.type === "folder" && node.id === displayedFolder.id
                   ? { ...node, title }
                   : node,
               );
-              void platform.shortcuts.save(nextShortcuts);
-              return nextShortcuts;
-            });
-          }}
-          onClose={() => {
-            setClosingFolder(null);
-            setRenameFolderId(null);
-            setOpenFolderId(null);
-          }}
-          panelRef={folderPanelRef}
-        />
-      ) : null}
-      {editingItem ? (
-        <EditItemDialog
-          item={editingItem}
-          onClose={() => setEditingItem(null)}
-          onSave={(title, url) => {
-            setShortcuts((currentShortcuts) => {
-              const nextShortcuts = currentShortcuts.map((node) => {
+              saveShortcuts(nextShortcuts);
+            }}
+            onClose={() => {
+              setClosingFolder(null);
+              setRenameFolderId(null);
+              setOpenFolderId(null);
+            }}
+            panelRef={folderPanelRef}
+          />
+        ) : null}
+        {editingItem ? (
+          <EditItemDialog
+            item={editingItem}
+            onClose={() => setEditingItem(null)}
+            onSave={(title, url) => {
+              const nextShortcuts = shortcutsRef.current.map((node) => {
                 if (node.type === "item") {
                   return node.id === editingItem.id
                     ? { ...node, title, url }
@@ -1299,31 +1375,26 @@ export function Launcher() {
                   ),
                 };
               });
-              void platform.shortcuts.save(nextShortcuts);
-              return nextShortcuts;
-            });
-          }}
-        />
-      ) : null}
-      {isAddingItem ? (
-        <AddItemDialog
-          onClose={() => setIsAddingItem(false)}
-          onSave={(title, url) => {
-            const item: ShortcutItem = {
-              type: "item",
-              id: `shortcut:${crypto.randomUUID()}`,
-              title,
-              url,
-              createdAt: Date.now(),
-            };
-            setShortcuts((currentShortcuts) => {
-              const nextShortcuts = [...currentShortcuts, item];
-              void platform.shortcuts.save(nextShortcuts);
-              return nextShortcuts;
-            });
-          }}
-        />
-      ) : null}
-    </DragDropProvider>
+              saveShortcuts(nextShortcuts);
+            }}
+          />
+        ) : null}
+        {isAddingItem ? (
+          <AddItemDialog
+            onClose={() => setIsAddingItem(false)}
+            onSave={(title, url) => {
+              const item: ShortcutItem = {
+                type: "item",
+                id: `shortcut:${crypto.randomUUID()}`,
+                title,
+                url,
+                createdAt: Date.now(),
+              };
+              saveShortcuts([...shortcutsRef.current, item]);
+            }}
+          />
+        ) : null}
+      </DragDropProvider>
+    </ShortcutCategoriesContext.Provider>
   );
 }

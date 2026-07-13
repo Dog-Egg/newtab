@@ -1,8 +1,9 @@
 import {
-  SHORTCUTS_STORAGE_KEY,
-  type ShortcutNode,
-  normalizeShortcuts,
-} from "../shortcuts";
+  ACTIVE_CATEGORY_ID_STORAGE_KEY,
+  LAUNCHER_STORAGE_KEY,
+  DEFAULT_CATEGORY,
+  normalizeLauncher,
+} from "../Launcher/launcher";
 import { importBrowserBookmarks } from "../browserBookmarks";
 import {
   normalizeStoredWallpaperUrl,
@@ -12,7 +13,7 @@ import type { Platform, StoredSearchEngineSettings } from "./types";
 import {
   LAUNCHER_SETTINGS_STORAGE_KEY,
   normalizeLauncherSettings,
-} from "../launcherSettings";
+} from "../Launcher/launcherSettings";
 
 const SEARCH_ENGINE_SETTINGS_KEY = "browser-tab.searchEngineSettings.v1";
 
@@ -89,17 +90,23 @@ function subscribeChromeStorage<T>(
 }
 
 export const platform: Platform = {
-  shortcuts: {
+  launcher: {
+    read: () => getChromeStorage(LAUNCHER_STORAGE_KEY, normalizeLauncher),
+    save: (categories) => setChromeStorage(LAUNCHER_STORAGE_KEY, categories),
+    subscribe: (onChange) =>
+      subscribeChromeStorage(LAUNCHER_STORAGE_KEY, normalizeLauncher, onChange),
+  },
+  activeCategoryId: {
     read: () =>
-      getChromeStorage<ShortcutNode[]>(
-        SHORTCUTS_STORAGE_KEY,
-        normalizeShortcuts,
+      getChromeStorage(ACTIVE_CATEGORY_ID_STORAGE_KEY, (value) =>
+        typeof value === "string" ? value : DEFAULT_CATEGORY.id,
       ),
-    save: (shortcuts) => setChromeStorage(SHORTCUTS_STORAGE_KEY, shortcuts),
+    save: (categoryId) =>
+      setChromeStorage(ACTIVE_CATEGORY_ID_STORAGE_KEY, categoryId),
     subscribe: (onChange) =>
       subscribeChromeStorage(
-        SHORTCUTS_STORAGE_KEY,
-        normalizeShortcuts,
+        ACTIVE_CATEGORY_ID_STORAGE_KEY,
+        (value) => (typeof value === "string" ? value : DEFAULT_CATEGORY.id),
         onChange,
       ),
   },

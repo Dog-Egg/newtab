@@ -16,7 +16,7 @@ import {
   MIN_LAUNCHER_NODE_SCALE,
   WALLPAPER_OVERLAY_OPACITY_STEP,
   type LauncherSettings,
-} from "./launcherSettings";
+} from "./Launcher/launcherSettings";
 
 function preloadImage(url: string) {
   return new Promise<void>((resolve, reject) => {

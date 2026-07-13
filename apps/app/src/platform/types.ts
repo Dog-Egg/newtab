@@ -1,5 +1,5 @@
-import type { ShortcutNode } from "../shortcuts";
-import type { LauncherSettings } from "../launcherSettings";
+import type { LauncherSettings } from "../Launcher/launcherSettings";
+import type { ShortcutCategory } from "../Launcher/launcher";
 
 export type StorageUnsubscribe = () => void;
 
@@ -20,12 +20,17 @@ export type BrowserBookmarksImportResult = {
 };
 
 export type Platform = {
-  shortcuts: {
-    read: () => Promise<ShortcutNode[]>;
-    save: (shortcuts: ShortcutNode[]) => Promise<void>;
+  launcher: {
+    read: () => Promise<ShortcutCategory[]>;
+    save: (categories: ShortcutCategory[]) => Promise<void>;
     subscribe: (
-      onChange: (shortcuts: ShortcutNode[]) => void,
+      onChange: (categories: ShortcutCategory[]) => void,
     ) => StorageUnsubscribe;
+  };
+  activeCategoryId: {
+    read: () => Promise<string>;
+    save: (categoryId: string) => Promise<void>;
+    subscribe: (onChange: (categoryId: string) => void) => StorageUnsubscribe;
   };
   wallpaper: {
     read: () => Promise<string | null>;

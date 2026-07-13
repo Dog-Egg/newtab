@@ -1,9 +1,11 @@
 import {
-  SHORTCUTS_STORAGE_KEY,
+  LAUNCHER_STORAGE_KEY,
+  DEFAULT_CATEGORY,
+  normalizeLauncher,
   type Shortcut,
+  type ShortcutCategory,
   type ShortcutNode,
-  normalizeShortcuts,
-} from "./shortcuts";
+} from "./Launcher/launcher";
 
 const MENU_ID = "save-to-browser-tab";
 
@@ -17,17 +19,17 @@ function createContextMenu() {
   });
 }
 
-function getShortcuts() {
-  return new Promise<ShortcutNode[]>((resolve) => {
-    chrome.storage.local.get(SHORTCUTS_STORAGE_KEY, (items) => {
-      resolve(normalizeShortcuts(items[SHORTCUTS_STORAGE_KEY]));
+function getCategories() {
+  return new Promise<ShortcutCategory[]>((resolve) => {
+    chrome.storage.local.get(LAUNCHER_STORAGE_KEY, (items) => {
+      resolve(normalizeLauncher(items[LAUNCHER_STORAGE_KEY]));
     });
   });
 }
 
-function setShortcuts(shortcuts: ShortcutNode[]) {
+function setCategories(categories: ShortcutCategory[]) {
   return new Promise<void>((resolve) => {
-    chrome.storage.local.set({ [SHORTCUTS_STORAGE_KEY]: shortcuts }, resolve);
+    chrome.storage.local.set({ [LAUNCHER_STORAGE_KEY]: categories }, resolve);
   });
 }
 
@@ -57,7 +59,7 @@ function removeShortcutUrl(
 }
 
 async function saveShortcut(url: string, title?: string) {
-  const shortcuts = await getShortcuts();
+  const categories = await getCategories();
   const shortcut: Shortcut = {
     type: "item",
     id: url,
@@ -66,7 +68,15 @@ async function saveShortcut(url: string, title?: string) {
     createdAt: Date.now(),
   };
 
-  await setShortcuts([shortcut, ...removeShortcutUrl(shortcuts, url)]);
+  await setCategories(
+    categories.map((category) => ({
+      ...category,
+      shortcuts:
+        category.id === DEFAULT_CATEGORY.id
+          ? [shortcut, ...removeShortcutUrl(category.shortcuts, url)]
+          : removeShortcutUrl(category.shortcuts, url),
+    })),
+  );
 }
 
 chrome.runtime.onInstalled.addListener(createContextMenu);

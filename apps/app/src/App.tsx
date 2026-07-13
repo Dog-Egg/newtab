@@ -12,7 +12,7 @@ import {
   LauncherSettingsProvider,
   normalizeLauncherSettings,
   type LauncherSettings,
-} from "./launcherSettings";
+} from "./Launcher/launcherSettings";
 
 export function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);

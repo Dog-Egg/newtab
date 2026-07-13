@@ -1,10 +1,12 @@
 import {
-  SHORTCUTS_STORAGE_KEY,
   type ShortcutFolder,
   type ShortcutItem,
   type ShortcutNode,
-  normalizeShortcuts,
-} from "./shortcuts";
+  LAUNCHER_STORAGE_KEY,
+  DEFAULT_CATEGORY,
+  normalizeLauncher,
+  type ShortcutCategory,
+} from "./Launcher/launcher";
 import { toast } from "sonner";
 
 export type BrowserBookmarksImportResult = {
@@ -36,23 +38,23 @@ function isWebUrl(url: string) {
   return url.startsWith("http://") || url.startsWith("https://");
 }
 
-function getStoredShortcuts() {
-  return new Promise<ShortcutNode[]>((resolve, reject) => {
-    chrome.storage.local.get(SHORTCUTS_STORAGE_KEY, (items) => {
+function getStoredCategories() {
+  return new Promise<ShortcutCategory[]>((resolve, reject) => {
+    chrome.storage.local.get(LAUNCHER_STORAGE_KEY, (items) => {
       const error = chrome.runtime.lastError;
       if (error) {
         reject(new Error(error.message));
         return;
       }
 
-      resolve(normalizeShortcuts(items[SHORTCUTS_STORAGE_KEY]));
+      resolve(normalizeLauncher(items[LAUNCHER_STORAGE_KEY]));
     });
   });
 }
 
-function setStoredShortcuts(shortcuts: ShortcutNode[]) {
+function setStoredCategories(categories: ShortcutCategory[]) {
   return new Promise<void>((resolve, reject) => {
-    chrome.storage.local.set({ [SHORTCUTS_STORAGE_KEY]: shortcuts }, () => {
+    chrome.storage.local.set({ [LAUNCHER_STORAGE_KEY]: categories }, () => {
       const error = chrome.runtime.lastError;
       if (error) {
         reject(new Error(error.message));
@@ -244,16 +246,28 @@ export async function importBrowserBookmarks(): Promise<BrowserBookmarksImportRe
     };
   }
 
-  const [existingShortcuts, browserBookmarkTree] = await Promise.all([
-    getStoredShortcuts(),
+  const [categories, browserBookmarkTree] = await Promise.all([
+    getStoredCategories(),
     getBrowserBookmarkTree(),
   ]);
+  const existingShortcuts = categories.flatMap(
+    (category) => category.shortcuts,
+  );
   const { importedShortcuts, skippedDuplicateCount, folderCount } =
     convertBrowserBookmarkTree(browserBookmarkTree, existingShortcuts);
   const importedCount = countImportedShortcuts(importedShortcuts);
 
   if (importedShortcuts.length > 0) {
-    await setStoredShortcuts([...existingShortcuts, ...importedShortcuts]);
+    await setStoredCategories(
+      categories.map((category) =>
+        category.id === DEFAULT_CATEGORY.id
+          ? {
+              ...category,
+              shortcuts: [...category.shortcuts, ...importedShortcuts],
+            }
+          : category,
+      ),
+    );
   }
 
   return {

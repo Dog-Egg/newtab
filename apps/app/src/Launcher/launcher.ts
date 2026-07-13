@@ -19,8 +19,6 @@ export type ShortcutFolder = {
 export type ShortcutNode = ShortcutItem | ShortcutFolder;
 export type Shortcut = ShortcutItem;
 
-export const SHORTCUTS_STORAGE_KEY = "shortcuts";
-
 function normalizeShortcutItem(value: unknown): ShortcutItem | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -172,4 +170,60 @@ export function normalizeShortcuts(value: unknown): ShortcutNode[] {
     const shortcut = normalizeShortcutItem(item);
     return shortcut ? [shortcut] : [];
   });
+}
+
+export type ShortcutCategory = {
+  id: string;
+  name: string;
+  shortcuts: ShortcutNode[];
+};
+
+export const LAUNCHER_STORAGE_KEY = "launcher";
+export const ACTIVE_CATEGORY_ID_STORAGE_KEY = "activeCategoryId";
+
+export const DEFAULT_CATEGORY: ShortcutCategory = {
+  id: "default",
+  name: "首页",
+  shortcuts: [],
+};
+
+export function normalizeLauncher(value: unknown): ShortcutCategory[] {
+  if (!Array.isArray(value)) return [DEFAULT_CATEGORY];
+
+  const categories = value.flatMap<ShortcutCategory>((item) => {
+    if (!item || typeof item !== "object") return [];
+    const category = item as Partial<ShortcutCategory>;
+    return typeof category.id === "string" &&
+      typeof category.name === "string" &&
+      category.name.trim()
+      ? [
+          {
+            id: category.id,
+            name: category.name.trim(),
+            shortcuts: normalizeShortcuts(category.shortcuts),
+          },
+        ]
+      : [];
+  });
+
+  const uniqueCategories = categories.filter(
+    (category, index, all) =>
+      all.findIndex((candidate) => candidate.id === category.id) === index,
+  );
+  const hasDefault = uniqueCategories.some(
+    (category) => category.id === DEFAULT_CATEGORY.id,
+  );
+  return hasDefault
+    ? uniqueCategories
+    : [DEFAULT_CATEGORY, ...uniqueCategories];
+}
+
+export function normalizeActiveCategoryId(
+  value: unknown,
+  categories: ShortcutCategory[],
+) {
+  return typeof value === "string" &&
+    categories.some((category) => category.id === value)
+    ? value
+    : DEFAULT_CATEGORY.id;
 }

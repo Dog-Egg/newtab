@@ -24,7 +24,6 @@ export function normalizeLauncherSettings(value: unknown): LauncherSettings {
     value && typeof value === "object" && "wallpaperOverlayOpacity" in value
       ? Number(value.wallpaperOverlayOpacity)
       : DEFAULT_WALLPAPER_OVERLAY_OPACITY;
-
   return {
     nodeScale: Number.isFinite(nodeScale)
       ? Math.min(
