@@ -3,22 +3,29 @@ import BrowserWindow from "./index.astro";
 
 interface Props {
   url: string;
+  title?: string;
+  tabTitle?: string;
 }
 
-const { url } = Astro.props;
+const {
+  url,
+  title = "Interactive BrowserTab product demo",
+  tabTitle = "New Tab",
+} = Astro.props;
 ---
 
-<div class="p-2.5">
+<div>
   <BrowserWindow
     url={url}
-    class="w-[800px] min-w-[min(100%,45vw)] max-w-full"
+    title={tabTitle}
+    class="mx-auto w-[1120px] max-w-full rounded-2xl border-black/10 shadow-[0_28px_80px_rgba(35,28,20,0.14)]"
     bodyClass="overflow-hidden p-0"
   >
-    <div class="relative h-[450px] w-full overflow-hidden">
+    <div class="relative aspect-[16/9] w-full overflow-hidden">
       <iframe
         src={url}
-        title={url}
-        class="absolute left-0 top-0 block h-[720px] w-[1280px] max-w-none origin-top-left scale-[0.625] border-0"
+        title={title}
+        class="absolute inset-0 block size-full border-0"
       ></iframe>
     </div>
   </BrowserWindow>

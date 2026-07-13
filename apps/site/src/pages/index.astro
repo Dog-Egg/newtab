@@ -1,20 +1,5 @@
 ---
-import "../styles/global.css";
-import IframeWindow from "../components/BrowserWindow/IframeWindow.astro";
+import LandingPage from "../components/LandingPage.astro";
 ---
 
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Browser Tab</title>
-  </head>
-  <body class="min-h-screen bg-slate-50 p-6">
-    <main
-      class="mx-auto flex min-h-[calc(100vh-3rem)] max-w-5xl items-center justify-center"
-    >
-      <IframeWindow url="/app/index.html" />
-    </main>
-  </body>
-</html>
+<LandingPage locale="en" />

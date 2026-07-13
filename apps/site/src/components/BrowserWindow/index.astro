@@ -1,12 +1,18 @@
 ---
 interface Props {
   url?: string;
+  title?: string;
   minHeight?: number | string;
   class?: string;
   bodyClass?: string;
 }
 
-const { minHeight, class: className, bodyClass } = Astro.props;
+const {
+  title = "New Tab",
+  minHeight,
+  class: className,
+  bodyClass,
+} = Astro.props;
 
 const minHeightValue =
   typeof minHeight === "number" ? `${minHeight}px` : minHeight;
@@ -14,13 +20,13 @@ const minHeightValue =
 
 <div
   class:list={[
-    "mb-6 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm",
+    "overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm",
     className,
   ]}
   style={minHeightValue ? `min-height: ${minHeightValue};` : undefined}
 >
   <!-- header -->
-  <div class="flex h-10 items-center overflow-hidden bg-[#f0f5f9]">
+  <div class="flex h-10 items-center overflow-hidden bg-[#E8E7E6]">
     <div class="flex h-8 shrink-0 items-center gap-1.5 px-4" aria-hidden="true">
       <span class="size-3 rounded-full border border-[#e53e57] bg-[#ff5960]"
       ></span>
@@ -43,13 +49,13 @@ const minHeightValue =
           aria-hidden="true"></span>
 
         <span
-          class="ml-2 min-w-0 flex-1 truncate text-xs leading-4 text-[#202124]"
+          class="ml-2 min-w-0 flex-1 truncate text-left text-xs font-medium leading-4 text-[#494949]"
         >
-          New Tab
+          {title}
         </span>
 
         <span
-          class="ml-2 grid size-4 shrink-0 place-items-center text-[#202124]"
+          class="ml-2 grid size-4 shrink-0 place-items-center text-[#494949]"
         >
           <svg
             class="size-3.5"
@@ -67,7 +73,7 @@ const minHeightValue =
       </div>
     </div>
 
-    <span class="ml-2 grid size-6 shrink-0 place-items-center text-[#3c4043]">
+    <span class="ml-2 grid size-6 shrink-0 place-items-center text-[#494949]">
       <svg class="size-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path
           d="M12 5v14M5 12h14"
