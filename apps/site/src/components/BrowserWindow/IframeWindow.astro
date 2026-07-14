@@ -5,13 +5,18 @@ interface Props {
   url: string;
   title?: string;
   tabTitle?: string;
+  scale?: number;
 }
 
 const {
   url,
   title = "Interactive BrowserTab product demo",
   tabTitle = "New Tab",
+  scale = 1,
 } = Astro.props;
+
+const iframeScale = Math.min(Math.max(scale, 0.1), 1);
+const iframeSize = `${100 / iframeScale}%`;
 ---
 
 <div>
@@ -25,7 +30,8 @@ const {
       <iframe
         src={url}
         title={title}
-        class="absolute inset-0 block size-full border-0"
+        class="absolute left-0 top-0 block border-0"
+        style={`width: ${iframeSize}; height: ${iframeSize}; transform: scale(${iframeScale}); transform-origin: top left;`}
       ></iframe>
     </div>
   </BrowserWindow>

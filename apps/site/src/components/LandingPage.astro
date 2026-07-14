@@ -35,9 +35,9 @@ const buttonBase =
     <link rel="alternate" hreflang="x-default" href="/" />
     <title>{t.title}</title>
   </head>
-  <body class="bg-paper text-ink m-0 font-sans antialiased">
+  <body class="m-0 bg-paper font-sans text-ink antialiased">
     <header
-      class="bg-paper/90 sticky top-0 z-50 grid h-[76px] grid-cols-[1fr_auto_1fr] items-center border-b border-black/10 px-[clamp(24px,6vw,96px)] backdrop-blur-2xl max-md:h-[66px] max-md:grid-cols-[1fr_auto] max-md:px-5"
+      class="sticky top-0 z-50 grid h-[76px] grid-cols-[1fr_auto_1fr] items-center border-b border-black/10 bg-paper/90 px-[clamp(24px,6vw,96px)] backdrop-blur-2xl max-md:h-[66px] max-md:grid-cols-[1fr_auto] max-md:px-5"
     >
       <a
         class="inline-flex w-max items-center gap-3 font-bold tracking-[-.03em]"
@@ -45,7 +45,7 @@ const buttonBase =
         aria-label={t.homeLabel}
       >
         <span
-          class="bg-brand relative grid size-7 rotate-[8deg] place-items-center rounded-lg"
+          class="relative grid size-7 rotate-[8deg] place-items-center rounded-lg bg-brand"
           aria-hidden="true"
         >
           <span
@@ -64,22 +64,22 @@ const buttonBase =
         class="flex gap-10 text-[13px] text-[#66625d] max-md:hidden"
         aria-label={t.navLabel}
       >
-        <a class="hover:text-brand transition-colors" href="#features"
+        <a class="transition-colors hover:text-brand" href="#features"
           >{t.nav.features}</a
-        ><a class="hover:text-brand transition-colors" href="#demo"
+        ><a class="transition-colors hover:text-brand" href="#demo"
           >{t.nav.demo}</a
-        ><a class="hover:text-brand transition-colors" href="#opensource"
+        ><a class="transition-colors hover:text-brand" href="#opensource"
           >{t.nav.openSource}</a
         >
       </nav>
       <div class="flex items-center gap-4 justify-self-end max-sm:gap-2.5">
         <a
-          class="hover:text-brand text-[13px] font-medium text-[#66625d] transition-colors"
+          class="text-[13px] font-medium text-[#66625d] transition-colors hover:text-brand"
           href={languageUrl}
           hreflang={isEnglish ? "zh-CN" : "en"}>{languageLabel}</a
         >
         <a
-          class="bg-brand inline-flex gap-2 rounded-full px-5 py-3 text-[13px] font-semibold text-white transition hover:-translate-y-0.5 max-sm:px-3.5"
+          class="inline-flex gap-2 rounded-full bg-brand px-5 py-3 text-[13px] font-semibold text-white transition hover:-translate-y-0.5 max-sm:px-3.5"
           href={placeholderUrl}
           >{t.nav.download} <span class="max-sm:hidden">↓</span></a
         >
@@ -99,22 +99,22 @@ const buttonBase =
         </div>
         <div class="relative z-[2] mx-auto max-w-[930px]">
           <div
-            class="text-caption inline-flex items-center gap-2 rounded-full border border-[#ddd9d2] bg-white/70 px-3.5 py-2 font-mono text-[11px] uppercase tracking-[.12em] shadow-[0_6px_22px_rgba(20,20,20,.04)]"
+            class="inline-flex items-center gap-2 rounded-full border border-[#ddd9d2] bg-white/70 px-3.5 py-2 font-mono text-[11px] uppercase tracking-[.12em] text-caption shadow-[0_6px_22px_rgba(20,20,20,.04)]"
           >
             <span
-              class="bg-brand size-1.5 rounded-full shadow-[0_0_0_4px_#ffebe4]"
+              class="size-1.5 rounded-full bg-brand shadow-[0_0_0_4px_#ffebe4]"
             ></span>
             {t.hero.badge}
           </div>
           <h1
             class="my-7 text-[clamp(50px,6.2vw,94px)] font-normal leading-[.98] tracking-[-.065em]"
           >
-            {t.hero.line1}<br /><em class="text-brand not-italic"
+            {t.hero.line1}<br /><em class="not-italic text-brand"
               >{t.hero.line2}</em
             >
           </h1>
           <p
-            class="text-muted mx-auto max-w-[650px] text-[clamp(15px,1.25vw,18px)] leading-[1.75]"
+            class="mx-auto max-w-[650px] text-[clamp(15px,1.25vw,18px)] leading-[1.75] text-muted"
           >
             {t.hero.description}
           </p>
@@ -149,7 +149,7 @@ const buttonBase =
           id="demo"
         >
           <div
-            class="bg-ink absolute -top-[15px] left-1/2 z-[4] -translate-x-1/2 whitespace-nowrap rounded-full px-[13px] py-2 font-mono text-[9px] tracking-[.12em] text-white"
+            class="absolute -top-[15px] left-1/2 z-[4] -translate-x-1/2 whitespace-nowrap rounded-full bg-ink px-[13px] py-2 font-mono text-[9px] tracking-[.12em] text-white"
           >
             LIVE DEMO
           </div>
@@ -157,6 +157,7 @@ const buttonBase =
             url="/app/index.html"
             title={t.demo.iframeTitle}
             tabTitle={t.demo.tabTitle}
+            scale={0.8}
           />
         </div>
       </section>
@@ -177,18 +178,18 @@ const buttonBase =
             >
           </h2>
           <div>
-            <p class="text-muted text-[15px] leading-[1.8]">
+            <p class="text-[15px] leading-[1.8] text-muted">
               {t.features.description}
             </p><a
-              class="border-ink mt-[18px] inline-flex gap-10 border-b pb-1.5 text-[13px] font-semibold"
+              class="mt-[18px] inline-flex gap-10 border-b border-ink pb-1.5 text-[13px] font-semibold"
               href="#download">{t.features.link} <span>→</span></a
             >
           </div>
         </div>
 
-        <div class="border-line grid grid-cols-3 border-y max-md:grid-cols-1">
+        <div class="grid grid-cols-3 border-y border-line max-md:grid-cols-1">
           <article
-            class="border-line relative border-r px-9 pb-[42px] pt-[38px] max-md:border-b max-md:border-r-0"
+            class="relative border-r border-line px-9 pb-[42px] pt-[38px] max-md:border-b max-md:border-r-0"
           >
             <span
               class="absolute right-6 top-[22px] font-mono text-[10px] text-[#aaa59f]"
@@ -198,17 +199,17 @@ const buttonBase =
               aria-hidden="true"
             >
               <span
-                class="border-brand col-start-1 row-start-1 size-[22px] rotate-45 rounded-[5px] border-2"
+                class="col-start-1 row-start-1 size-[22px] rotate-45 rounded-[5px] border-2 border-brand"
               ></span><i
-                class="bg-ink col-start-1 row-start-1 size-2 rounded-full"></i>
+                class="col-start-1 row-start-1 size-2 rounded-full bg-ink"></i>
             </div><h3 class="mb-3 text-[19px] font-semibold tracking-[-.03em]">
               {t.features.items[0][0]}
-            </h3><p class="text-muted max-w-[280px] text-[13px] leading-[1.75]">
+            </h3><p class="max-w-[280px] text-[13px] leading-[1.75] text-muted">
               {t.features.items[0][1]}
             </p>
           </article>
           <article
-            class="border-line relative border-r px-9 pb-[42px] pt-[38px] max-md:border-b max-md:border-r-0"
+            class="relative border-r border-line px-9 pb-[42px] pt-[38px] max-md:border-b max-md:border-r-0"
           >
             <span
               class="absolute right-6 top-[22px] font-mono text-[10px] text-[#aaa59f]"
@@ -218,13 +219,13 @@ const buttonBase =
               aria-hidden="true"
             >
               <span
-                class="border-ink col-start-1 row-start-1 size-[22px] rounded-full border-2"
+                class="col-start-1 row-start-1 size-[22px] rounded-full border-2 border-ink"
               ></span><i
-                class="bg-brand col-start-1 row-start-1 size-3 rounded-full"
+                class="col-start-1 row-start-1 size-3 rounded-full bg-brand"
               ></i>
             </div><h3 class="mb-3 text-[19px] font-semibold tracking-[-.03em]">
               {t.features.items[1][0]}
-            </h3><p class="text-muted max-w-[280px] text-[13px] leading-[1.75]">
+            </h3><p class="max-w-[280px] text-[13px] leading-[1.75] text-muted">
               {t.features.items[1][1]}
             </p>
           </article>
@@ -237,13 +238,13 @@ const buttonBase =
               aria-hidden="true"
             >
               <span class="flex h-5 w-6 flex-col justify-between">
-                <i class="bg-brand h-0.5 w-full"></i>
-                <i class="bg-ink h-0.5 w-full"></i>
+                <i class="h-0.5 w-full bg-brand"></i>
+                <i class="h-0.5 w-full bg-ink"></i>
                 <i class="h-0.5 w-full bg-[#aaa59f]"></i>
               </span>
             </div><h3 class="mb-3 text-[19px] font-semibold tracking-[-.03em]">
               {t.features.items[2][0]}
-            </h3><p class="text-muted max-w-[280px] text-[13px] leading-[1.75]">
+            </h3><p class="max-w-[280px] text-[13px] leading-[1.75] text-muted">
               {t.features.items[2][1]}
             </p>
           </article>
@@ -251,7 +252,7 @@ const buttonBase =
       </section>
 
       <section
-        class="bg-ink grid min-h-[670px] scroll-mt-[76px] grid-cols-2 text-white max-md:scroll-mt-[66px] max-md:grid-cols-1"
+        class="grid min-h-[670px] scroll-mt-[76px] grid-cols-2 bg-ink text-white max-md:scroll-mt-[66px] max-md:grid-cols-1"
         id="opensource"
       >
         <div
@@ -259,12 +260,12 @@ const buttonBase =
           aria-hidden="true"
         >
           <span
-            class="text-brand absolute left-[19%] top-[8%] font-serif text-[380px] font-light leading-none max-sm:left-[10%] max-sm:text-[260px]"
+            class="absolute left-[19%] top-[8%] font-serif text-[380px] font-light leading-none text-brand max-sm:left-[10%] max-sm:text-[260px]"
             >{`{`}</span
           ><span
-            class="bg-brand absolute left-1/2 top-1/2 size-[115px] -translate-x-1/2 -translate-y-1/2 rounded-full shadow-[0_0_0_18px_rgba(255,79,36,.12)]"
+            class="absolute left-1/2 top-1/2 size-[115px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand shadow-[0_0_0_18px_rgba(255,79,36,.12)]"
           ></span><span
-            class="text-brand absolute right-[19%] top-[31%] font-serif text-[380px] font-light leading-none max-sm:right-[10%] max-sm:text-[260px]"
+            class="absolute right-[19%] top-[31%] font-serif text-[380px] font-light leading-none text-brand max-sm:right-[10%] max-sm:text-[260px]"
             >{`}`}</span
           >
         </div>
@@ -285,7 +286,7 @@ const buttonBase =
             {t.source.description}
           </p>
           <a
-            class:list={[buttonBase, "text-ink self-start bg-white"]}
+            class:list={[buttonBase, "self-start bg-white text-ink"]}
             href={placeholderUrl}>{t.source.link} <span>↗</span></a
           >
         </div>
@@ -299,23 +300,23 @@ const buttonBase =
         id="download"
       >
         <div
-          class="text-caption inline-flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[.12em]"
+          class="inline-flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[.12em] text-caption"
         >
           GET STARTED / 03
         </div>
         <h2
           class="mb-0 mt-[30px] text-[clamp(48px,6vw,82px)] font-normal leading-[1.02] tracking-[-.06em] max-sm:text-[46px]"
         >
-          {t.download.title1}<br /><em class="text-brand not-italic"
+          {t.download.title1}<br /><em class="not-italic text-brand"
             >{t.download.title2}</em
           >
         </h2>
-        <p class="text-muted mb-[34px] mt-6 text-[15px]">
+        <p class="mb-[34px] mt-6 text-[15px] text-muted">
           {t.download.description}
         </p>
         <div class="flex justify-center gap-3.5 max-sm:flex-col">
           <a
-            class="hover:border-brand grid min-w-[250px] grid-cols-[38px_1fr_auto] items-center gap-3.5 rounded-[14px] border border-[#ccc8c1] bg-white/80 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(30,20,15,.08)] max-sm:mx-auto max-sm:w-full max-sm:min-w-0 max-sm:max-w-[360px]"
+            class="grid min-w-[250px] grid-cols-[38px_1fr_auto] items-center gap-3.5 rounded-[14px] border border-[#ccc8c1] bg-white/80 p-4 text-left transition hover:-translate-y-0.5 hover:border-brand hover:shadow-[0_14px_30px_rgba(30,20,15,.08)] max-sm:mx-auto max-sm:w-full max-sm:min-w-0 max-sm:max-w-[360px]"
             href={placeholderUrl}
             ><span
               class="size-9 rounded-full bg-[conic-gradient(#e94235_0_33%,#fabb05_0_66%,#34a853_0)] shadow-[inset_0_0_0_9px_#4285f4]"
@@ -326,7 +327,7 @@ const buttonBase =
             ><b class="font-normal text-[#999]">↗</b></a
           >
           <a
-            class="hover:border-brand grid min-w-[250px] grid-cols-[38px_1fr_auto] items-center gap-3.5 rounded-[14px] border border-[#ccc8c1] bg-white/80 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(30,20,15,.08)] max-sm:mx-auto max-sm:w-full max-sm:min-w-0 max-sm:max-w-[360px]"
+            class="grid min-w-[250px] grid-cols-[38px_1fr_auto] items-center gap-3.5 rounded-[14px] border border-[#ccc8c1] bg-white/80 p-4 text-left transition hover:-translate-y-0.5 hover:border-brand hover:shadow-[0_14px_30px_rgba(30,20,15,.08)] max-sm:mx-auto max-sm:w-full max-sm:min-w-0 max-sm:max-w-[360px]"
             href={placeholderUrl}
             ><span
               class="grid size-9 place-items-center rounded-full bg-gradient-to-br from-[#0aa5f5] to-[#0dcc93] font-serif text-2xl font-bold text-white"
@@ -342,13 +343,13 @@ const buttonBase =
     </main>
 
     <footer
-      class="border-line grid min-h-40 grid-cols-[1fr_auto_1fr] items-center gap-[30px] border-t bg-[#f1efe9] px-[clamp(24px,6vw,96px)] py-[42px] text-xs max-md:grid-cols-[1fr_auto] max-sm:flex max-sm:flex-wrap max-sm:justify-between"
+      class="grid min-h-40 grid-cols-[1fr_auto_1fr] items-center gap-[30px] border-t border-line bg-[#f1efe9] px-[clamp(24px,6vw,96px)] py-[42px] text-xs max-md:grid-cols-[1fr_auto] max-sm:flex max-sm:flex-wrap max-sm:justify-between"
     >
       <a
         class="inline-flex w-max items-center gap-3 font-bold tracking-[-.03em]"
         href="#top"
         ><span
-          class="bg-brand grid size-7 place-items-center rounded-lg text-xs text-white"
+          class="grid size-7 place-items-center rounded-lg bg-brand text-xs text-white"
           aria-hidden="true">B</span
         ><span>BrowserTab</span></a
       >
@@ -365,7 +366,7 @@ const buttonBase =
         >
       </div>
       <small
-        class="border-line col-span-full w-full border-t pt-5 text-[#aaa59e]"
+        class="col-span-full w-full border-t border-line pt-5 text-[#aaa59e]"
         >© 2026 BrowserTab · Open source with care.</small
       >
     </footer>
