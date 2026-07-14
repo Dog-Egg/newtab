@@ -195,7 +195,10 @@ export function Launcher() {
             gridTemplateColumns: `repeat(auto-fill, ${Math.round(88 * nodeScale)}px)`,
           }}
         >
-          <div className="col-span-full justify-self-start">
+          <div
+            className="col-span-full justify-self-start"
+            style={{ paddingLeft: `${8 * nodeScale}px` }}
+          >
             <CategoryTabs
               categories={loadedCategories}
               activeCategoryId={activeCategoryId}

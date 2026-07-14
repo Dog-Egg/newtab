@@ -7,7 +7,7 @@ import {
 import { PointerActivationConstraints } from "@dnd-kit/dom";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 import clsx from "clsx";
-import { Check, Pencil, Plus, Settings2, X } from "lucide-react";
+import { Check, House, Pencil, Plus, Settings2, X } from "lucide-react";
 import { DEFAULT_CATEGORY, type ShortcutCategory } from "./launcher";
 
 const CATEGORY_SORTABLE_GROUP = "categories";
@@ -89,11 +89,14 @@ function SortableCategory({
       ) : (
         <button
           type="button"
-          className="h-full rounded-lg px-2.5 text-xs font-semibold outline-none focus-visible:ring-2 focus-visible:ring-white/80 disabled:cursor-grab"
+          className="flex h-full items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold outline-none focus-visible:ring-2 focus-visible:ring-white/80 disabled:cursor-grab"
           aria-current={showActive ? "page" : undefined}
           disabled={isManaging}
           onClick={onSelect}
         >
+          {category.id === DEFAULT_CATEGORY.id ? (
+            <House className="size-3.5" strokeWidth={2.2} aria-hidden="true" />
+          ) : null}
           {category.name}
         </button>
       )}
@@ -285,7 +288,11 @@ export function CategoryTabs({
           aria-label={isManaging ? "退出分类管理" : "管理分类"}
           title={isManaging ? "完成管理" : "管理分类"}
         >
-          <Settings2 className="size-3.5" strokeWidth={2.1} />
+          {isManaging ? (
+            <X className="size-3.5" strokeWidth={2.2} />
+          ) : (
+            <Settings2 className="size-3.5" strokeWidth={2.1} />
+          )}
         </button>
       </nav>
     </DragDropProvider>
