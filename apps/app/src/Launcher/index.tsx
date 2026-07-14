@@ -9,7 +9,6 @@ import {
 } from "./launcher";
 import { Dialog, DialogTitle } from "../components/Dialog";
 import { ShortcutPage } from "./ShortcutPage";
-import { useLauncherSettings } from "./launcherSettings";
 import { Slider } from "./Slider";
 
 function DeleteCategoryDialog({
@@ -72,7 +71,6 @@ function DeleteCategoryDialog({
 }
 
 export function Launcher() {
-  const { nodeScale } = useLauncherSettings();
   const [categories, setCategories] = useState<ShortcutCategory[] | null>(null);
   const [activeCategoryId, setActiveCategoryId] = useState(DEFAULT_CATEGORY.id);
   const [pendingDeleteCategory, setPendingDeleteCategory] =
@@ -187,76 +185,64 @@ export function Launcher() {
   }
 
   return (
-    <>
-      <section className="relative z-10 mx-auto flex w-full max-w-6xl flex-col overflow-hidden px-6 pt-12 sm:px-10 sm:pt-14">
-        <div
-          className="grid justify-center gap-x-3 sm:gap-x-4"
-          style={{
-            gridTemplateColumns: `repeat(auto-fill, ${Math.round(88 * nodeScale)}px)`,
-          }}
-        >
-          <div
-            className="col-span-full justify-self-start"
-            style={{ paddingLeft: `${8 * nodeScale}px` }}
-          >
-            <CategoryTabs
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto [-webkit-mask-image:linear-gradient(to_bottom,transparent_0,black_2rem,black_calc(100%_-_3rem),transparent_100%)] [mask-image:linear-gradient(to_bottom,transparent_0,black_2rem,black_calc(100%_-_3rem),transparent_100%)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <Slider
+          items={loadedCategories}
+          activeId={activeCategoryId}
+          onSelect={selectCategory}
+          renderItem={(category) => (
+            <ShortcutPage
+              categoryId={category.id}
+              shortcuts={category.shortcuts}
               categories={loadedCategories}
-              activeCategoryId={activeCategoryId}
-              onSelect={selectCategory}
-              onAdd={(category) => {
-                saveCategories([...loadedCategories, category]);
-                selectCategory(category.id);
-              }}
-              onRename={(categoryId, name) =>
-                saveCategories(
-                  loadedCategories.map((category) =>
-                    category.id === categoryId
-                      ? { ...category, name }
-                      : category,
-                  ),
+              onChange={(shortcuts) =>
+                updateCategoryShortcuts(category.id, shortcuts)
+              }
+              onMove={(sourceShortcuts, shortcut, targetCategoryId) =>
+                moveShortcut(
+                  category.id,
+                  sourceShortcuts,
+                  shortcut,
+                  targetCategoryId,
                 )
               }
-              onDelete={(categoryId) => {
-                const category = loadedCategories.find(
-                  (candidate) => candidate.id === categoryId,
-                );
-                if (!category) return;
-                const hasShortcuts = category.shortcuts.length > 0;
-                if (hasShortcuts) {
-                  setPendingDeleteCategory(category);
-                } else {
-                  deleteCategory(categoryId, false);
-                }
-              }}
-              onReorder={(nextCategories) => saveCategories(nextCategories)}
             />
-          </div>
-        </div>
-      </section>
+          )}
+        />
+      </div>
 
-      <Slider
-        items={loadedCategories}
-        activeId={activeCategoryId}
-        onSelect={selectCategory}
-        renderItem={(category) => (
-          <ShortcutPage
-            categoryId={category.id}
-            shortcuts={category.shortcuts}
-            categories={loadedCategories}
-            onChange={(shortcuts) =>
-              updateCategoryShortcuts(category.id, shortcuts)
+      <div className="z-20 flex shrink-0 justify-center px-4 pb-10 pt-3 sm:pb-24">
+        <CategoryTabs
+          categories={loadedCategories}
+          activeCategoryId={activeCategoryId}
+          onSelect={selectCategory}
+          onAdd={(category) => {
+            saveCategories([...loadedCategories, category]);
+            selectCategory(category.id);
+          }}
+          onRename={(categoryId, name) =>
+            saveCategories(
+              loadedCategories.map((category) =>
+                category.id === categoryId ? { ...category, name } : category,
+              ),
+            )
+          }
+          onDelete={(categoryId) => {
+            const category = loadedCategories.find(
+              (candidate) => candidate.id === categoryId,
+            );
+            if (!category) return;
+            const hasShortcuts = category.shortcuts.length > 0;
+            if (hasShortcuts) {
+              setPendingDeleteCategory(category);
+            } else {
+              deleteCategory(categoryId, false);
             }
-            onMove={(sourceShortcuts, shortcut, targetCategoryId) =>
-              moveShortcut(
-                category.id,
-                sourceShortcuts,
-                shortcut,
-                targetCategoryId,
-              )
-            }
-          />
-        )}
-      />
+          }}
+          onReorder={saveCategories}
+        />
+      </div>
 
       {pendingDeleteCategory ? (
         <DeleteCategoryDialog
@@ -271,6 +257,6 @@ export function Launcher() {
           onMoveToDefault={() => deleteCategory(pendingDeleteCategory.id, true)}
         />
       ) : null}
-    </>
+    </div>
   );
 }

@@ -99,8 +99,8 @@ export function App() {
         </button>
 
         <LauncherSettingsProvider settings={launcherSettings}>
-          <div className="flex flex-col pt-16 sm:pt-48">
-            <div className="relative z-20 px-6 sm:px-10">
+          <div className="flex h-screen min-h-0 flex-col pt-16 sm:pt-48">
+            <div className="relative z-20 shrink-0 px-6 sm:px-10">
               <SearchEngineBox />
             </div>
             <Launcher />

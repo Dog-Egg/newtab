@@ -60,17 +60,17 @@ function SortableCategory({
         handleRef(isEditing ? null : node);
       }}
       className={clsx(
-        "group/category flex h-7 shrink-0 cursor-grab touch-none select-none items-center rounded-lg border backdrop-blur-xl transition duration-200 active:cursor-grabbing",
+        "group/category flex h-9 shrink-0 cursor-grab touch-none select-none items-center rounded-xl transition duration-200 active:cursor-grabbing",
         showActive
-          ? "border-white/65 bg-white/80 text-slate-700"
-          : "border-white/25 bg-white/15 text-white/85 hover:border-white/40 hover:bg-white/25 hover:text-white",
+          ? "bg-white/85 text-slate-700 shadow-sm"
+          : "text-white/85 hover:bg-white/10 hover:text-white",
         isDragging && "opacity-40",
       )}
     >
       {isEditing ? (
         <input
           autoFocus
-          className="placeholder:text-current/50 mx-2 min-w-8 max-w-28 bg-transparent text-xs font-semibold text-inherit outline-none"
+          className="placeholder:text-current/50 mx-3 min-w-8 max-w-28 bg-transparent text-xs font-semibold text-inherit outline-none"
           style={{ width: `${draftName.length + 2}ch` }}
           value={draftName}
           maxLength={12}
@@ -89,7 +89,7 @@ function SortableCategory({
       ) : (
         <button
           type="button"
-          className="flex h-full items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold outline-none focus-visible:ring-2 focus-visible:ring-white/80 disabled:cursor-grab"
+          className="flex h-full items-center gap-1.5 rounded-xl px-3 text-xs font-semibold outline-none focus-visible:ring-2 focus-visible:ring-white/80 disabled:cursor-grab"
           aria-current={showActive ? "page" : undefined}
           disabled={isManaging}
           onClick={onSelect}
@@ -103,7 +103,7 @@ function SortableCategory({
       {isManaging && !isEditing ? (
         <div
           className={clsx(
-            "mr-1 flex shrink-0 items-center gap-0.5",
+            "flex max-w-0 shrink-0 items-center gap-0.5 overflow-hidden opacity-0 transition-[max-width,opacity] duration-200 ease-out group-hover/category:max-w-12 group-hover/category:opacity-100 group-focus-within/category:max-w-12 group-focus-within/category:opacity-100",
             showActive ? "text-slate-500" : "text-white/70",
           )}
         >
@@ -130,6 +130,7 @@ function SortableCategory({
               <X className="size-3" strokeWidth={2.2} />
             </button>
           ) : null}
+          <span className="w-0.5 shrink-0" aria-hidden="true" />
         </div>
       ) : null}
     </div>
@@ -212,7 +213,7 @@ export function CategoryTabs({
       onDragEnd={handleDragEnd}
     >
       <nav
-        className="flex max-w-[calc(100vw-3rem)] items-center gap-1 overflow-x-auto p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex max-w-[calc(100vw-2rem)] items-center gap-1 overflow-x-auto rounded-[20px] border border-white/25 bg-slate-900/30 p-1.5 shadow-[0_16px_50px_rgba(15,23,42,0.28)] backdrop-blur-2xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         aria-label="快捷方式分类"
       >
         {categories.map((category, index) => (
@@ -230,7 +231,7 @@ export function CategoryTabs({
 
         {isManaging && isAdding ? (
           <form
-            className="flex h-7 shrink-0 items-center rounded-lg border border-white/60 bg-white/80 pl-2 pr-0.5 backdrop-blur-xl"
+            className="flex h-9 shrink-0 items-center rounded-xl bg-white/85 pl-3 pr-1"
             onSubmit={addCategory}
           >
             <input
@@ -265,7 +266,7 @@ export function CategoryTabs({
         ) : isManaging ? (
           <button
             type="button"
-            className="grid size-7 shrink-0 place-items-center rounded-lg border border-white/25 bg-white/15 text-white/85 outline-none backdrop-blur-xl transition hover:border-white/40 hover:bg-white/25 hover:text-white focus-visible:ring-2 focus-visible:ring-white/80"
+            className="grid size-9 shrink-0 place-items-center rounded-xl text-white/85 outline-none transition hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white/80"
             onClick={startAdding}
             aria-label="新建分类"
             title="新建分类"
@@ -273,13 +274,17 @@ export function CategoryTabs({
             <Plus className="size-3.5" strokeWidth={2.2} />
           </button>
         ) : null}
+        <span
+          className="mx-0.5 h-5 w-px shrink-0 bg-gradient-to-b from-transparent via-white/20 to-transparent"
+          aria-hidden="true"
+        />
         <button
           type="button"
           className={clsx(
-            "grid size-7 shrink-0 place-items-center rounded-lg outline-none transition focus-visible:ring-2 focus-visible:ring-white/80",
+            "grid size-9 shrink-0 place-items-center rounded-full outline-none transition-all duration-200 hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-white/80",
             isManaging
-              ? "text-white"
-              : "text-white/70 hover:bg-white/10 hover:text-white",
+              ? "bg-white/[0.08] text-white"
+              : "text-white/70 hover:text-white",
           )}
           onClick={() => {
             setIsManaging((current) => !current);

@@ -951,7 +951,7 @@ function AddShortcutButton({ onClick }: { onClick: () => void }) {
       type="button"
       aria-label="添加快捷方式"
       onClick={onClick}
-      className="flex w-full flex-col items-center rounded-[30px] px-1 py-2 text-center text-white outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
+      className="group flex w-full flex-col items-center rounded-[30px] text-center text-white outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
       style={{ width: 88 * nodeScale, gap: 8 * nodeScale }}
     >
       <span
@@ -1209,9 +1209,9 @@ export function ShortcutPage({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <section className="relative z-10 mx-auto flex w-full max-w-6xl flex-col px-6 pb-8 pt-3 sm:px-10 sm:pb-8">
+        <section className="relative z-10 mx-auto flex min-h-full w-full max-w-6xl flex-col px-6 pb-8 pt-12 sm:px-10 sm:pt-14">
           {shortcuts.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center gap-5">
+            <div className="flex flex-1 flex-col items-center gap-5">
               <AddShortcutButton onClick={() => setIsAddingItem(true)} />
               {categories.every(
                 (category) => category.shortcuts.length === 0,

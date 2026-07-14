@@ -58,8 +58,8 @@ export function Slider<T extends { id: string }>({
   }, [activeIndex, emblaApi]);
 
   return (
-    <div ref={viewportRef}>
-      <div className="flex touch-pan-y">
+    <div ref={viewportRef} className="h-full">
+      <div className="flex min-h-full touch-pan-y">
         {items.map((item) => (
           <div key={item.id} className="min-w-0 flex-[0_0_100%]">
             {renderItem(item)}
