@@ -73,13 +73,11 @@ function DeleteCategoryDialog({
 
 export function Launcher() {
   const { nodeScale } = useLauncherSettings();
-  const [categories, setCategories] = useState<ShortcutCategory[]>([
-    DEFAULT_CATEGORY,
-  ]);
+  const [categories, setCategories] = useState<ShortcutCategory[] | null>(null);
   const [activeCategoryId, setActiveCategoryId] = useState(DEFAULT_CATEGORY.id);
   const [pendingDeleteCategory, setPendingDeleteCategory] =
     useState<ShortcutCategory | null>(null);
-  const categoriesRef = useRef(categories);
+  const categoriesRef = useRef<ShortcutCategory[]>([DEFAULT_CATEGORY]);
 
   useEffect(() => {
     let isCurrent = true;
@@ -119,6 +117,9 @@ export function Launcher() {
     };
   }, []);
 
+  if (!categories) return null;
+  const loadedCategories = categories;
+
   function saveCategories(nextCategories: ShortcutCategory[]) {
     categoriesRef.current = nextCategories;
     setCategories(nextCategories);
@@ -136,7 +137,7 @@ export function Launcher() {
     shortcuts: ShortcutNode[],
   ) {
     saveCategories(
-      categories.map((category) =>
+      loadedCategories.map((category) =>
         category.id === categoryId ? { ...category, shortcuts } : category,
       ),
     );
@@ -149,7 +150,7 @@ export function Launcher() {
     targetCategoryId: string,
   ) {
     saveCategories(
-      categories.map((category) => {
+      loadedCategories.map((category) => {
         if (category.id === sourceCategoryId) {
           return { ...category, shortcuts: sourceShortcuts };
         }
@@ -162,10 +163,10 @@ export function Launcher() {
   }
 
   function deleteCategory(categoryId: string, moveToDefault: boolean) {
-    const deletedCategory = categories.find(
+    const deletedCategory = loadedCategories.find(
       (category) => category.id === categoryId,
     );
-    const nextCategories = categories
+    const nextCategories = loadedCategories
       .filter((category) => category.id !== categoryId)
       .map((category) =>
         moveToDefault && category.id === DEFAULT_CATEGORY.id
@@ -196,16 +197,16 @@ export function Launcher() {
         >
           <div className="col-span-full justify-self-start">
             <CategoryTabs
-              categories={categories}
+              categories={loadedCategories}
               activeCategoryId={activeCategoryId}
               onSelect={selectCategory}
               onAdd={(category) => {
-                saveCategories([...categories, category]);
+                saveCategories([...loadedCategories, category]);
                 selectCategory(category.id);
               }}
               onRename={(categoryId, name) =>
                 saveCategories(
-                  categories.map((category) =>
+                  loadedCategories.map((category) =>
                     category.id === categoryId
                       ? { ...category, name }
                       : category,
@@ -213,7 +214,7 @@ export function Launcher() {
                 )
               }
               onDelete={(categoryId) => {
-                const category = categories.find(
+                const category = loadedCategories.find(
                   (candidate) => candidate.id === categoryId,
                 );
                 if (!category) return;
@@ -231,14 +232,14 @@ export function Launcher() {
       </section>
 
       <Slider
-        items={categories}
+        items={loadedCategories}
         activeId={activeCategoryId}
         onSelect={selectCategory}
         renderItem={(category) => (
           <ShortcutPage
             categoryId={category.id}
             shortcuts={category.shortcuts}
-            categories={categories}
+            categories={loadedCategories}
             onChange={(shortcuts) =>
               updateCategoryShortcuts(category.id, shortcuts)
             }
