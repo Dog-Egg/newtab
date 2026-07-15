@@ -60,7 +60,7 @@ function RangeLabels({
     "absolute rounded px-1 outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none";
 
   return (
-    <div className="relative mt-0.5 h-5 text-xs font-medium text-glass-muted">
+    <div className="relative mt-0.5 h-5 text-xs font-medium text-white/[0.85]">
       <button
         className={`${labelButtonClass} left-0`}
         type="button"
@@ -330,7 +330,7 @@ function WallpaperSettingsSection({
             }}
           />
           <button
-            className="h-9 shrink-0 rounded-lg bg-glass-selected px-3 text-sm font-semibold text-glass-selected-content outline-none transition hover:bg-glass-strong/90 focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
+            className="h-9 shrink-0 rounded-lg bg-glass-selected px-3 text-sm font-semibold text-glass-selected-content outline-none transition hover:bg-glass-strong/90 focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-75 motion-reduce:transition-none"
             type="submit"
             disabled={
               isApplyingCustomImage || customImageUrl.trim().length === 0
@@ -351,7 +351,7 @@ function WallpaperSettingsSection({
           {selectedWallpaperUrl ?? "当前使用默认壁纸"}
         </p>
         <button
-          className="h-8 shrink-0 rounded-lg px-2 text-sm font-medium text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none"
+          className="h-8 shrink-0 rounded-lg px-2 text-sm font-medium text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-[0.85] motion-reduce:transition-none"
           type="button"
           onClick={onClearWallpaper}
           disabled={!selectedWallpaperUrl}
@@ -395,7 +395,7 @@ export function SettingsPanel({
     >
       <aside
         data-settings-drawer=""
-        className={`glass-panel absolute inset-y-0 right-0 flex w-[min(100vw,26rem)] flex-col overflow-hidden rounded-none transition-transform duration-300 ease-out motion-reduce:transition-none ${
+        className={`glass-panel settings-panel absolute inset-y-0 right-0 flex w-[min(100vw,26rem)] flex-col overflow-hidden rounded-none transition-transform duration-300 ease-out motion-reduce:transition-none ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
         role="dialog"

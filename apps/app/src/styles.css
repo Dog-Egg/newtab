@@ -7,6 +7,10 @@
     @apply rounded-glass border border-glass-border bg-glass-surface text-glass-content shadow-glass backdrop-blur-2xl;
   }
 
+  .settings-panel {
+    background-color: rgba(15, 23, 42, 0.68);
+  }
+
   .settings-range {
     @apply h-5 w-full cursor-pointer appearance-none bg-transparent outline-none;
   }
