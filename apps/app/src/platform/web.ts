@@ -15,8 +15,12 @@ import {
   SETTINGS_STORAGE_KEY,
   type Settings,
 } from "../Settings/settings";
+import { getLocaleFromLanguage } from "../i18n/locale";
 
 let defaultShortcutOrder = 0;
+const defaultLocale = getLocaleFromLanguage(
+  new URLSearchParams(window.location.search).get("lang") ?? "en",
+);
 
 function defaultShortcut(title: string, url: string) {
   return {
@@ -193,7 +197,10 @@ function readStoredActiveCategoryId() {
 }
 
 function readStoredSettings() {
-  return normalizeSettings(readJsonStorageValue(SETTINGS_STORAGE_KEY));
+  return normalizeSettings(
+    readJsonStorageValue(SETTINGS_STORAGE_KEY),
+    defaultLocale,
+  );
 }
 
 function saveStoredSettings(settings: Settings) {
@@ -201,7 +208,7 @@ function saveStoredSettings(settings: Settings) {
 }
 
 export const platform: Platform = {
-  defaultLocale: "en",
+  defaultLocale,
   launcher: {
     read: async () => readStoredLauncher(),
     save: async (categories) => saveStoredLauncher(categories),

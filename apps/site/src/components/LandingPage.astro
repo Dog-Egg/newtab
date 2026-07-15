@@ -12,6 +12,7 @@ const t = translations[locale];
 const isEnglish = locale === "en";
 const languageUrl = isEnglish ? "/zh/" : "/";
 const languageLabel = isEnglish ? "中文" : "English";
+const appUrl = `/app/index.html?lang=${isEnglish ? "en" : "zh-CN"}`;
 
 const placeholderUrl = "https://example.com";
 const gridPaper =
@@ -154,7 +155,7 @@ const buttonBase =
             LIVE DEMO
           </div>
           <IframeWindow
-            url="/app/index.html"
+            url={appUrl}
             title={t.demo.iframeTitle}
             tabTitle={t.demo.tabTitle}
             scale={0.8}
