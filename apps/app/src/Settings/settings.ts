@@ -1,7 +1,7 @@
 import { normalizeStoredWallpaperUrl } from "./wallpaper";
 
-const DEFAULT_LAUNCHER_NODE_SCALE = 1;
-const DEFAULT_WALLPAPER_OVERLAY_OPACITY = 0.35;
+export const DEFAULT_LAUNCHER_NODE_SCALE = 1;
+export const DEFAULT_WALLPAPER_OVERLAY_OPACITY = 0.35;
 export const MIN_LAUNCHER_NODE_SCALE = 0.75;
 export const MAX_LAUNCHER_NODE_SCALE = 1.5;
 export const LAUNCHER_NODE_SCALE_STEP = 0.01;

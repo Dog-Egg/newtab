@@ -9,6 +9,8 @@ import { X } from "lucide-react";
 import { importBrowserBookmarksWithToast } from "../browserBookmarks";
 import { normalizeImageUrl } from "./wallpaper";
 import {
+  DEFAULT_LAUNCHER_NODE_SCALE,
+  DEFAULT_WALLPAPER_OVERLAY_OPACITY,
   LAUNCHER_NODE_SCALE_STEP,
   MAX_WALLPAPER_OVERLAY_OPACITY,
   MAX_LAUNCHER_NODE_SCALE,
@@ -18,6 +20,75 @@ import {
   type Settings,
 } from "./settings";
 import { useSettings } from "./SettingsProvider";
+
+function getRangePosition(value: number, min: number, max: number) {
+  return `${((value - min) / (max - min)) * 100}%`;
+}
+
+function adjustRangeValue(
+  value: number,
+  direction: -1 | 1,
+  step: number,
+  min: number,
+  max: number,
+) {
+  const adjustedValue =
+    Math.round((value + direction * step * 10) / step) * step;
+  return Math.min(max, Math.max(min, Number(adjustedValue.toFixed(12))));
+}
+
+function RangeLabels({
+  minLabel,
+  maxLabel,
+  defaultValue,
+  min,
+  max,
+  onDecrease,
+  onIncrease,
+  onReset,
+}: {
+  minLabel: string;
+  maxLabel: string;
+  defaultValue: number;
+  min: number;
+  max: number;
+  onDecrease: () => void;
+  onIncrease: () => void;
+  onReset: () => void;
+}) {
+  const labelButtonClass =
+    "absolute rounded px-1 outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none";
+
+  return (
+    <div className="relative mt-0.5 h-5 text-xs font-medium text-glass-muted">
+      <button
+        className={`${labelButtonClass} left-0`}
+        type="button"
+        onClick={onDecrease}
+        aria-label={`减小${minLabel}`}
+      >
+        {minLabel}
+      </button>
+      <button
+        className={`${labelButtonClass} -translate-x-1/2`}
+        style={{ left: getRangePosition(defaultValue, min, max) }}
+        type="button"
+        onClick={onReset}
+        aria-label={`恢复${defaultValue}的默认值`}
+      >
+        默认
+      </button>
+      <button
+        className={`${labelButtonClass} right-0`}
+        type="button"
+        onClick={onIncrease}
+        aria-label={`增大${maxLabel}`}
+      >
+        {maxLabel}
+      </button>
+    </div>
+  );
+}
 
 function preloadImage(url: string) {
   return new Promise<void>((resolve, reject) => {
@@ -93,10 +164,36 @@ function LauncherSizeSettings({
             })
           }
         />
-        <div className="mt-0.5 flex justify-between text-xs font-medium text-glass-muted">
-          <span>小</span>
-          <span>大</span>
-        </div>
+        <RangeLabels
+          minLabel="小"
+          maxLabel="大"
+          defaultValue={DEFAULT_LAUNCHER_NODE_SCALE}
+          min={MIN_LAUNCHER_NODE_SCALE}
+          max={MAX_LAUNCHER_NODE_SCALE}
+          onDecrease={() =>
+            onChange({
+              nodeScale: adjustRangeValue(
+                settings.nodeScale,
+                -1,
+                LAUNCHER_NODE_SCALE_STEP,
+                MIN_LAUNCHER_NODE_SCALE,
+                MAX_LAUNCHER_NODE_SCALE,
+              ),
+            })
+          }
+          onIncrease={() =>
+            onChange({
+              nodeScale: adjustRangeValue(
+                settings.nodeScale,
+                1,
+                LAUNCHER_NODE_SCALE_STEP,
+                MIN_LAUNCHER_NODE_SCALE,
+                MAX_LAUNCHER_NODE_SCALE,
+              ),
+            })
+          }
+          onReset={() => onChange({ nodeScale: DEFAULT_LAUNCHER_NODE_SCALE })}
+        />
       </div>
     </section>
   );
@@ -175,10 +272,40 @@ function WallpaperSettingsSection({
               })
             }
           />
-          <div className="mt-0.5 flex justify-between text-xs font-medium text-glass-muted">
-            <span>清晰</span>
-            <span>深色</span>
-          </div>
+          <RangeLabels
+            minLabel="清晰"
+            maxLabel="深色"
+            defaultValue={DEFAULT_WALLPAPER_OVERLAY_OPACITY}
+            min={MIN_WALLPAPER_OVERLAY_OPACITY}
+            max={MAX_WALLPAPER_OVERLAY_OPACITY}
+            onDecrease={() =>
+              onChangeSettings({
+                wallpaperOverlayOpacity: adjustRangeValue(
+                  settings.wallpaperOverlayOpacity,
+                  -1,
+                  WALLPAPER_OVERLAY_OPACITY_STEP,
+                  MIN_WALLPAPER_OVERLAY_OPACITY,
+                  MAX_WALLPAPER_OVERLAY_OPACITY,
+                ),
+              })
+            }
+            onIncrease={() =>
+              onChangeSettings({
+                wallpaperOverlayOpacity: adjustRangeValue(
+                  settings.wallpaperOverlayOpacity,
+                  1,
+                  WALLPAPER_OVERLAY_OPACITY_STEP,
+                  MIN_WALLPAPER_OVERLAY_OPACITY,
+                  MAX_WALLPAPER_OVERLAY_OPACITY,
+                ),
+              })
+            }
+            onReset={() =>
+              onChangeSettings({
+                wallpaperOverlayOpacity: DEFAULT_WALLPAPER_OVERLAY_OPACITY,
+              })
+            }
+          />
         </div>
       </div>
 
