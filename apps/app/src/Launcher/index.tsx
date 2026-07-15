@@ -7,68 +7,9 @@ import {
   type ShortcutCategory,
   type ShortcutNode,
 } from "./launcher";
-import { Dialog, DialogTitle } from "../components/Dialog";
+import { DeleteShortcutCollectionDialog } from "./DeleteShortcutCollectionDialog";
 import { ShortcutPage } from "./ShortcutPage";
 import { Slider } from "./Slider";
-
-function DeleteCategoryDialog({
-  category,
-  shortcutCount,
-  onClose,
-  onDeleteAll,
-  onMoveToDefault,
-}: {
-  category: ShortcutCategory;
-  shortcutCount: number;
-  onClose: () => void;
-  onDeleteAll: () => void;
-  onMoveToDefault: () => void;
-}) {
-  return (
-    <Dialog
-      onClose={onClose}
-      className="max-w-md rounded-[28px] border-white/20 bg-slate-900/90 p-7 backdrop-blur-2xl"
-    >
-      {(close) => (
-        <>
-          <DialogTitle className="text-xl font-bold">删除分类</DialogTitle>
-          <p className="mt-3 text-sm leading-6 text-white/70">
-            “{category.name}”中有 {shortcutCount} 个快捷方式。你希望如何处理？
-          </p>
-          <div className="mt-6 flex flex-col gap-2">
-            <button
-              type="button"
-              className="rounded-xl bg-white px-4 py-3 text-left text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
-              onClick={() => {
-                onMoveToDefault();
-                close();
-              }}
-            >
-              仅删除分类，快捷方式移到首页
-            </button>
-            <button
-              type="button"
-              className="rounded-xl bg-red-500/15 px-4 py-3 text-left text-sm font-semibold text-red-200 transition hover:bg-red-500/25"
-              onClick={() => {
-                onDeleteAll();
-                close();
-              }}
-            >
-              删除分类及其中的所有快捷方式
-            </button>
-            <button
-              type="button"
-              className="rounded-xl px-4 py-3 text-sm font-semibold text-white/70 transition hover:bg-white/10 hover:text-white"
-              onClick={close}
-            >
-              取消
-            </button>
-          </div>
-        </>
-      )}
-    </Dialog>
-  );
-}
 
 export function Launcher() {
   const [categories, setCategories] = useState<ShortcutCategory[] | null>(null);
@@ -245,16 +186,19 @@ export function Launcher() {
       </div>
 
       {pendingDeleteCategory ? (
-        <DeleteCategoryDialog
-          category={pendingDeleteCategory}
+        <DeleteShortcutCollectionDialog
+          title="删除分类"
+          collectionName={pendingDeleteCategory.name}
           shortcutCount={pendingDeleteCategory.shortcuts.reduce(
             (count, node) =>
               count + (node.type === "folder" ? node.children.length : 1),
             0,
           )}
+          keepShortcutsLabel="仅删除分类，快捷方式移到首页"
+          deleteAllLabel="删除分类及其中的所有快捷方式"
           onClose={() => setPendingDeleteCategory(null)}
           onDeleteAll={() => deleteCategory(pendingDeleteCategory.id, false)}
-          onMoveToDefault={() => deleteCategory(pendingDeleteCategory.id, true)}
+          onKeepShortcuts={() => deleteCategory(pendingDeleteCategory.id, true)}
         />
       ) : null}
     </div>

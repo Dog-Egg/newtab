@@ -37,14 +37,7 @@ import { move } from "@dnd-kit/helpers";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import clsx from "clsx";
-import {
-  EllipsisVertical,
-  FolderInput,
-  FolderOpen,
-  Pencil,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { ChevronRight, EllipsisVertical, Plus } from "lucide-react";
 import {
   createShortcutSortableGroups,
   mergeShortcutIntoNode,
@@ -58,6 +51,7 @@ import { Dialog, DialogTitle } from "../components/Dialog";
 import { importBrowserBookmarksWithToast } from "../browserBookmarks";
 import { SiteIcon } from "../components/SiteIcon";
 import { useLauncherSettings } from "./launcherSettings";
+import { DeleteShortcutCollectionDialog } from "./DeleteShortcutCollectionDialog";
 
 type SortableCollisionDetector = NonNullable<
   Parameters<typeof useSortable>[0]["collisionDetector"]
@@ -438,7 +432,6 @@ function SortableNode({
   node,
   index,
   onOpenFolder,
-  onExpandFolder,
   onEdit,
   onDelete,
   onMove,
@@ -446,7 +439,6 @@ function SortableNode({
   node: ShortcutNode;
   index: number;
   onOpenFolder: (folder: ShortcutFolder) => void;
-  onExpandFolder: (folder: ShortcutFolder) => void;
   onEdit: (node: ShortcutNode) => void;
   onDelete: (node: ShortcutNode) => void;
   onMove: (node: ShortcutNode, categoryId: string) => void;
@@ -486,9 +478,6 @@ function SortableNode({
       />
       <NodeMenu
         node={node}
-        onExpand={
-          node.type === "folder" ? () => onExpandFolder(node) : undefined
-        }
         onEdit={() => onEdit(node)}
         onDelete={() => onDelete(node)}
         onMove={(categoryId) => onMove(node, categoryId)}
@@ -695,13 +684,11 @@ function FolderSortableItem({
 
 function NodeMenu({
   node,
-  onExpand,
   onEdit,
   onDelete,
   onMove,
 }: {
   node: ShortcutNode;
-  onExpand?: () => void;
   onEdit: () => void;
   onDelete?: () => void;
   onMove?: (categoryId: string) => void;
@@ -734,26 +721,16 @@ function NodeMenu({
             className="data-[state=closed]:animate-out data-[state=open]:animate-in z-[80] min-w-36 rounded-xl border border-white/20 bg-slate-900/95 p-1.5 text-sm text-white shadow-2xl backdrop-blur-xl"
           >
             <DropdownMenu.Item
-              className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-white/15"
+              className="cursor-default select-none rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-white/15"
               onSelect={onEdit}
             >
-              <Pencil className="size-4" />
               {node.type === "folder" ? "修改标题" : "编辑"}
             </DropdownMenu.Item>
-            {onExpand ? (
-              <DropdownMenu.Item
-                className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-white/15"
-                onSelect={onExpand}
-              >
-                <FolderOpen className="size-4" />
-                展开文件夹
-              </DropdownMenu.Item>
-            ) : null}
             {onMove && categories.length > 1 ? (
               <DropdownMenu.Sub>
-                <DropdownMenu.SubTrigger className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-white/15 data-[state=open]:bg-white/15">
-                  <FolderInput className="size-4" />
-                  移动到其他分类
+                <DropdownMenu.SubTrigger className="flex cursor-default select-none items-center justify-between gap-3 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-white/15 data-[state=open]:bg-white/15">
+                  <span>移动到其他分类</span>
+                  <ChevronRight className="size-4" aria-hidden="true" />
                 </DropdownMenu.SubTrigger>
                 <DropdownMenu.Portal>
                   <DropdownMenu.SubContent
@@ -778,10 +755,9 @@ function NodeMenu({
             ) : null}
             {onDelete ? (
               <DropdownMenu.Item
-                className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 text-red-300 outline-none data-[highlighted]:bg-red-500/20"
+                className="cursor-default select-none rounded-lg px-3 py-2 text-red-300 outline-none data-[highlighted]:bg-red-500/20"
                 onSelect={onDelete}
               >
-                <Trash2 className="size-4" />
                 {node.type === "folder" ? "删除文件夹" : "删除"}
               </DropdownMenu.Item>
             ) : null}
@@ -997,6 +973,8 @@ export function ShortcutPage({
   const [renameFolderId, setRenameFolderId] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<ShortcutItem | null>(null);
   const [isAddingItem, setIsAddingItem] = useState(false);
+  const [pendingDeleteFolder, setPendingDeleteFolder] =
+    useState<ShortcutFolder | null>(null);
   const [openFolderId, setOpenFolderId] = useState<string | null>(null);
   // 越界后业务数据会立即迁移到 root；这份不含拖拽项的快照仅用于
   // 让 Dialog 播完关闭动画，也覆盖空 Folder 已被业务数据删除的情况。
@@ -1243,20 +1221,6 @@ export function ShortcutPage({
                     setRenameFolderId(null);
                     setOpenFolderId(folder.id);
                   }}
-                  onExpandFolder={(folder) => {
-                    saveShortcuts(
-                      shortcuts.flatMap((candidate) =>
-                        candidate.id === folder.id
-                          ? folder.children
-                          : [candidate],
-                      ),
-                    );
-                    if (openFolderId === folder.id) {
-                      setClosingFolder(null);
-                      setRenameFolderId(null);
-                      setOpenFolderId(null);
-                    }
-                  }}
                   onEdit={(selectedNode) => {
                     if (selectedNode.type === "folder") {
                       setClosingFolder(null);
@@ -1267,6 +1231,10 @@ export function ShortcutPage({
                     }
                   }}
                   onDelete={(selectedNode) => {
+                    if (selectedNode.type === "folder") {
+                      setPendingDeleteFolder(selectedNode);
+                      return;
+                    }
                     saveShortcuts(
                       shortcuts.filter(
                         (candidate) => candidate.id !== selectedNode.id,
@@ -1295,6 +1263,34 @@ export function ShortcutPage({
             </div>
           ) : null}
         </DragOverlay>
+        {pendingDeleteFolder ? (
+          <DeleteShortcutCollectionDialog
+            title="删除文件夹"
+            collectionName={pendingDeleteFolder.title}
+            shortcutCount={pendingDeleteFolder.children.length}
+            keepShortcutsLabel="仅删除文件夹，快捷方式放回当前分类"
+            deleteAllLabel="删除文件夹及其中的所有快捷方式"
+            onClose={() => setPendingDeleteFolder(null)}
+            onKeepShortcuts={() => {
+              saveShortcuts(
+                shortcutsRef.current.flatMap((node) =>
+                  node.id === pendingDeleteFolder.id
+                    ? pendingDeleteFolder.children
+                    : [node],
+                ),
+              );
+              setPendingDeleteFolder(null);
+            }}
+            onDeleteAll={() => {
+              saveShortcuts(
+                shortcutsRef.current.filter(
+                  (node) => node.id !== pendingDeleteFolder.id,
+                ),
+              );
+              setPendingDeleteFolder(null);
+            }}
+          />
+        ) : null}
         {displayedFolder ? (
           <FolderDialog
             folder={displayedFolder}
