@@ -5,14 +5,16 @@ import {
   normalizeLauncher,
   type ShortcutCategory,
 } from "../Launcher/launcher";
-import type { Platform, StoredSearchEngineSettings } from "./types";
+import {
+  SEARCH_ENGINE_SETTINGS_KEY,
+  type Platform,
+  type StoredSearchEngineSettings,
+} from "./types";
 import {
   normalizeSettings,
   SETTINGS_STORAGE_KEY,
   type Settings,
 } from "../Settings/settings";
-
-const SEARCH_ENGINE_SETTINGS_KEY = "browser-tab.searchEngineSettings.v1";
 
 let defaultShortcutOrder = 0;
 

@@ -1,6 +1,8 @@
 import type { Settings } from "../Settings/settings";
 import type { ShortcutCategory } from "../Launcher/launcher";
 
+export const SEARCH_ENGINE_SETTINGS_KEY = "search-engine-settings";
+
 export type StorageUnsubscribe = () => void;
 
 export type StoredSearchEngineSettings = {

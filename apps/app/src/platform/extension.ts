@@ -5,10 +5,12 @@ import {
   normalizeLauncher,
 } from "../Launcher/launcher";
 import { importBrowserBookmarks } from "../browserBookmarks";
-import type { Platform, StoredSearchEngineSettings } from "./types";
+import {
+  SEARCH_ENGINE_SETTINGS_KEY,
+  type Platform,
+  type StoredSearchEngineSettings,
+} from "./types";
 import { normalizeSettings, SETTINGS_STORAGE_KEY } from "../Settings/settings";
-
-const SEARCH_ENGINE_SETTINGS_KEY = "browser-tab.searchEngineSettings.v1";
 
 function getChromeStorage<T>(key: string, normalize: (value: unknown) => T) {
   return new Promise<T>((resolve, reject) => {

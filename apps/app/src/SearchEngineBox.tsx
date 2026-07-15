@@ -115,7 +115,6 @@ function SearchEngineGlyph({
 export function SearchEngineBox() {
   const [storedSettings, setStoredSettings] =
     useState<StoredSearchEngineSettings>({});
-  const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
   const [query, setQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -147,13 +146,8 @@ export function SearchEngineBox() {
         }
 
         setStoredSettings(settings);
-        setIsSettingsLoaded(true);
       },
-      () => {
-        if (isCurrent) {
-          setIsSettingsLoaded(true);
-        }
-      },
+      () => undefined,
     );
 
     return () => {
@@ -161,19 +155,29 @@ export function SearchEngineBox() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!isSettingsLoaded) {
+  function updateStoredSettings(
+    update: (
+      currentSettings: StoredSearchEngineSettings,
+    ) => StoredSearchEngineSettings,
+  ) {
+    const nextSettings = update(storedSettings);
+    if (nextSettings === storedSettings) {
       return;
     }
 
-    void platform.searchEngineSettings.save(storedSettings);
-  }, [isSettingsLoaded, storedSettings]);
+    setStoredSettings(nextSettings);
+    void platform.searchEngineSettings.save(nextSettings);
+  }
 
   function selectSearchEngine(engineId: string) {
-    setStoredSettings((currentSettings) => ({
-      ...currentSettings,
-      selectedEngineId: engineId,
-    }));
+    updateStoredSettings((currentSettings) =>
+      currentSettings.selectedEngineId === engineId
+        ? currentSettings
+        : {
+            ...currentSettings,
+            selectedEngineId: engineId,
+          },
+    );
     setIsDropdownOpen(false);
   }
 
@@ -198,7 +202,7 @@ export function SearchEngineBox() {
       urlFormat,
     };
 
-    setStoredSettings((currentSettings) => ({
+    updateStoredSettings((currentSettings) => ({
       ...currentSettings,
       selectedEngineId: nextCustomEngine.id,
       customEngines: [
