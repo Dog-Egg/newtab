@@ -312,7 +312,7 @@ export function SearchEngineBox() {
               <label className="mt-6 block text-sm font-semibold text-glass-content">
                 名称
                 <input
-                  className="mt-2 h-11 w-full rounded-xl border border-glass-border bg-white/15 px-4 text-base font-semibold text-glass-strong outline-none transition placeholder:text-glass-muted focus:border-glass-focus focus:bg-white/20 focus:ring-2 focus:ring-glass-focus motion-reduce:transition-none"
+                  className="mt-2 h-11 w-full rounded-xl border border-glass-border bg-white/15 px-4 text-base font-semibold text-glass-strong outline-none transition placeholder:text-white/70 focus:border-glass-focus focus:bg-white/20 focus:ring-2 focus:ring-glass-focus motion-reduce:transition-none"
                   value={customEngineDraft.name}
                   onChange={(event) =>
                     setCustomEngineDraft((draft) => ({
@@ -327,7 +327,7 @@ export function SearchEngineBox() {
               <label className="mt-5 block text-sm font-semibold text-glass-content">
                 网址格式（用“%s”代替搜索字词）
                 <input
-                  className="mt-2 h-11 w-full rounded-xl border border-glass-border bg-white/15 px-4 text-sm font-semibold text-glass-strong outline-none transition placeholder:text-glass-muted focus:border-glass-focus focus:bg-white/20 focus:ring-2 focus:ring-glass-focus motion-reduce:transition-none"
+                  className="mt-2 h-11 w-full rounded-xl border border-glass-border bg-white/15 px-4 text-sm font-semibold text-glass-strong outline-none transition placeholder:text-white/70 focus:border-glass-focus focus:bg-white/20 focus:ring-2 focus:ring-glass-focus motion-reduce:transition-none"
                   value={customEngineDraft.urlFormat}
                   onChange={(event) =>
                     setCustomEngineDraft((draft) => ({
