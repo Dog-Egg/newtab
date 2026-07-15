@@ -8,6 +8,7 @@ import {
   type ShortcutCategory,
 } from "./Launcher/launcher";
 import { toast } from "sonner";
+import i18n from "./i18n";
 
 export type BrowserBookmarksImportResult = {
   importedCount: number;
@@ -122,7 +123,7 @@ function getBookmarkTitle(node: chrome.bookmarks.BookmarkTreeNode) {
   }
 
   if (!node.url) {
-    return "未命名";
+    return i18n.t("bookmarks.unnamed");
   }
 
   try {
@@ -282,32 +283,37 @@ export async function importBrowserBookmarksWithToast() {
     const result = await importBrowserBookmarks();
 
     if (result.unsupported) {
-      toast.error("当前环境无法读取浏览器收藏夹", {
-        description: "请在浏览器扩展环境中使用收藏夹导入。",
+      toast.error(i18n.t("bookmarks.unavailable"), {
+        description: i18n.t("bookmarks.unavailableDescription"),
       });
       return;
     }
 
     const skippedText =
       result.skippedDuplicateCount > 0
-        ? `，跳过 ${result.skippedDuplicateCount} 个重复项`
+        ? i18n.t("bookmarks.skipped", { count: result.skippedDuplicateCount })
         : "";
 
     if (result.importedCount === 0) {
       toast.info(
         result.skippedDuplicateCount > 0
-          ? `没有新的可导入收藏${skippedText}`
-          : "没有找到可导入的浏览器收藏",
+          ? i18n.t("bookmarks.noNew", { skipped: skippedText })
+          : i18n.t("bookmarks.noneFound"),
       );
       return;
     }
 
+    const folders =
+      result.folderCount > 0
+        ? i18n.t("bookmarks.folders", { count: result.folderCount })
+        : "";
     toast.success(
-      `已导入 ${result.importedCount} 个收藏${
-        result.folderCount > 0 ? `，包含 ${result.folderCount} 个文件夹` : ""
-      }${skippedText}`,
+      i18n.t("bookmarks.imported", {
+        count: result.importedCount,
+        folders: `${folders}${skippedText}`,
+      }),
     );
   } catch {
-    toast.error("导入失败，请稍后重试");
+    toast.error(i18n.t("bookmarks.failed"));
   }
 }

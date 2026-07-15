@@ -8,8 +8,10 @@ import { Wallpaper } from "./Wallpaper";
 import { SettingsPanel } from "./Settings";
 import { MainDialogPortal } from "./components/Dialog";
 import { useSettings } from "./Settings/SettingsProvider";
+import { useTranslation } from "react-i18next";
 
 export function App() {
+  const { t } = useTranslation();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const { settings } = useSettings();
@@ -48,7 +50,7 @@ export function App() {
           )}
           type="button"
           onClick={() => setIsSettingsOpen((isOpen) => !isOpen)}
-          aria-label="打开设置"
+          aria-label={t("app.openSettings")}
           aria-expanded={isSettingsOpen}
         >
           <Settings aria-hidden="true" className="size-5" />

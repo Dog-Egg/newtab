@@ -10,8 +10,10 @@ import {
 import { DeleteShortcutCollectionDialog } from "./DeleteShortcutCollectionDialog";
 import { ShortcutPage } from "./ShortcutPage";
 import { Slider } from "./Slider";
+import { useTranslation } from "react-i18next";
 
 export function Launcher() {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState<ShortcutCategory[] | null>(null);
   const [activeCategoryId, setActiveCategoryId] = useState(DEFAULT_CATEGORY.id);
   const [pendingDeleteCategory, setPendingDeleteCategory] =
@@ -187,15 +189,15 @@ export function Launcher() {
 
       {pendingDeleteCategory ? (
         <DeleteShortcutCollectionDialog
-          title="删除分类"
+          title={t("launcher.deleteCategoryTitle")}
           collectionName={pendingDeleteCategory.name}
           shortcutCount={pendingDeleteCategory.shortcuts.reduce(
             (count, node) =>
               count + (node.type === "folder" ? node.children.length : 1),
             0,
           )}
-          keepShortcutsLabel="仅删除分类，快捷方式移到首页"
-          deleteAllLabel="删除分类及其中的所有快捷方式"
+          keepShortcutsLabel={t("launcher.keepCategoryShortcuts")}
+          deleteAllLabel={t("launcher.deleteCategoryAll")}
           onClose={() => setPendingDeleteCategory(null)}
           onDeleteAll={() => deleteCategory(pendingDeleteCategory.id, false)}
           onKeepShortcuts={() => deleteCategory(pendingDeleteCategory.id, true)}

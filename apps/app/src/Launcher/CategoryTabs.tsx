@@ -9,6 +9,7 @@ import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 import clsx from "clsx";
 import { Check, House, Pencil, Plus, Settings2, X } from "lucide-react";
 import { DEFAULT_CATEGORY, type ShortcutCategory } from "./launcher";
+import { useTranslation } from "react-i18next";
 
 const CATEGORY_SORTABLE_GROUP = "categories";
 
@@ -29,6 +30,7 @@ function SortableCategory({
   onRename: (name: string) => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation();
   const canDelete = category.id !== DEFAULT_CATEGORY.id;
   const showActive = isActive && !isManaging;
   const [isEditing, setIsEditing] = useState(false);
@@ -70,11 +72,11 @@ function SortableCategory({
       {isEditing ? (
         <input
           autoFocus
-          className="placeholder:text-current/50 text-control mx-3 min-w-8 max-w-28 bg-transparent text-inherit outline-none"
+          className="placeholder:text-current/50 mx-3 min-w-8 max-w-28 bg-transparent text-control text-inherit outline-none"
           style={{ width: `${draftName.length + 2}ch` }}
           value={draftName}
           maxLength={12}
-          aria-label={`修改分类 ${category.name} 的名称`}
+          aria-label={t("launcher.renameCategory", { name: category.name })}
           onChange={(event) => setDraftName(event.target.value)}
           onFocus={(event) => event.currentTarget.select()}
           onBlur={saveRename}
@@ -89,7 +91,7 @@ function SortableCategory({
       ) : (
         <button
           type="button"
-          className="text-control focus-visible:ring-glass-focus flex h-full items-center gap-1.5 rounded-xl px-3 outline-none focus-visible:ring-2 disabled:cursor-grab"
+          className="flex h-full items-center gap-1.5 rounded-xl px-3 text-control outline-none focus-visible:ring-2 focus-visible:ring-glass-focus disabled:cursor-grab"
           aria-current={showActive ? "page" : undefined}
           disabled={isManaging}
           onClick={onSelect}
@@ -109,23 +111,23 @@ function SortableCategory({
         >
           <button
             type="button"
-            className="focus-visible:ring-glass-focus grid size-5 place-items-center rounded-md outline-none transition hover:bg-black/10 focus-visible:ring-2"
+            className="grid size-5 place-items-center rounded-md outline-none transition hover:bg-black/10 focus-visible:ring-2 focus-visible:ring-glass-focus"
             onClick={() => {
               setDraftName(category.name);
               setIsEditing(true);
             }}
-            aria-label={`修改分类 ${category.name}`}
-            title="修改名称"
+            aria-label={t("launcher.editCategory", { name: category.name })}
+            title={t("launcher.rename")}
           >
             <Pencil className="size-3" strokeWidth={2.2} />
           </button>
           {canDelete ? (
             <button
               type="button"
-              className="focus-visible:ring-glass-focus grid size-5 place-items-center rounded-md outline-none transition hover:bg-black/10 focus-visible:ring-2"
+              className="grid size-5 place-items-center rounded-md outline-none transition hover:bg-black/10 focus-visible:ring-2 focus-visible:ring-glass-focus"
               onClick={onDelete}
-              aria-label={`删除分类 ${category.name}`}
-              title="删除分类"
+              aria-label={t("launcher.deleteCategory", { name: category.name })}
+              title={t("launcher.deleteCategoryTitle")}
             >
               <X className="size-3" strokeWidth={2.2} />
             </button>
@@ -154,6 +156,7 @@ export function CategoryTabs({
   onDelete: (categoryId: string) => void;
   onReorder: (categories: ShortcutCategory[]) => void;
 }) {
+  const { t } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
   const [isManaging, setIsManaging] = useState(false);
   const [draftName, setDraftName] = useState("");
@@ -214,7 +217,7 @@ export function CategoryTabs({
     >
       <nav
         className="glass-panel flex max-w-[calc(100vw-2rem)] items-center gap-1 overflow-x-auto p-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        aria-label="快捷方式分类"
+        aria-label={t("launcher.categories")}
       >
         {categories.map((category, index) => (
           <SortableCategory
@@ -231,26 +234,26 @@ export function CategoryTabs({
 
         {isManaging && isAdding ? (
           <form
-            className="bg-glass-selected flex h-9 shrink-0 items-center rounded-xl pl-3 pr-1"
+            className="flex h-9 shrink-0 items-center rounded-xl bg-glass-selected pl-3 pr-1"
             onSubmit={addCategory}
           >
             <input
               ref={inputRef}
-              className="text-control text-glass-selected-content placeholder:text-glass-muted w-[72px] bg-transparent outline-none"
+              className="w-[72px] bg-transparent text-control text-glass-selected-content outline-none placeholder:text-glass-muted"
               value={draftName}
               onChange={(event) => setDraftName(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Escape") cancelAdding();
               }}
-              placeholder="分类名称"
+              placeholder={t("launcher.categoryName")}
               maxLength={12}
-              aria-label="分类名称"
+              aria-label={t("launcher.categoryName")}
             />
             <button
               type="submit"
-              className="text-action grid size-5 place-items-center rounded-md transition hover:bg-blue-50 disabled:text-slate-300"
+              className="grid size-5 place-items-center rounded-md text-action transition hover:bg-blue-50 disabled:text-slate-300"
               disabled={!draftName.trim()}
-              aria-label="保存分类"
+              aria-label={t("launcher.saveCategory")}
             >
               <Check className="size-3.5" strokeWidth={2.4} />
             </button>
@@ -258,7 +261,7 @@ export function CategoryTabs({
               type="button"
               className="grid size-5 place-items-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
               onClick={cancelAdding}
-              aria-label="取消新增分类"
+              aria-label={t("launcher.cancelNewCategory")}
             >
               <X className="size-3.5" />
             </button>
@@ -266,10 +269,10 @@ export function CategoryTabs({
         ) : isManaging ? (
           <button
             type="button"
-            className="text-glass-content hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-glass-focus grid size-9 shrink-0 place-items-center rounded-xl outline-none transition focus-visible:ring-2"
+            className="grid size-9 shrink-0 place-items-center rounded-xl text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus"
             onClick={startAdding}
-            aria-label="新建分类"
-            title="新建分类"
+            aria-label={t("launcher.newCategory")}
+            title={t("launcher.newCategory")}
           >
             <Plus className="size-3.5" strokeWidth={2.2} />
           </button>
@@ -281,7 +284,7 @@ export function CategoryTabs({
         <button
           type="button"
           className={clsx(
-            "focus-visible:ring-glass-focus grid size-9 shrink-0 place-items-center rounded-full outline-none transition-all duration-200 hover:bg-white/[0.08] focus-visible:ring-2",
+            "grid size-9 shrink-0 place-items-center rounded-full outline-none transition-all duration-200 hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-glass-focus",
             isManaging
               ? "bg-white/[0.08] text-white"
               : "text-white/70 hover:text-white",
@@ -290,8 +293,16 @@ export function CategoryTabs({
             setIsManaging((current) => !current);
             cancelAdding();
           }}
-          aria-label={isManaging ? "退出分类管理" : "管理分类"}
-          title={isManaging ? "完成管理" : "管理分类"}
+          aria-label={t(
+            isManaging
+              ? "launcher.exitManagement"
+              : "launcher.manageCategories",
+          )}
+          title={t(
+            isManaging
+              ? "launcher.finishManagement"
+              : "launcher.manageCategories",
+          )}
         >
           {isManaging ? (
             <X className="size-3.5" strokeWidth={2.2} />

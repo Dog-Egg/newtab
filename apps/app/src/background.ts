@@ -6,15 +6,22 @@ import {
   type ShortcutCategory,
   type ShortcutNode,
 } from "./Launcher/launcher";
+import { normalizeSettings, SETTINGS_STORAGE_KEY } from "./Settings/settings";
 
 const MENU_ID = "save-to-browser-tab";
 
 function createContextMenu() {
-  chrome.contextMenus.removeAll(() => {
-    chrome.contextMenus.create({
-      id: MENU_ID,
-      title: "添加快捷方式到 BrowserTab",
-      contexts: ["page"],
+  chrome.storage.local.get(SETTINGS_STORAGE_KEY, (items) => {
+    const { locale } = normalizeSettings(items[SETTINGS_STORAGE_KEY]);
+    chrome.contextMenus.removeAll(() => {
+      chrome.contextMenus.create({
+        id: MENU_ID,
+        title:
+          locale === "zh-CN"
+            ? "添加快捷方式到 BrowserTab"
+            : "Add shortcut to BrowserTab",
+        contexts: ["page"],
+      });
     });
   });
 }
@@ -81,6 +88,11 @@ async function saveShortcut(url: string, title?: string) {
 
 chrome.runtime.onInstalled.addListener(createContextMenu);
 chrome.runtime.onStartup.addListener(createContextMenu);
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === "local" && changes[SETTINGS_STORAGE_KEY]) {
+    createContextMenu();
+  }
+});
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== MENU_ID) {

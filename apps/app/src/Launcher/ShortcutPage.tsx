@@ -57,6 +57,7 @@ import {
 import { importBrowserBookmarksWithToast } from "../browserBookmarks";
 import { SiteIcon } from "../components/SiteIcon";
 import { useSettings } from "../Settings/SettingsProvider";
+import { useTranslation } from "react-i18next";
 import { DeleteShortcutCollectionDialog } from "./DeleteShortcutCollectionDialog";
 
 type SortableCollisionDetector = NonNullable<
@@ -539,6 +540,7 @@ function FolderDialog({
   onMoveItem: (item: ShortcutItem, categoryId: string) => void;
   panelRef: RefObject<HTMLDivElement | null>;
 }) {
+  const { t } = useTranslation();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [title, setTitle] = useState(folder.title);
   const titleInputRef = useRef<HTMLInputElement | null>(null);
@@ -581,7 +583,7 @@ function FolderDialog({
                   ref={titleInputRef}
                   className="min-w-0 rounded-lg bg-white/10 px-2 py-1 text-inherit outline-none ring-2 ring-white/60 [font:inherit]"
                   value={title}
-                  aria-label="文件夹标题"
+                  aria-label={t("launcher.folderTitle")}
                   onChange={(event) => setTitle(event.target.value)}
                   onBlur={commitTitle}
                   onKeyDown={(event) => {
@@ -704,6 +706,7 @@ function NodeMenu({
   onDelete?: () => void;
   onMove?: (categoryId: string) => void;
 }) {
+  const { t } = useTranslation();
   const {
     settings: { nodeScale },
   } = useSettings();
@@ -718,8 +721,8 @@ function NodeMenu({
         <DropdownMenu.Trigger asChild>
           <button
             type="button"
-            aria-label={`${node.title}的更多操作`}
-            title="更多操作"
+            aria-label={t("search.moreActionsFor", { name: node.title })}
+            title={t("search.moreActions")}
             className="pointer-events-auto invisible absolute right-0 top-0 grid size-6 -translate-y-1/3 translate-x-1/3 place-items-center rounded-full bg-slate-900/60 text-glass-content opacity-0 shadow-[0_8px_24px_rgba(15,23,42,0.24)] outline-none backdrop-blur-2xl transition-[color,background-color,opacity,visibility] delay-0 duration-200 hover:bg-slate-900/70 hover:text-glass-strong focus-visible:visible focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-glass-focus focus-visible:delay-0 group-hover:visible group-hover:opacity-100 group-hover:delay-500 data-[state=open]:visible data-[state=open]:bg-slate-900/70 data-[state=open]:text-glass-strong data-[state=open]:opacity-100 data-[state=open]:delay-0 motion-reduce:transition-none motion-reduce:delay-0"
             onClick={(event) => event.stopPropagation()}
             onPointerDown={(event) => event.stopPropagation()}
@@ -730,12 +733,12 @@ function NodeMenu({
         <DropdownMenu.Portal>
           <DropdownMenuContent className="min-w-44">
             <DropdownMenuItem onSelect={onEdit}>
-              {node.type === "folder" ? "修改标题" : "编辑"}
+              {t(node.type === "folder" ? "launcher.editTitle" : "common.edit")}
             </DropdownMenuItem>
             {onMove && categories.length > 1 ? (
               <DropdownMenu.Sub>
                 <DropdownMenuSubTrigger>
-                  <span className="flex-1">移动到其他分类</span>
+                  <span className="flex-1">{t("launcher.moveToCategory")}</span>
                   <ChevronRight
                     className="size-3.5"
                     strokeWidth={2.2}
@@ -760,7 +763,11 @@ function NodeMenu({
             ) : null}
             {onDelete ? (
               <DropdownMenuItem variant="danger" onSelect={onDelete}>
-                {node.type === "folder" ? "删除文件夹" : "删除"}
+                {t(
+                  node.type === "folder"
+                    ? "launcher.deleteFolder"
+                    : "common.delete",
+                )}
               </DropdownMenuItem>
             ) : null}
           </DropdownMenuContent>
@@ -779,6 +786,7 @@ function EditItemDialog({
   onClose: () => void;
   onSave: (title: string, url: string) => void;
 }) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState(item.title);
   const [url, setUrl] = useState(item.url);
   const titleInputRef = useRef<HTMLInputElement | null>(null);
@@ -788,7 +796,7 @@ function EditItemDialog({
       {(close) => (
         <>
           <DialogTitle className="mb-6 text-xl font-bold">
-            编辑快捷方式
+            {t("launcher.editShortcut")}
           </DialogTitle>
           <form
             className="space-y-5"
@@ -803,7 +811,7 @@ function EditItemDialog({
             }}
           >
             <label className="block space-y-2 text-sm font-medium">
-              <span>名称</span>
+              <span>{t("launcher.name")}</span>
               <input
                 ref={titleInputRef}
                 autoFocus
@@ -814,7 +822,7 @@ function EditItemDialog({
               />
             </label>
             <label className="block space-y-2 text-sm font-medium">
-              <span>网址</span>
+              <span>{t("launcher.url")}</span>
               <input
                 type="url"
                 required
@@ -829,13 +837,13 @@ function EditItemDialog({
                 onClick={close}
                 className="rounded-xl px-4 py-2.5 font-semibold transition hover:bg-white/10"
               >
-                取消
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
                 className="rounded-xl bg-white px-4 py-2.5 font-semibold text-slate-900 transition hover:bg-slate-100"
               >
-                保存
+                {t("common.save")}
               </button>
             </div>
           </form>
@@ -852,6 +860,7 @@ function AddItemDialog({
   onClose: () => void;
   onSave: (title: string, url: string) => void;
 }) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
 
@@ -860,7 +869,7 @@ function AddItemDialog({
       {(close) => (
         <>
           <DialogTitle className="mb-6 text-xl font-bold">
-            添加快捷方式
+            {t("launcher.addShortcut")}
           </DialogTitle>
           <form
             className="space-y-5"
@@ -875,7 +884,7 @@ function AddItemDialog({
             }}
           >
             <label className="block space-y-2 text-sm font-medium">
-              <span>名称</span>
+              <span>{t("launcher.name")}</span>
               <input
                 autoFocus
                 value={title}
@@ -884,7 +893,7 @@ function AddItemDialog({
               />
             </label>
             <label className="block space-y-2 text-sm font-medium">
-              <span>网址</span>
+              <span>{t("launcher.url")}</span>
               <input
                 type="url"
                 required
@@ -899,13 +908,13 @@ function AddItemDialog({
                 onClick={close}
                 className="rounded-xl px-4 py-2.5 font-semibold transition hover:bg-white/10"
               >
-                取消
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
                 className="rounded-xl bg-white px-4 py-2.5 font-semibold text-slate-900 transition hover:bg-slate-100"
               >
-                完成
+                {t("launcher.done")}
               </button>
             </div>
           </form>
@@ -916,6 +925,7 @@ function AddItemDialog({
 }
 
 function AddShortcutButton({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation();
   const {
     settings: { nodeScale },
   } = useSettings();
@@ -923,7 +933,7 @@ function AddShortcutButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       type="button"
-      aria-label="添加快捷方式"
+      aria-label={t("launcher.addShortcut")}
       onClick={onClick}
       className="group flex w-full flex-col items-center rounded-[30px] text-center text-white outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
       style={{ width: 88 * nodeScale, gap: 8 * nodeScale }}
@@ -962,6 +972,7 @@ export function ShortcutPage({
     targetCategoryId: string,
   ) => void;
 }) {
+  const { t } = useTranslation();
   const {
     settings: { nodeScale },
   } = useSettings();
@@ -1096,6 +1107,8 @@ export function ShortcutPage({
         sourceData.node.id,
         targetData.node.id,
         `folder:${crypto.randomUUID()}`,
+        Date.now(),
+        t("launcher.folder"),
       );
       if (nextCategoryShortcuts !== shortcuts) {
         saveShortcuts(nextCategoryShortcuts);
@@ -1265,11 +1278,11 @@ export function ShortcutPage({
         </DragOverlay>
         {pendingDeleteFolder ? (
           <DeleteShortcutCollectionDialog
-            title="删除文件夹"
+            title={t("launcher.deleteFolder")}
             collectionName={pendingDeleteFolder.title}
             shortcutCount={pendingDeleteFolder.children.length}
-            keepShortcutsLabel="仅删除文件夹，快捷方式放回当前分类"
-            deleteAllLabel="删除文件夹及其中的所有快捷方式"
+            keepShortcutsLabel={t("launcher.keepFolderShortcuts")}
+            deleteAllLabel={t("launcher.deleteFolderAll")}
             onClose={() => setPendingDeleteFolder(null)}
             onKeepShortcuts={() => {
               saveShortcuts(

@@ -1,4 +1,5 @@
 import { Dialog, DialogTitle } from "../components/Dialog";
+import { useTranslation } from "react-i18next";
 
 export function DeleteShortcutCollectionDialog({
   title,
@@ -19,16 +20,17 @@ export function DeleteShortcutCollectionDialog({
   onKeepShortcuts: () => void;
   onDeleteAll: () => void;
 }) {
+  const { t } = useTranslation();
   return (
-    <Dialog
-      onClose={onClose}
-      className="max-w-md p-7"
-    >
+    <Dialog onClose={onClose} className="max-w-md p-7">
       {(close) => (
         <>
           <DialogTitle className="text-xl font-bold">{title}</DialogTitle>
           <p className="mt-3 text-sm leading-6 text-white/70">
-            “{collectionName}”中有 {shortcutCount} 个快捷方式。你希望如何处理？
+            {t("launcher.collectionPrompt", {
+              name: collectionName,
+              count: shortcutCount,
+            })}
           </p>
           <div className="mt-6 flex flex-col gap-2">
             <button
@@ -56,7 +58,7 @@ export function DeleteShortcutCollectionDialog({
               className="rounded-xl px-4 py-3 text-sm font-semibold text-white/70 transition hover:bg-white/10 hover:text-white"
               onClick={close}
             >
-              取消
+              {t("common.cancel")}
             </button>
           </div>
         </>

@@ -1,11 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import clsx from "clsx";
-import {
-  ChevronDown,
-  EllipsisVertical,
-  Plus,
-} from "lucide-react";
+import { ChevronDown, EllipsisVertical, Plus } from "lucide-react";
 import { platform } from "@platform";
 import type { StoredSearchEngineSettings } from "./platform/types";
 import { Dialog, DialogTitle } from "./components/Dialog";
@@ -15,6 +11,7 @@ import {
   DropdownMenuItem,
 } from "./components/DropdownMenu";
 import { SiteIcon } from "./components/SiteIcon";
+import { useTranslation } from "react-i18next";
 
 type SearchEngine = {
   id: string;
@@ -110,6 +107,7 @@ function SearchEngineGlyph({
 }
 
 export function SearchEngineBox() {
+  const { t } = useTranslation();
   const [storedSettings, setStoredSettings] =
     useState<StoredSearchEngineSettings>({});
   const [query, setQuery] = useState("");
@@ -305,7 +303,9 @@ export function SearchEngineBox() {
               <button
                 className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-2 text-slate-700 outline-none transition hover:bg-white/45 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
                 type="button"
-                aria-label={`选择搜索引擎，当前为${selectedEngine.name}`}
+                aria-label={t("search.selectEngine", {
+                  name: selectedEngine.name,
+                })}
                 title={selectedEngine.name}
               >
                 <SearchEngineGlyph engine={selectedEngine} size="small" />
@@ -323,7 +323,7 @@ export function SearchEngineBox() {
                 <div
                   className="flex items-center gap-2 overflow-x-auto p-1"
                   role="group"
-                  aria-label="搜索引擎"
+                  aria-label={t("search.engines")}
                 >
                   {searchEngines.map((engine) => (
                     <div key={engine.id} className="group relative shrink-0">
@@ -347,8 +347,10 @@ export function SearchEngineBox() {
                           <button
                             className="absolute right-0.5 top-0.5 grid size-6 place-items-center rounded-full bg-slate-800/80 text-white/80 shadow-sm outline-none transition hover:bg-slate-800 hover:text-white focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-glass-focus data-[state=open]:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                             type="button"
-                            aria-label={`${engine.name}的更多操作`}
-                            title="更多操作"
+                            aria-label={t("search.moreActionsFor", {
+                              name: engine.name,
+                            })}
+                            title={t("search.moreActions")}
                           >
                             <EllipsisVertical
                               aria-hidden="true"
@@ -361,7 +363,7 @@ export function SearchEngineBox() {
                             <DropdownMenuItem
                               onSelect={() => openEditDialog(engine)}
                             >
-                              编辑
+                              {t("common.edit")}
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               variant="danger"
@@ -374,7 +376,7 @@ export function SearchEngineBox() {
                                 );
                               }}
                             >
-                              删除
+                              {t("common.delete")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu.Portal>
@@ -385,8 +387,8 @@ export function SearchEngineBox() {
                     className="grid h-16 min-w-[88px] shrink-0 place-items-center rounded-xl border border-dashed border-glass-border text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
                     type="button"
                     onClick={openAddDialog}
-                    aria-label="新增搜索引擎"
-                    title="新增搜索引擎"
+                    aria-label={t("search.addEngine")}
+                    title={t("search.addEngine")}
                   >
                     <Plus aria-hidden="true" className="size-5" />
                   </button>
@@ -403,8 +405,8 @@ export function SearchEngineBox() {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="输入搜索内容"
-              aria-label="输入搜索内容"
+              placeholder={t("search.placeholder")}
+              aria-label={t("search.placeholder")}
             />
           </form>
         </div>
@@ -421,14 +423,16 @@ export function SearchEngineBox() {
                 handleSaveCustomEngine(event);
                 if (canSaveCustomEngine) close();
               }}
-              aria-label={editingEngineId ? "编辑搜索引擎" : "新增搜索引擎"}
+              aria-label={t(
+                editingEngineId ? "search.editEngine" : "search.addEngine",
+              )}
             >
               <DialogTitle className="text-xl font-semibold">
-                {editingEngineId ? "编辑搜索引擎" : "新增搜索引擎"}
+                {t(editingEngineId ? "search.editEngine" : "search.addEngine")}
               </DialogTitle>
 
               <label className="mt-6 block text-sm font-semibold text-glass-content">
-                名称
+                {t("search.name")}
                 <input
                   className="mt-2 h-11 w-full rounded-xl border border-glass-border bg-white/15 px-4 text-base font-semibold text-glass-strong outline-none transition placeholder:text-white/70 focus:border-glass-focus focus:bg-white/20 focus:ring-2 focus:ring-glass-focus motion-reduce:transition-none"
                   value={customEngineDraft.name}
@@ -443,7 +447,7 @@ export function SearchEngineBox() {
               </label>
 
               <label className="mt-5 block text-sm font-semibold text-glass-content">
-                网址格式（用“%s”代替搜索字词）
+                {t("search.urlFormat")}
                 <input
                   className="mt-2 h-11 w-full rounded-xl border border-glass-border bg-white/15 px-4 text-sm font-semibold text-glass-strong outline-none transition placeholder:text-white/70 focus:border-glass-focus focus:bg-white/20 focus:ring-2 focus:ring-glass-focus motion-reduce:transition-none"
                   value={customEngineDraft.urlFormat}
@@ -463,14 +467,14 @@ export function SearchEngineBox() {
                   type="button"
                   onClick={close}
                 >
-                  取消
+                  {t("common.cancel")}
                 </button>
                 <button
                   className="h-10 rounded-xl bg-action px-7 text-sm font-semibold text-white outline-none transition hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-glass-focus disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none"
                   type="submit"
                   disabled={!canSaveCustomEngine}
                 >
-                  保存
+                  {t("common.save")}
                 </button>
               </div>
             </form>
@@ -486,10 +490,12 @@ export function SearchEngineBox() {
           {(close) => (
             <>
               <DialogTitle className="text-xl font-semibold">
-                删除搜索引擎
+                {t("search.deleteEngine")}
               </DialogTitle>
               <p className="mt-3 text-sm leading-6 text-glass-content">
-                确定要删除“{enginePendingDeletion.name}”吗？此操作无法撤销。
+                {t("search.deleteConfirm", {
+                  name: enginePendingDeletion.name,
+                })}
               </p>
               <div className="mt-7 flex justify-end gap-3">
                 <button
@@ -497,7 +503,7 @@ export function SearchEngineBox() {
                   type="button"
                   onClick={close}
                 >
-                  取消
+                  {t("common.cancel")}
                 </button>
                 <button
                   className="h-10 rounded-xl bg-red-500 px-6 text-sm font-semibold text-white outline-none transition hover:bg-red-600 focus-visible:ring-2 focus-visible:ring-glass-focus"
@@ -507,7 +513,7 @@ export function SearchEngineBox() {
                     close();
                   }}
                 >
-                  删除
+                  {t("common.delete")}
                 </button>
               </div>
             </>

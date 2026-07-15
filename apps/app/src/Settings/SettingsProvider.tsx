@@ -9,6 +9,7 @@ import {
 } from "react";
 import { platform } from "@platform";
 import { normalizeSettings, type Settings } from "./settings";
+import i18n from "../i18n";
 
 type SettingsContextValue = {
   settings: Settings;
@@ -19,6 +20,11 @@ type SettingsUpdate =
   Partial<Settings> | ((currentSettings: Settings) => Partial<Settings>);
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
+
+function applyLocale(locale: Settings["locale"]) {
+  document.documentElement.lang = locale;
+  void i18n.changeLanguage(locale);
+}
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings>(() =>
@@ -37,6 +43,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
           localUpdateVersionRef.current === initialUpdateVersion
         ) {
           settingsRef.current = storedSettings;
+          applyLocale(storedSettings.locale);
           setSettings(storedSettings);
         }
       },
@@ -46,6 +53,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     );
     const unsubscribe = platform.settings.subscribe((storedSettings) => {
       settingsRef.current = storedSettings;
+      applyLocale(storedSettings.locale);
       setSettings(storedSettings);
     });
     return () => {
@@ -64,6 +72,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     });
     localUpdateVersionRef.current += 1;
     settingsRef.current = normalizedSettings;
+    applyLocale(normalizedSettings.locale);
     setSettings(normalizedSettings);
     void platform.settings.save(normalizedSettings).catch((error: unknown) => {
       console.error("Failed to save settings", error);

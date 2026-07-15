@@ -5,7 +5,8 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { importBrowserBookmarksWithToast } from "../browserBookmarks";
 import { normalizeImageUrl } from "./wallpaper";
 import {
@@ -56,6 +57,7 @@ function RangeLabels({
   onIncrease: () => void;
   onReset: () => void;
 }) {
+  const { t } = useTranslation();
   const labelButtonClass =
     "absolute rounded px-1 outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none";
 
@@ -65,7 +67,7 @@ function RangeLabels({
         className={`${labelButtonClass} left-0`}
         type="button"
         onClick={onDecrease}
-        aria-label={`减小${minLabel}`}
+        aria-label={t("settings.decrease", { label: minLabel })}
       >
         {minLabel}
       </button>
@@ -74,15 +76,15 @@ function RangeLabels({
         style={{ left: getRangePosition(defaultValue, min, max) }}
         type="button"
         onClick={onReset}
-        aria-label={`恢复${defaultValue}的默认值`}
+        aria-label={t("settings.resetDefault", { value: defaultValue })}
       >
-        默认
+        {t("common.default")}
       </button>
       <button
         className={`${labelButtonClass} right-0`}
         type="button"
         onClick={onIncrease}
-        aria-label={`增大${maxLabel}`}
+        aria-label={t("settings.increase", { label: maxLabel })}
       >
         {maxLabel}
       </button>
@@ -101,6 +103,7 @@ function preloadImage(url: string) {
 }
 
 function BrowserBookmarksImportSettings() {
+  const { t } = useTranslation();
   const [isImportingBookmarks, setIsImportingBookmarks] = useState(false);
 
   const handleImportBrowserBookmarks = useCallback(async () => {
@@ -116,7 +119,7 @@ function BrowserBookmarksImportSettings() {
     <section className="border-b border-glass-border px-2 py-3.5">
       <div className="flex items-center justify-between gap-3">
         <h3 className="min-w-0 text-sm font-medium text-glass-strong">
-          导入浏览器收藏夹
+          {t("settings.importBookmarks")}
         </h3>
         <button
           className="h-8 shrink-0 rounded-lg bg-glass-selected px-3 text-sm font-medium text-glass-selected-content outline-none transition hover:bg-glass-strong/90 focus-visible:ring-2 focus-visible:ring-glass-focus disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
@@ -124,7 +127,7 @@ function BrowserBookmarksImportSettings() {
           onClick={handleImportBrowserBookmarks}
           disabled={isImportingBookmarks}
         >
-          {isImportingBookmarks ? "导入中" : "导入"}
+          {t(isImportingBookmarks ? "settings.importing" : "settings.import")}
         </button>
       </div>
     </section>
@@ -138,6 +141,7 @@ function LauncherSizeSettings({
   settings: Settings;
   onChange: (settings: Partial<Settings>) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <section className="space-y-2.5 border-b border-glass-border px-2 py-4">
       <div className="flex items-center justify-between gap-3">
@@ -145,7 +149,7 @@ function LauncherSizeSettings({
           className="text-sm font-medium text-glass-strong"
           htmlFor="launcher-node-size"
         >
-          快捷方式大小
+          {t("settings.shortcutSize")}
         </label>
       </div>
       <div>
@@ -157,7 +161,7 @@ function LauncherSizeSettings({
           max={MAX_LAUNCHER_NODE_SCALE}
           step={LAUNCHER_NODE_SCALE_STEP}
           value={settings.nodeScale}
-          aria-label="快捷方式大小"
+          aria-label={t("settings.shortcutSize")}
           onChange={(event) =>
             onChange({
               nodeScale: Number(event.currentTarget.value),
@@ -165,8 +169,8 @@ function LauncherSizeSettings({
           }
         />
         <RangeLabels
-          minLabel="小"
-          maxLabel="大"
+          minLabel={t("settings.small")}
+          maxLabel={t("settings.large")}
           defaultValue={DEFAULT_LAUNCHER_NODE_SCALE}
           min={MIN_LAUNCHER_NODE_SCALE}
           max={MAX_LAUNCHER_NODE_SCALE}
@@ -212,6 +216,7 @@ function WallpaperSettingsSection({
   onClearWallpaper: () => void;
   onChangeSettings: (settings: Partial<Settings>) => void;
 }) {
+  const { t } = useTranslation();
   const [customImageUrl, setCustomImageUrl] = useState("");
   const [customImageError, setCustomImageError] = useState("");
   const [isApplyingCustomImage, setIsApplyingCustomImage] = useState(false);
@@ -225,7 +230,7 @@ function WallpaperSettingsSection({
       try {
         imageUrl = normalizeImageUrl(customImageUrl);
       } catch {
-        setCustomImageError("请输入有效的 http 或 https 图片 URL");
+        setCustomImageError(t("settings.invalidImageUrl"));
         return;
       }
 
@@ -237,7 +242,7 @@ function WallpaperSettingsSection({
         onSelectWallpaper(imageUrl);
         setCustomImageUrl("");
       } catch {
-        setCustomImageError("图片加载失败，请检查图片地址是否可访问");
+        setCustomImageError(t("settings.imageLoadFailed"));
       } finally {
         setIsApplyingCustomImage(false);
       }
@@ -251,7 +256,7 @@ function WallpaperSettingsSection({
         id="wallpaper-settings-title"
         className="text-sm font-medium text-glass-strong"
       >
-        设置壁纸
+        {t("settings.wallpaper")}
       </h3>
 
       <div className="mt-4 space-y-4">
@@ -261,7 +266,7 @@ function WallpaperSettingsSection({
               className="text-xs font-semibold text-glass-content"
               htmlFor="wallpaper-url"
             >
-              图片地址
+              {t("settings.imageUrl")}
             </label>
             {selectedWallpaperUrl && (
               <button
@@ -271,7 +276,7 @@ function WallpaperSettingsSection({
                 type="button"
                 onClick={onClearWallpaper}
               >
-                恢复默认
+                {t("settings.restoreDefault")}
               </button>
             )}
           </div>
@@ -294,7 +299,9 @@ function WallpaperSettingsSection({
                 isApplyingCustomImage || customImageUrl.trim().length === 0
               }
             >
-              {isApplyingCustomImage ? "加载中" : "应用"}
+              {t(
+                isApplyingCustomImage ? "settings.applying" : "settings.apply",
+              )}
             </button>
           </div>
           {customImageError ? (
@@ -309,7 +316,7 @@ function WallpaperSettingsSection({
             className="block text-xs font-semibold text-glass-content"
             htmlFor="wallpaper-overlay"
           >
-            壁纸遮罩
+            {t("settings.wallpaperOverlay")}
           </label>
           <div>
             <input
@@ -320,7 +327,7 @@ function WallpaperSettingsSection({
               max={MAX_WALLPAPER_OVERLAY_OPACITY}
               step={WALLPAPER_OVERLAY_OPACITY_STEP}
               value={settings.wallpaperOverlayOpacity}
-              aria-label="壁纸遮罩强度"
+              aria-label={t("settings.overlayIntensity")}
               onChange={(event) =>
                 onChangeSettings({
                   wallpaperOverlayOpacity: Number(event.currentTarget.value),
@@ -328,8 +335,8 @@ function WallpaperSettingsSection({
               }
             />
             <RangeLabels
-              minLabel="浅"
-              maxLabel="深"
+              minLabel={t("settings.light")}
+              maxLabel={t("settings.dark")}
               defaultValue={DEFAULT_WALLPAPER_OVERLAY_OPACITY}
               min={MIN_WALLPAPER_OVERLAY_OPACITY}
               max={MAX_WALLPAPER_OVERLAY_OPACITY}
@@ -375,6 +382,7 @@ export function SettingsPanel({
   isOpen: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const { settings, updateSettings } = useSettings();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -412,20 +420,51 @@ export function SettingsPanel({
             id="settings-drawer-title"
             className="text-base font-semibold text-glass-strong"
           >
-            设置
+            {t("settings.title")}
           </h2>
           <button
             ref={closeButtonRef}
             className="grid size-9 place-items-center rounded-full text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
             type="button"
             onClick={onClose}
-            aria-label="关闭设置"
+            aria-label={t("settings.close")}
           >
             <X aria-hidden="true" className="size-5" />
           </button>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <section
+            className="border-b border-glass-border px-2 py-4"
+            aria-labelledby="language-settings-title"
+          >
+            <h3
+              id="language-settings-title"
+              className="text-sm font-medium text-glass-strong"
+            >
+              {t("settings.language")}
+            </h3>
+            <div className="relative mt-3">
+              <select
+                id="settings-language"
+                className="h-10 w-full appearance-none rounded-xl border border-glass-border bg-white/10 py-0 pl-3 pr-11 text-sm font-medium text-glass-strong outline-none transition hover:bg-glass-hover focus-visible:border-glass-focus focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
+                value={settings.locale}
+                aria-labelledby="language-settings-title"
+                onChange={(event) =>
+                  updateSettings({
+                    locale: event.currentTarget.value as Settings["locale"],
+                  })
+                }
+              >
+                <option value="en">{t("settings.english")}</option>
+                <option value="zh-CN">{t("settings.chinese")}</option>
+              </select>
+              <ChevronDown
+                className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-glass-content"
+                aria-hidden="true"
+              />
+            </div>
+          </section>
           <BrowserBookmarksImportSettings />
           <LauncherSizeSettings settings={settings} onChange={updateSettings} />
           <WallpaperSettingsSection

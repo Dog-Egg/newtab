@@ -84,6 +84,7 @@ export function mergeShortcutIntoNode(
   targetId: string,
   folderId: string,
   createdAt = Date.now(),
+  folderTitle = "Folder",
 ): ShortcutNode[] {
   if (sourceId === targetId) return nodes;
 
@@ -108,7 +109,7 @@ export function mergeShortcutIntoNode(
   const folder: ShortcutFolder = {
     type: "folder",
     id: folderId,
-    title: "文件夹",
+    title: folderTitle,
     children: [target, source],
     createdAt,
   };
@@ -183,7 +184,7 @@ export const ACTIVE_CATEGORY_ID_STORAGE_KEY = "activeCategoryId";
 
 export const DEFAULT_CATEGORY: ShortcutCategory = {
   id: "default",
-  name: "首页",
+  name: "Home",
   shortcuts: [],
 };
 
