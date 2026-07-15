@@ -82,7 +82,7 @@ export function Wallpaper({
   }, [isPendingWallpaperVisible, pendingWallpaperUrl]);
 
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div className="pointer-events-none fixed inset-0 overflow-hidden">
       {activeWallpaperUrl ? (
         <div
           className="absolute inset-0 bg-cover bg-center"

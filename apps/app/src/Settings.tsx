@@ -5,7 +5,7 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { Download, X } from "lucide-react";
+import { X } from "lucide-react";
 import { importBrowserBookmarksWithToast } from "./browserBookmarks";
 import { normalizeImageUrl } from "./wallpapers";
 import {
@@ -41,18 +41,17 @@ function BrowserBookmarksImportSettings() {
   }, []);
 
   return (
-    <section className="space-y-3 border-b border-white/10 px-4 py-3">
+    <section className="border-b border-glass-border px-2 py-3.5">
       <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="text-sm font-bold">导入浏览器收藏夹</h3>
-        </div>
+        <h3 className="min-w-0 text-sm font-medium text-glass-strong">
+          浏览器收藏夹
+        </h3>
         <button
-          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-white px-3 text-sm font-bold text-slate-900 outline-none transition hover:bg-white/90 focus-visible:ring-4 focus-visible:ring-white/60 disabled:cursor-not-allowed disabled:opacity-60"
+          className="h-8 shrink-0 rounded-lg bg-glass-selected px-3 text-sm font-medium text-glass-selected-content outline-none transition hover:bg-glass-strong/90 focus-visible:ring-2 focus-visible:ring-glass-focus disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
           type="button"
           onClick={handleImportBrowserBookmarks}
           disabled={isImportingBookmarks}
         >
-          <Download aria-hidden="true" className="size-4" />
           {isImportingBookmarks ? "导入中" : "导入"}
         </button>
       </div>
@@ -68,16 +67,19 @@ function LauncherSizeSettings({
   onChange: (settings: LauncherSettings) => void;
 }) {
   return (
-    <section className="space-y-3 border-b border-white/10 px-4 py-4">
+    <section className="space-y-2.5 border-b border-glass-border px-2 py-4">
       <div className="flex items-center justify-between gap-3">
-        <label className="text-sm font-bold" htmlFor="launcher-node-size">
+        <label
+          className="text-sm font-medium text-glass-strong"
+          htmlFor="launcher-node-size"
+        >
           快捷方式大小
         </label>
       </div>
       <div>
         <input
           id="launcher-node-size"
-          className="w-full cursor-pointer accent-white"
+          className="settings-range"
           type="range"
           min={MIN_LAUNCHER_NODE_SCALE}
           max={MAX_LAUNCHER_NODE_SCALE}
@@ -91,7 +93,7 @@ function LauncherSizeSettings({
             })
           }
         />
-        <div className="flex justify-between text-xs font-semibold text-white/55">
+        <div className="mt-0.5 flex justify-between text-xs font-medium text-glass-muted">
           <span>小</span>
           <span>大</span>
         </div>
@@ -147,17 +149,20 @@ function WallpaperSettingsSection({
   );
 
   return (
-    <>
-      <section className="space-y-3 border-b border-white/10 px-4 py-4">
+    <section className="space-y-4 px-2 py-4">
+      <div className="space-y-2.5">
         <div className="flex items-center justify-between gap-3">
-          <label className="text-sm font-bold" htmlFor="wallpaper-overlay">
+          <label
+            className="text-sm font-medium text-glass-strong"
+            htmlFor="wallpaper-overlay"
+          >
             壁纸遮罩
           </label>
         </div>
         <div>
           <input
             id="wallpaper-overlay"
-            className="w-full cursor-pointer accent-white"
+            className="settings-range"
             type="range"
             min={MIN_WALLPAPER_OVERLAY_OPACITY}
             max={MAX_WALLPAPER_OVERLAY_OPACITY}
@@ -171,23 +176,23 @@ function WallpaperSettingsSection({
               })
             }
           />
-          <div className="flex justify-between text-xs font-semibold text-white/55">
+          <div className="mt-0.5 flex justify-between text-xs font-medium text-glass-muted">
             <span>清晰</span>
             <span>深色</span>
           </div>
         </div>
-      </section>
+      </div>
 
-      <form className="space-y-2 px-4 py-3" onSubmit={applyCustomWallpaper}>
+      <form className="space-y-2" onSubmit={applyCustomWallpaper}>
         <label
-          className="block text-xs font-bold text-white/70"
+          className="block text-xs font-semibold text-glass-content"
           htmlFor="wallpaper-url"
         >
           图片 URL
         </label>
         <div className="flex gap-2">
           <input
-            className="min-w-0 flex-1 rounded-full border border-white/20 bg-white/10 px-3 text-sm font-semibold text-white outline-none transition placeholder:text-white/40 focus:border-white/45 focus:bg-white/15 focus-visible:ring-4 focus-visible:ring-white/30"
+            className="h-9 min-w-0 flex-1 rounded-lg border border-glass-border bg-white/60 px-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-500 focus:bg-white/80 focus-visible:ring-2 focus-visible:ring-white/70 motion-reduce:transition-none"
             id="wallpaper-url"
             type="url"
             inputMode="url"
@@ -199,7 +204,7 @@ function WallpaperSettingsSection({
             }}
           />
           <button
-            className="h-10 shrink-0 rounded-full bg-white px-3 text-sm font-bold text-slate-900 outline-none transition hover:bg-white/90 focus-visible:ring-4 focus-visible:ring-white/60 disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-9 shrink-0 rounded-lg bg-glass-selected px-3 text-sm font-semibold text-glass-selected-content outline-none transition hover:bg-glass-strong/90 focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
             type="submit"
             disabled={
               isApplyingCustomImage || customImageUrl.trim().length === 0
@@ -209,18 +214,18 @@ function WallpaperSettingsSection({
           </button>
         </div>
         {customImageError ? (
-          <p className="text-xs font-semibold text-rose-100">
+          <p className="text-xs font-semibold text-rose-700">
             {customImageError}
           </p>
         ) : null}
       </form>
 
-      <div className="flex items-center justify-between gap-3 border-t border-white/10 px-4 py-3">
-        <p className="min-w-0 truncate text-xs font-semibold text-white/65">
+      <div className="flex items-center justify-between gap-3 border-t border-glass-border pt-3">
+        <p className="min-w-0 truncate text-xs font-medium text-glass-content">
           {selectedWallpaperUrl ?? "当前使用默认壁纸"}
         </p>
         <button
-          className="hover:bg-white/18 h-9 shrink-0 rounded-full bg-white/10 px-3 text-sm font-semibold outline-none transition focus-visible:ring-4 focus-visible:ring-white/60 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-8 shrink-0 rounded-lg px-2 text-sm font-medium text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none"
           type="button"
           onClick={onClearWallpaper}
           disabled={!selectedWallpaperUrl}
@@ -228,7 +233,7 @@ function WallpaperSettingsSection({
           恢复默认
         </button>
       </div>
-    </>
+    </section>
   );
 }
 
@@ -254,7 +259,7 @@ export function SettingsPanel({
   useEffect(() => {
     if (!isOpen) return;
 
-    closeButtonRef.current?.focus();
+    closeButtonRef.current?.focus({ preventScroll: true });
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
@@ -266,27 +271,30 @@ export function SettingsPanel({
 
   return (
     <div
-      className="relative z-[110] shrink-0 overflow-hidden transition-[width] duration-300 ease-out"
+      className={`relative z-[110] shrink-0 transition-[width] duration-300 ease-out motion-reduce:transition-none`}
       style={{ width: isOpen ? "min(100vw, 26rem)" : 0 }}
       aria-hidden={!isOpen}
       inert={!isOpen}
     >
       <aside
         data-settings-drawer=""
-        className={`absolute inset-y-0 right-0 flex w-[min(100vw,26rem)] flex-col overflow-hidden border-l border-white/30 bg-slate-950/90 text-white shadow-[-24px_0_70px_rgba(15,23,42,0.35)] backdrop-blur-xl transition-transform duration-300 ease-out ${
-          isOpen ? "translate-x-0" : "pointer-events-none translate-x-full"
+        className={`glass-panel absolute inset-y-0 right-0 flex w-[min(100vw,26rem)] flex-col overflow-hidden rounded-none transition-transform duration-300 ease-out motion-reduce:transition-none ${
+          isOpen ? "translate-x-0" : "translate-x-full"
         }`}
         role="dialog"
         aria-modal="false"
         aria-labelledby="settings-drawer-title"
       >
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/15 px-5 py-4">
-          <h2 id="settings-drawer-title" className="text-base font-bold">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-glass-border px-5 py-4">
+          <h2
+            id="settings-drawer-title"
+            className="text-base font-semibold text-glass-strong"
+          >
             设置
           </h2>
           <button
             ref={closeButtonRef}
-            className="grid size-9 place-items-center rounded-full bg-white/10 outline-none transition hover:bg-white/20 focus-visible:ring-4 focus-visible:ring-white/60"
+            className="grid size-9 place-items-center rounded-full text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
             type="button"
             onClick={onClose}
             aria-label="关闭设置"
@@ -295,7 +303,7 @@ export function SettingsPanel({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)]">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <BrowserBookmarksImportSettings />
           <LauncherSizeSettings
             settings={launcherSettings}

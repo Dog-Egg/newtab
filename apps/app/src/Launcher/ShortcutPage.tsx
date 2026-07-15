@@ -59,6 +59,7 @@ type SortableCollisionDetector = NonNullable<
 const MERGE_TARGET_PREFIX = "merge:";
 // dnd-kit 用 group 区分多个 sortable 容器：首页是 root，每个 Folder 使用自身 ID。
 const ROOT_SORTABLE_GROUP = "root";
+const tw = String.raw;
 
 const ShortcutCategoriesContext = createContext<{
   categories: ShortcutCategory[];
@@ -559,7 +560,7 @@ function FolderDialog({
       contentRef={panelRef}
       isClosing={isClosing}
       onClose={onClose}
-      className="max-w-xl rounded-[32px] border-white/20 bg-slate-900/80 p-7 backdrop-blur-2xl"
+      className="max-w-xl p-7"
     >
       {(close) => (
         <>
@@ -696,6 +697,16 @@ function NodeMenu({
   const { nodeScale } = useLauncherSettings();
   const { categories, categoryId } = useContext(ShortcutCategoriesContext);
 
+  const menuItemBaseClass = tw`flex h-9 cursor-default select-none items-center rounded-xl px-3 outline-none transition-colors duration-200 motion-reduce:transition-none`;
+  const menuItemClass = clsx(
+    menuItemBaseClass,
+    "data-[highlighted]:bg-glass-hover data-[highlighted]:text-glass-strong",
+  );
+  const dangerMenuItemClass = clsx(
+    menuItemBaseClass,
+    "text-red-300 data-[highlighted]:bg-red-500/20 data-[highlighted]:text-red-200",
+  );
+
   return (
     <div
       className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2"
@@ -706,11 +717,12 @@ function NodeMenu({
           <button
             type="button"
             aria-label={`${node.title}的更多操作`}
-            className="pointer-events-auto invisible absolute right-0 top-0 grid size-6 -translate-y-1/3 translate-x-1/3 place-items-center rounded-full bg-slate-900/75 text-white opacity-0 shadow-lg outline-none backdrop-blur transition-[opacity,visibility] delay-0 hover:bg-slate-800 focus-visible:visible focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-white group-hover:visible group-hover:opacity-100 group-hover:delay-500 data-[state=open]:visible data-[state=open]:opacity-100"
+            title="更多操作"
+            className="pointer-events-auto invisible absolute right-0 top-0 grid size-6 -translate-y-1/3 translate-x-1/3 place-items-center rounded-full bg-slate-900/60 text-glass-content opacity-0 shadow-[0_8px_24px_rgba(15,23,42,0.24)] outline-none backdrop-blur-2xl transition-[color,background-color,opacity,visibility] delay-0 duration-200 hover:bg-slate-900/70 hover:text-glass-strong focus-visible:visible focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-glass-focus focus-visible:delay-0 group-hover:visible group-hover:opacity-100 group-hover:delay-500 data-[state=open]:visible data-[state=open]:bg-slate-900/70 data-[state=open]:text-glass-strong data-[state=open]:opacity-100 data-[state=open]:delay-0 motion-reduce:transition-none motion-reduce:delay-0"
             onClick={(event) => event.stopPropagation()}
             onPointerDown={(event) => event.stopPropagation()}
           >
-            <EllipsisVertical className="size-4" />
+            <EllipsisVertical className="size-4" aria-hidden="true" />
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
@@ -718,32 +730,38 @@ function NodeMenu({
             align="end"
             sideOffset={6}
             onCloseAutoFocus={(event) => event.preventDefault()}
-            className="data-[state=closed]:animate-out data-[state=open]:animate-in z-[80] min-w-36 rounded-xl border border-white/20 bg-slate-900/95 p-1.5 text-sm text-white shadow-2xl backdrop-blur-xl"
+            className="glass-panel z-[80] min-w-44 p-1.5 text-control transition-[opacity,transform] duration-200 data-[state=closed]:scale-95 data-[state=open]:scale-100 data-[state=closed]:opacity-0 data-[state=open]:opacity-100 motion-reduce:transition-none"
           >
-            <DropdownMenu.Item
-              className="cursor-default select-none rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-white/15"
-              onSelect={onEdit}
-            >
+            <DropdownMenu.Item className={menuItemClass} onSelect={onEdit}>
               {node.type === "folder" ? "修改标题" : "编辑"}
             </DropdownMenu.Item>
             {onMove && categories.length > 1 ? (
               <DropdownMenu.Sub>
-                <DropdownMenu.SubTrigger className="flex cursor-default select-none items-center justify-between gap-3 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-white/15 data-[state=open]:bg-white/15">
-                  <span>移动到其他分类</span>
-                  <ChevronRight className="size-4" aria-hidden="true" />
+                <DropdownMenu.SubTrigger
+                  className={clsx(
+                    menuItemClass,
+                    "data-[state=open]:bg-glass-hover data-[state=open]:text-glass-strong",
+                  )}
+                >
+                  <span className="flex-1">移动到其他分类</span>
+                  <ChevronRight
+                    className="size-3.5"
+                    strokeWidth={2.2}
+                    aria-hidden="true"
+                  />
                 </DropdownMenu.SubTrigger>
                 <DropdownMenu.Portal>
                   <DropdownMenu.SubContent
                     sideOffset={6}
                     alignOffset={-6}
-                    className="data-[state=closed]:animate-out data-[state=open]:animate-in z-[90] min-w-32 rounded-xl border border-white/20 bg-slate-900/95 p-1.5 text-sm text-white shadow-2xl backdrop-blur-xl"
+                    className="glass-panel z-[90] min-w-36 p-1.5 text-control transition-[opacity,transform] duration-200 data-[state=closed]:scale-95 data-[state=open]:scale-100 data-[state=closed]:opacity-0 data-[state=open]:opacity-100 motion-reduce:transition-none"
                   >
                     {categories
                       .filter((category) => category.id !== categoryId)
                       .map((category) => (
                         <DropdownMenu.Item
                           key={category.id}
-                          className="cursor-default select-none rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-white/15"
+                          className={menuItemClass}
                           onSelect={() => onMove(category.id)}
                         >
                           {category.name}
@@ -755,7 +773,7 @@ function NodeMenu({
             ) : null}
             {onDelete ? (
               <DropdownMenu.Item
-                className="cursor-default select-none rounded-lg px-3 py-2 text-red-300 outline-none data-[highlighted]:bg-red-500/20"
+                className={dangerMenuItemClass}
                 onSelect={onDelete}
               >
                 {node.type === "folder" ? "删除文件夹" : "删除"}
@@ -782,10 +800,7 @@ function EditItemDialog({
   const titleInputRef = useRef<HTMLInputElement | null>(null);
 
   return (
-    <Dialog
-      onClose={onClose}
-      className="max-w-md rounded-[28px] border-white/20 bg-slate-900/90 p-7 backdrop-blur-2xl"
-    >
+    <Dialog onClose={onClose} className="max-w-md p-7">
       {(close) => (
         <>
           <DialogTitle className="mb-6 text-xl font-bold">
@@ -857,10 +872,7 @@ function AddItemDialog({
   const [url, setUrl] = useState("");
 
   return (
-    <Dialog
-      onClose={onClose}
-      className="max-w-md rounded-[28px] border-white/20 bg-slate-900/90 p-7 backdrop-blur-2xl"
-    >
+    <Dialog onClose={onClose} className="max-w-md p-7">
       {(close) => (
         <>
           <DialogTitle className="mb-6 text-xl font-bold">

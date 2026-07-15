@@ -22,7 +22,7 @@ export function DeleteShortcutCollectionDialog({
   return (
     <Dialog
       onClose={onClose}
-      className="max-w-md rounded-[28px] border-white/20 bg-slate-900/90 p-7 backdrop-blur-2xl"
+      className="max-w-md p-7"
     >
       {(close) => (
         <>

@@ -62,15 +62,15 @@ function SortableCategory({
       className={clsx(
         "group/category flex h-9 shrink-0 cursor-grab touch-none select-none items-center rounded-xl transition duration-200 active:cursor-grabbing",
         showActive
-          ? "bg-white/85 text-slate-700 shadow-sm"
-          : "text-white/85 hover:bg-white/10 hover:text-white",
+          ? "bg-glass-selected text-glass-selected-content shadow-sm"
+          : "text-glass-content hover:bg-glass-hover hover:text-glass-strong",
         isDragging && "opacity-40",
       )}
     >
       {isEditing ? (
         <input
           autoFocus
-          className="placeholder:text-current/50 mx-3 min-w-8 max-w-28 bg-transparent text-xs font-semibold text-inherit outline-none"
+          className="placeholder:text-current/50 text-control mx-3 min-w-8 max-w-28 bg-transparent text-inherit outline-none"
           style={{ width: `${draftName.length + 2}ch` }}
           value={draftName}
           maxLength={12}
@@ -89,7 +89,7 @@ function SortableCategory({
       ) : (
         <button
           type="button"
-          className="flex h-full items-center gap-1.5 rounded-xl px-3 text-xs font-semibold outline-none focus-visible:ring-2 focus-visible:ring-white/80 disabled:cursor-grab"
+          className="text-control focus-visible:ring-glass-focus flex h-full items-center gap-1.5 rounded-xl px-3 outline-none focus-visible:ring-2 disabled:cursor-grab"
           aria-current={showActive ? "page" : undefined}
           disabled={isManaging}
           onClick={onSelect}
@@ -103,13 +103,13 @@ function SortableCategory({
       {isManaging && !isEditing ? (
         <div
           className={clsx(
-            "flex max-w-0 shrink-0 items-center gap-0.5 overflow-hidden opacity-0 transition-[max-width,opacity] duration-200 ease-out group-hover/category:max-w-12 group-hover/category:opacity-100 group-focus-within/category:max-w-12 group-focus-within/category:opacity-100",
+            "flex max-w-0 shrink-0 items-center gap-0.5 overflow-hidden opacity-0 transition-[max-width,opacity] duration-200 ease-out group-focus-within/category:max-w-12 group-focus-within/category:opacity-100 group-hover/category:max-w-12 group-hover/category:opacity-100",
             showActive ? "text-slate-500" : "text-white/70",
           )}
         >
           <button
             type="button"
-            className="grid size-5 place-items-center rounded-md outline-none transition hover:bg-black/10 focus-visible:ring-2 focus-visible:ring-white/80"
+            className="focus-visible:ring-glass-focus grid size-5 place-items-center rounded-md outline-none transition hover:bg-black/10 focus-visible:ring-2"
             onClick={() => {
               setDraftName(category.name);
               setIsEditing(true);
@@ -122,7 +122,7 @@ function SortableCategory({
           {canDelete ? (
             <button
               type="button"
-              className="grid size-5 place-items-center rounded-md outline-none transition hover:bg-black/10 focus-visible:ring-2 focus-visible:ring-white/80"
+              className="focus-visible:ring-glass-focus grid size-5 place-items-center rounded-md outline-none transition hover:bg-black/10 focus-visible:ring-2"
               onClick={onDelete}
               aria-label={`删除分类 ${category.name}`}
               title="删除分类"
@@ -213,7 +213,7 @@ export function CategoryTabs({
       onDragEnd={handleDragEnd}
     >
       <nav
-        className="flex max-w-[calc(100vw-2rem)] items-center gap-1 overflow-x-auto rounded-[20px] border border-white/25 bg-slate-900/30 p-1.5 shadow-[0_16px_50px_rgba(15,23,42,0.28)] backdrop-blur-2xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="glass-panel flex max-w-[calc(100vw-2rem)] items-center gap-1 overflow-x-auto p-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         aria-label="快捷方式分类"
       >
         {categories.map((category, index) => (
@@ -231,12 +231,12 @@ export function CategoryTabs({
 
         {isManaging && isAdding ? (
           <form
-            className="flex h-9 shrink-0 items-center rounded-xl bg-white/85 pl-3 pr-1"
+            className="bg-glass-selected flex h-9 shrink-0 items-center rounded-xl pl-3 pr-1"
             onSubmit={addCategory}
           >
             <input
               ref={inputRef}
-              className="w-[72px] bg-transparent text-xs font-semibold text-slate-700 outline-none placeholder:text-slate-400"
+              className="text-control text-glass-selected-content placeholder:text-glass-muted w-[72px] bg-transparent outline-none"
               value={draftName}
               onChange={(event) => setDraftName(event.target.value)}
               onKeyDown={(event) => {
@@ -248,7 +248,7 @@ export function CategoryTabs({
             />
             <button
               type="submit"
-              className="grid size-5 place-items-center rounded-md text-blue-600 transition hover:bg-blue-50 disabled:text-slate-300"
+              className="text-action grid size-5 place-items-center rounded-md transition hover:bg-blue-50 disabled:text-slate-300"
               disabled={!draftName.trim()}
               aria-label="保存分类"
             >
@@ -266,7 +266,7 @@ export function CategoryTabs({
         ) : isManaging ? (
           <button
             type="button"
-            className="grid size-9 shrink-0 place-items-center rounded-xl text-white/85 outline-none transition hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white/80"
+            className="text-glass-content hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-glass-focus grid size-9 shrink-0 place-items-center rounded-xl outline-none transition focus-visible:ring-2"
             onClick={startAdding}
             aria-label="新建分类"
             title="新建分类"
@@ -281,7 +281,7 @@ export function CategoryTabs({
         <button
           type="button"
           className={clsx(
-            "grid size-9 shrink-0 place-items-center rounded-full outline-none transition-all duration-200 hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-white/80",
+            "focus-visible:ring-glass-focus grid size-9 shrink-0 place-items-center rounded-full outline-none transition-all duration-200 hover:bg-white/[0.08] focus-visible:ring-2",
             isManaging
               ? "bg-white/[0.08] text-white"
               : "text-white/70 hover:text-white",

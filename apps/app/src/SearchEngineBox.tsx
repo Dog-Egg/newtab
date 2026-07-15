@@ -224,11 +224,12 @@ export function SearchEngineBox() {
   return (
     <>
       <div className="relative mx-auto w-full max-w-[526px]" role="search">
-        <div className="flex h-12 items-center rounded-2xl border border-white/50 bg-white/75 px-3 shadow-[0_18px_45px_rgba(15,23,42,0.12)] backdrop-blur-md transition focus-within:border-white/80 focus-within:bg-white/85 focus-within:shadow-[0_20px_55px_rgba(15,23,42,0.18)] sm:h-[52px]">
+        {/* 搜索框 */}
+        <div className="flex h-12 items-center rounded-glass border border-white/50 bg-white/55 px-3 text-slate-800 shadow-[0_16px_42px_rgba(15,23,42,0.2)] backdrop-blur-2xl transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-white/95 focus-within:bg-white/80 focus-within:shadow-[0_22px_58px_rgba(15,23,42,0.32)] motion-reduce:transition-none sm:h-[52px]">
           <Popover.Root open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
             <Popover.Trigger asChild>
               <button
-                className="flex h-9 shrink-0 items-center gap-1.5 rounded-full px-2 text-slate-600 outline-none transition hover:bg-slate-900/5 focus-visible:ring-4 focus-visible:ring-blue-300/50"
+                className="focus-visible:ring-glass-focus flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-2 text-slate-700 outline-none transition hover:bg-white/45 hover:text-slate-900 focus-visible:ring-2 motion-reduce:transition-none"
                 type="button"
                 aria-label={`选择搜索引擎，当前为${selectedEngine.name}`}
                 title={selectedEngine.name}
@@ -240,7 +241,7 @@ export function SearchEngineBox() {
 
             <Popover.Portal>
               <Popover.Content
-                className="z-30 w-[calc(100vw-2rem)] max-w-[526px] overflow-hidden rounded-2xl border border-white/70 bg-white/95 p-2 text-slate-700 shadow-[0_24px_60px_rgba(15,23,42,0.22)] backdrop-blur-xl"
+                className="glass-panel z-30 w-[calc(100vw-2rem)] max-w-[526px] overflow-hidden p-2"
                 sideOffset={16}
                 align="start"
                 alignOffset={-12}
@@ -254,9 +255,9 @@ export function SearchEngineBox() {
                     <button
                       key={engine.id}
                       className={clsx(
-                        "flex h-16 min-w-[88px] shrink-0 flex-col items-center justify-center gap-1 rounded-xl px-3 text-center outline-none transition hover:bg-slate-100 focus-visible:bg-slate-100 focus-visible:ring-4 focus-visible:ring-blue-300/40",
+                        "text-glass-content hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-glass-focus flex h-16 min-w-[88px] shrink-0 flex-col items-center justify-center gap-1 rounded-xl px-3 text-center outline-none transition focus-visible:ring-2 motion-reduce:transition-none",
                         engine.id === selectedEngine.id &&
-                          "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+                          "bg-glass-selected text-glass-selected-content shadow-sm",
                       )}
                       type="button"
                       aria-pressed={engine.id === selectedEngine.id}
@@ -269,25 +270,25 @@ export function SearchEngineBox() {
                     </button>
                   ))}
                   <button
-                    className="flex h-16 min-w-[104px] shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-blue-200 bg-blue-50/70 px-3 text-xs font-semibold text-blue-600 outline-none transition hover:bg-blue-100 focus-visible:bg-blue-100 focus-visible:ring-4 focus-visible:ring-blue-300/40"
+                    className="border-glass-border text-glass-content hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-glass-focus grid h-16 min-w-[88px] shrink-0 place-items-center rounded-xl border border-dashed outline-none transition focus-visible:ring-2 motion-reduce:transition-none"
                     type="button"
                     onClick={openAddDialog}
+                    aria-label="新增搜索引擎"
+                    title="新增搜索引擎"
                   >
-                    <span className="grid size-7 place-items-center rounded-full bg-white text-blue-600 shadow-sm">
-                      <Plus aria-hidden="true" className="size-4" />
-                    </span>
-                    新增
+                    <Plus aria-hidden="true" className="size-5" />
                   </button>
                 </div>
               </Popover.Content>
             </Popover.Portal>
           </Popover.Root>
 
-          <div className="mx-1 h-6 w-px shrink-0 bg-slate-900/10" />
+          <div className="mx-1 h-6 w-px shrink-0 bg-slate-500/30" />
 
           <form className="flex min-w-0 flex-1" onSubmit={handleSearchSubmit}>
             <input
-              className="min-w-0 flex-1 bg-transparent px-3 text-[15px] font-semibold text-slate-700 outline-none placeholder:text-slate-400 sm:text-base"
+              className="min-w-0 flex-1 bg-transparent px-3 text-[15px] font-semibold text-slate-800 outline-none placeholder:text-slate-600/75 sm:text-base"
+              type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="输入搜索内容"
@@ -299,7 +300,7 @@ export function SearchEngineBox() {
 
       {isAddDialogOpen ? (
         <Dialog
-          className="max-w-xl rounded-2xl bg-white p-6 text-slate-800 sm:p-8"
+          className="max-w-xl p-6 sm:p-8"
           onClose={() => setIsAddDialogOpen(false)}
         >
           {(close) => (
@@ -310,14 +311,14 @@ export function SearchEngineBox() {
               }}
               aria-label="新增搜索引擎"
             >
-              <DialogTitle className="text-2xl font-semibold">
+              <DialogTitle className="text-xl font-semibold">
                 新增搜索引擎
               </DialogTitle>
 
-              <label className="mt-7 block text-sm font-semibold text-slate-600">
+              <label className="text-glass-content mt-6 block text-sm font-semibold">
                 名称
                 <input
-                  className="mt-2 h-14 w-full rounded-xl border-0 bg-slate-100 px-4 text-lg font-semibold text-slate-800 outline-none ring-1 ring-transparent transition placeholder:text-slate-400 focus:bg-white focus:ring-blue-300"
+                  className="border-glass-border text-glass-strong placeholder:text-glass-muted focus:border-glass-focus focus:ring-glass-focus mt-2 h-11 w-full rounded-xl border bg-white/15 px-4 text-base font-semibold outline-none transition focus:bg-white/20 focus:ring-2 motion-reduce:transition-none"
                   value={customEngineDraft.name}
                   onChange={(event) =>
                     setCustomEngineDraft((draft) => ({
@@ -329,10 +330,10 @@ export function SearchEngineBox() {
                 />
               </label>
 
-              <label className="mt-5 block text-sm font-semibold text-slate-600">
+              <label className="text-glass-content mt-5 block text-sm font-semibold">
                 网址格式（用“%s”代替搜索字词）
                 <input
-                  className="mt-2 h-14 w-full rounded-xl border-0 bg-slate-100 px-4 text-base font-semibold text-slate-800 outline-none ring-1 ring-transparent transition placeholder:text-slate-400 focus:bg-white focus:ring-blue-300"
+                  className="border-glass-border text-glass-strong placeholder:text-glass-muted focus:border-glass-focus focus:ring-glass-focus mt-2 h-11 w-full rounded-xl border bg-white/15 px-4 text-sm font-semibold outline-none transition focus:bg-white/20 focus:ring-2 motion-reduce:transition-none"
                   value={customEngineDraft.urlFormat}
                   onChange={(event) =>
                     setCustomEngineDraft((draft) => ({
@@ -346,14 +347,14 @@ export function SearchEngineBox() {
 
               <div className="mt-8 flex justify-end gap-3">
                 <button
-                  className="h-12 rounded-full border border-blue-200 px-8 text-base font-semibold text-blue-600 transition hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300/40"
+                  className="text-glass-content hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-glass-focus h-10 rounded-xl px-6 text-sm font-semibold outline-none transition focus-visible:ring-2 motion-reduce:transition-none"
                   type="button"
                   onClick={close}
                 >
                   取消
                 </button>
                 <button
-                  className="h-12 rounded-full bg-blue-600 px-9 text-base font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300/50 disabled:cursor-not-allowed disabled:bg-blue-300"
+                  className="bg-action focus-visible:ring-glass-focus h-10 rounded-xl px-7 text-sm font-semibold text-white outline-none transition hover:bg-blue-700 focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none"
                   type="submit"
                   disabled={!canSaveCustomEngine}
                 >

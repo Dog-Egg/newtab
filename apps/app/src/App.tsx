@@ -65,12 +65,12 @@ export function App() {
 
   return (
     <div className="relative flex min-h-screen min-w-80 overflow-hidden font-sans text-white">
-      <main className="relative min-h-screen min-w-0 flex-1 overflow-hidden">
-        <Wallpaper
-          wallpaperUrl={wallpaperUrl}
-          overlayOpacity={launcherSettings.wallpaperOverlayOpacity}
-        />
+      <Wallpaper
+        wallpaperUrl={wallpaperUrl}
+        overlayOpacity={launcherSettings.wallpaperOverlayOpacity}
+      />
 
+      <main className="relative min-h-screen min-w-0 flex-1 overflow-hidden">
         <Toaster
           position="bottom-right"
           toastOptions={{

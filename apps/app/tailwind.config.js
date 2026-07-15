@@ -3,6 +3,32 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      colors: {
+        glass: {
+          surface: "rgba(15, 23, 42, 0.30)",
+          border: "rgba(255, 255, 255, 0.25)",
+          content: "rgba(255, 255, 255, 0.85)",
+          strong: "#FFFFFF",
+          hover: "rgba(255, 255, 255, 0.10)",
+          selected: "rgba(255, 255, 255, 0.85)",
+          "selected-content": "#334155",
+          muted: "#94A3B8",
+          focus: "rgba(255, 255, 255, 0.80)",
+        },
+        action: "#2563EB",
+      },
+      borderRadius: {
+        glass: "20px",
+      },
+      boxShadow: {
+        glass: "0 16px 50px rgba(15, 23, 42, 0.28)",
+      },
+      fontSize: {
+        control: [
+          "0.75rem",
+          { lineHeight: "1rem", fontWeight: "600" },
+        ],
+      },
       keyframes: {
         "dialog-overlay-in": {
           from: { opacity: "0" },

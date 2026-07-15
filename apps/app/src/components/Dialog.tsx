@@ -116,7 +116,7 @@ export function Dialog({
         <RadixDialog.Portal container={portalContainer}>
           <div
             className={clsx(
-              "pointer-events-auto absolute inset-0 bg-slate-950/40 backdrop-blur-md",
+              "pointer-events-auto absolute inset-0 bg-slate-950/40 backdrop-blur-md motion-reduce:animate-none",
               isOpen
                 ? "animate-dialog-overlay-in"
                 : "animate-dialog-overlay-out",
@@ -126,7 +126,7 @@ export function Dialog({
           <RadixDialog.Content
             ref={contentRef}
             className={clsx(
-              "pointer-events-auto absolute left-1/2 top-1/2 z-10 max-h-[calc(100%-3rem)] w-[calc(100%-3rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain border border-white/45 bg-white/30 text-white shadow-2xl outline-none backdrop-blur-xl data-[state=closed]:animate-dialog-content-out data-[state=open]:animate-dialog-content-in",
+              "pointer-events-auto absolute left-1/2 top-1/2 z-10 max-h-[calc(100%-3rem)] w-[calc(100%-3rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-glass border border-glass-border bg-white/30 text-glass-strong shadow-glass outline-none backdrop-blur-2xl focus-visible:ring-2 focus-visible:ring-glass-focus data-[state=closed]:animate-dialog-content-out data-[state=open]:animate-dialog-content-in motion-reduce:animate-none",
               className,
             )}
             onInteractOutside={(event) => {
