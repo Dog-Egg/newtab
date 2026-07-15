@@ -25,16 +25,6 @@ const DEFAULT_SEARCH_ENGINES: SearchEngine[] = [
     name: "Bing",
     urlFormat: "https://www.bing.com/search?q=%s",
   },
-  {
-    id: "sogou",
-    name: "搜狗",
-    urlFormat: "https://www.sogou.com/web?query=%s",
-  },
-  {
-    id: "baidu",
-    name: "百度",
-    urlFormat: "https://www.baidu.com/s?wd=%s",
-  },
 ];
 
 const EMPTY_CUSTOM_ENGINE = {
@@ -233,7 +223,7 @@ export function SearchEngineBox() {
           <Popover.Root open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
             <Popover.Trigger asChild>
               <button
-                className="focus-visible:ring-glass-focus flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-2 text-slate-700 outline-none transition hover:bg-white/45 hover:text-slate-900 focus-visible:ring-2 motion-reduce:transition-none"
+                className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-2 text-slate-700 outline-none transition hover:bg-white/45 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
                 type="button"
                 aria-label={`选择搜索引擎，当前为${selectedEngine.name}`}
                 title={selectedEngine.name}
@@ -259,7 +249,7 @@ export function SearchEngineBox() {
                     <button
                       key={engine.id}
                       className={clsx(
-                        "text-glass-content hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-glass-focus flex h-16 min-w-[88px] shrink-0 flex-col items-center justify-center gap-1 rounded-xl px-3 text-center outline-none transition focus-visible:ring-2 motion-reduce:transition-none",
+                        "flex h-16 min-w-[88px] shrink-0 flex-col items-center justify-center gap-1 rounded-xl px-3 text-center text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none",
                         engine.id === selectedEngine.id &&
                           "bg-glass-selected text-glass-selected-content shadow-sm",
                       )}
@@ -274,7 +264,7 @@ export function SearchEngineBox() {
                     </button>
                   ))}
                   <button
-                    className="border-glass-border text-glass-content hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-glass-focus grid h-16 min-w-[88px] shrink-0 place-items-center rounded-xl border border-dashed outline-none transition focus-visible:ring-2 motion-reduce:transition-none"
+                    className="grid h-16 min-w-[88px] shrink-0 place-items-center rounded-xl border border-dashed border-glass-border text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
                     type="button"
                     onClick={openAddDialog}
                     aria-label="新增搜索引擎"
@@ -319,10 +309,10 @@ export function SearchEngineBox() {
                 新增搜索引擎
               </DialogTitle>
 
-              <label className="text-glass-content mt-6 block text-sm font-semibold">
+              <label className="mt-6 block text-sm font-semibold text-glass-content">
                 名称
                 <input
-                  className="border-glass-border text-glass-strong placeholder:text-glass-muted focus:border-glass-focus focus:ring-glass-focus mt-2 h-11 w-full rounded-xl border bg-white/15 px-4 text-base font-semibold outline-none transition focus:bg-white/20 focus:ring-2 motion-reduce:transition-none"
+                  className="mt-2 h-11 w-full rounded-xl border border-glass-border bg-white/15 px-4 text-base font-semibold text-glass-strong outline-none transition placeholder:text-glass-muted focus:border-glass-focus focus:bg-white/20 focus:ring-2 focus:ring-glass-focus motion-reduce:transition-none"
                   value={customEngineDraft.name}
                   onChange={(event) =>
                     setCustomEngineDraft((draft) => ({
@@ -330,14 +320,14 @@ export function SearchEngineBox() {
                       name: event.target.value,
                     }))
                   }
-                  placeholder="搜狗"
+                  placeholder="Google"
                 />
               </label>
 
-              <label className="text-glass-content mt-5 block text-sm font-semibold">
+              <label className="mt-5 block text-sm font-semibold text-glass-content">
                 网址格式（用“%s”代替搜索字词）
                 <input
-                  className="border-glass-border text-glass-strong placeholder:text-glass-muted focus:border-glass-focus focus:ring-glass-focus mt-2 h-11 w-full rounded-xl border bg-white/15 px-4 text-sm font-semibold outline-none transition focus:bg-white/20 focus:ring-2 motion-reduce:transition-none"
+                  className="mt-2 h-11 w-full rounded-xl border border-glass-border bg-white/15 px-4 text-sm font-semibold text-glass-strong outline-none transition placeholder:text-glass-muted focus:border-glass-focus focus:bg-white/20 focus:ring-2 focus:ring-glass-focus motion-reduce:transition-none"
                   value={customEngineDraft.urlFormat}
                   onChange={(event) =>
                     setCustomEngineDraft((draft) => ({
@@ -345,20 +335,20 @@ export function SearchEngineBox() {
                       urlFormat: event.target.value,
                     }))
                   }
-                  placeholder="https://www.sogou.com/web?query=%s"
+                  placeholder="https://www.google.com/search?q=%s"
                 />
               </label>
 
               <div className="mt-8 flex justify-end gap-3">
                 <button
-                  className="text-glass-content hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-glass-focus h-10 rounded-xl px-6 text-sm font-semibold outline-none transition focus-visible:ring-2 motion-reduce:transition-none"
+                  className="h-10 rounded-xl px-6 text-sm font-semibold text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
                   type="button"
                   onClick={close}
                 >
                   取消
                 </button>
                 <button
-                  className="bg-action focus-visible:ring-glass-focus h-10 rounded-xl px-7 text-sm font-semibold text-white outline-none transition hover:bg-blue-700 focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none"
+                  className="h-10 rounded-xl bg-action px-7 text-sm font-semibold text-white outline-none transition hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-glass-focus disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none"
                   type="submit"
                   disabled={!canSaveCustomEngine}
                 >
