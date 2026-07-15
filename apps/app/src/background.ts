@@ -7,12 +7,17 @@ import {
   type ShortcutNode,
 } from "./Launcher/launcher";
 import { normalizeSettings, SETTINGS_STORAGE_KEY } from "./Settings/settings";
+import { getLocaleFromLanguage } from "./i18n/locale";
 
 const MENU_ID = "save-to-browser-tab";
+const defaultLocale = getLocaleFromLanguage(chrome.i18n.getUILanguage());
 
 function createContextMenu() {
   chrome.storage.local.get(SETTINGS_STORAGE_KEY, (items) => {
-    const { locale } = normalizeSettings(items[SETTINGS_STORAGE_KEY]);
+    const { locale } = normalizeSettings(
+      items[SETTINGS_STORAGE_KEY],
+      defaultLocale,
+    );
     chrome.contextMenus.removeAll(() => {
       chrome.contextMenus.create({
         id: MENU_ID,

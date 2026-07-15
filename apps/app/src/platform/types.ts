@@ -1,4 +1,5 @@
 import type { Settings } from "../Settings/settings";
+import type { AppLocale } from "../i18n/locale";
 import type { ShortcutCategory } from "../Launcher/launcher";
 
 export const SEARCH_ENGINE_SETTINGS_KEY = "search-engine-settings";
@@ -23,6 +24,7 @@ export type BrowserBookmarksImportResult = {
 };
 
 export type Platform = {
+  defaultLocale: AppLocale;
   launcher: {
     read: () => Promise<ShortcutCategory[]>;
     save: (categories: ShortcutCategory[]) => Promise<void>;

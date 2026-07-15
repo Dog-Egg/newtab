@@ -11,6 +11,9 @@ import {
   type StoredSearchEngineSettings,
 } from "./types";
 import { normalizeSettings, SETTINGS_STORAGE_KEY } from "../Settings/settings";
+import { getLocaleFromLanguage } from "../i18n/locale";
+
+const defaultLocale = getLocaleFromLanguage(chrome.i18n.getUILanguage());
 
 function getChromeStorage<T>(key: string, normalize: (value: unknown) => T) {
   return new Promise<T>((resolve, reject) => {
@@ -71,6 +74,7 @@ function subscribeChromeStorage<T>(
 }
 
 export const platform: Platform = {
+  defaultLocale,
   launcher: {
     read: () => getChromeStorage(LAUNCHER_STORAGE_KEY, normalizeLauncher),
     save: (categories) => setChromeStorage(LAUNCHER_STORAGE_KEY, categories),
@@ -92,10 +96,17 @@ export const platform: Platform = {
       ),
   },
   settings: {
-    read: () => getChromeStorage(SETTINGS_STORAGE_KEY, normalizeSettings),
+    read: () =>
+      getChromeStorage(SETTINGS_STORAGE_KEY, (value) =>
+        normalizeSettings(value, defaultLocale),
+      ),
     save: (settings) => setChromeStorage(SETTINGS_STORAGE_KEY, settings),
     subscribe: (onChange) =>
-      subscribeChromeStorage(SETTINGS_STORAGE_KEY, normalizeSettings, onChange),
+      subscribeChromeStorage(
+        SETTINGS_STORAGE_KEY,
+        (value) => normalizeSettings(value, defaultLocale),
+        onChange,
+      ),
   },
   searchEngineSettings: {
     read: () =>

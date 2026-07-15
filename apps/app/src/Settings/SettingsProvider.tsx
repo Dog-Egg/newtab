@@ -26,40 +26,23 @@ function applyLocale(locale: Settings["locale"]) {
   void i18n.changeLanguage(locale);
 }
 
-export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<Settings>(() =>
-    normalizeSettings(undefined),
-  );
+export function SettingsProvider({
+  children,
+  initialSettings,
+}: {
+  children: ReactNode;
+  initialSettings: Settings;
+}) {
+  const [settings, setSettings] = useState(initialSettings);
   const settingsRef = useRef(settings);
-  const localUpdateVersionRef = useRef(0);
 
   useEffect(() => {
-    let isCurrent = true;
-    const initialUpdateVersion = localUpdateVersionRef.current;
-    void platform.settings.read().then(
-      (storedSettings) => {
-        if (
-          isCurrent &&
-          localUpdateVersionRef.current === initialUpdateVersion
-        ) {
-          settingsRef.current = storedSettings;
-          applyLocale(storedSettings.locale);
-          setSettings(storedSettings);
-        }
-      },
-      (error: unknown) => {
-        console.error("Failed to read settings", error);
-      },
-    );
     const unsubscribe = platform.settings.subscribe((storedSettings) => {
       settingsRef.current = storedSettings;
       applyLocale(storedSettings.locale);
       setSettings(storedSettings);
     });
-    return () => {
-      isCurrent = false;
-      unsubscribe();
-    };
+    return unsubscribe;
   }, []);
 
   const updateSettings = useCallback((update: SettingsUpdate) => {
@@ -70,7 +53,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       ...currentSettings,
       ...patch,
     });
-    localUpdateVersionRef.current += 1;
     settingsRef.current = normalizedSettings;
     applyLocale(normalizedSettings.locale);
     setSettings(normalizedSettings);

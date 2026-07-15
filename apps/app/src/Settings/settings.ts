@@ -1,5 +1,5 @@
 import { normalizeStoredWallpaperUrl } from "./wallpaper";
-import { normalizeLocale, type AppLocale } from "../i18n";
+import { normalizeLocale, type AppLocale } from "../i18n/locale";
 
 export const DEFAULT_LAUNCHER_NODE_SCALE = 1;
 export const DEFAULT_WALLPAPER_OVERLAY_OPACITY = 0.35;
@@ -18,7 +18,10 @@ export type Settings = {
   wallpaperOverlayOpacity: number;
 };
 
-export function normalizeSettings(value: unknown): Settings {
+export function normalizeSettings(
+  value: unknown,
+  defaultLocale: AppLocale = "en",
+): Settings {
   const wallpaperUrl =
     value && typeof value === "object" && "wallpaperUrl" in value
       ? normalizeStoredWallpaperUrl(value.wallpaperUrl)
@@ -32,11 +35,10 @@ export function normalizeSettings(value: unknown): Settings {
       ? Number(value.wallpaperOverlayOpacity)
       : DEFAULT_WALLPAPER_OVERLAY_OPACITY;
   return {
-    locale: normalizeLocale(
+    locale:
       value && typeof value === "object" && "locale" in value
-        ? value.locale
-        : undefined,
-    ),
+        ? normalizeLocale(value.locale)
+        : defaultLocale,
     wallpaperUrl,
     nodeScale: Number.isFinite(nodeScale)
       ? Math.min(

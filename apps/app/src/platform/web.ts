@@ -201,6 +201,7 @@ function saveStoredSettings(settings: Settings) {
 }
 
 export const platform: Platform = {
+  defaultLocale: "en",
   launcher: {
     read: async () => readStoredLauncher(),
     save: async (categories) => saveStoredLauncher(categories),
