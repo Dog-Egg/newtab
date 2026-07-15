@@ -141,7 +141,7 @@ const DEFAULT_LAUNCHER: ShortcutCategory[] = [
 ];
 
 function readJsonStorageValue(key: string) {
-  const saved = window.localStorage.getItem(key);
+  const saved = window.sessionStorage.getItem(key);
   if (!saved) {
     return undefined;
   }
@@ -163,7 +163,7 @@ function readStoredSearchEngineSettings(): StoredSearchEngineSettings {
 }
 
 function saveStoredSearchEngineSettings(settings: StoredSearchEngineSettings) {
-  window.localStorage.setItem(
+  window.sessionStorage.setItem(
     SEARCH_ENGINE_SETTINGS_KEY,
     JSON.stringify(settings),
   );
@@ -179,7 +179,10 @@ function readStoredLauncher() {
 }
 
 function saveStoredLauncher(categories: ReturnType<typeof normalizeLauncher>) {
-  window.localStorage.setItem(LAUNCHER_STORAGE_KEY, JSON.stringify(categories));
+  window.sessionStorage.setItem(
+    LAUNCHER_STORAGE_KEY,
+    JSON.stringify(categories),
+  );
 }
 
 function readStoredActiveCategoryId() {
@@ -192,7 +195,7 @@ function readStoredSettings() {
 }
 
 function saveStoredSettings(settings: Settings) {
-  window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  window.sessionStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
 }
 
 export const platform: Platform = {
@@ -215,7 +218,7 @@ export const platform: Platform = {
   activeCategoryId: {
     read: async () => readStoredActiveCategoryId(),
     save: async (categoryId) =>
-      window.localStorage.setItem(
+      window.sessionStorage.setItem(
         ACTIVE_CATEGORY_ID_STORAGE_KEY,
         JSON.stringify(categoryId),
       ),
