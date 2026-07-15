@@ -20,6 +20,7 @@ import {
   type Settings,
 } from "./settings";
 import { useSettings } from "./SettingsProvider";
+import clsx from "clsx";
 
 function getRangePosition(value: number, min: number, max: number) {
   return `${((value - min) / (max - min)) * 100}%`;
@@ -116,7 +117,7 @@ function BrowserBookmarksImportSettings() {
     <section className="border-b border-glass-border px-2 py-3.5">
       <div className="flex items-center justify-between gap-3">
         <h3 className="min-w-0 text-sm font-medium text-glass-strong">
-          浏览器收藏夹
+          导入浏览器收藏夹
         </h3>
         <button
           className="h-8 shrink-0 rounded-lg bg-glass-selected px-3 text-sm font-medium text-glass-selected-content outline-none transition hover:bg-glass-strong/90 focus-visible:ring-2 focus-visible:ring-glass-focus disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
@@ -237,7 +238,7 @@ function WallpaperSettingsSection({
         onSelectWallpaper(imageUrl);
         setCustomImageUrl("");
       } catch {
-        setCustomImageError("图片加载失败，请检查 URL 是否可访问");
+        setCustomImageError("图片加载失败，请检查图片地址是否可访问");
       } finally {
         setIsApplyingCustomImage(false);
       }
@@ -246,118 +247,123 @@ function WallpaperSettingsSection({
   );
 
   return (
-    <section className="space-y-4 px-2 py-4">
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between gap-3">
+    <section className="px-2 py-4" aria-labelledby="wallpaper-settings-title">
+      <h3
+        id="wallpaper-settings-title"
+        className="text-sm font-medium text-glass-strong"
+      >
+        设置壁纸
+      </h3>
+
+      <div className="mt-4 space-y-4">
+        <form className="space-y-2" onSubmit={applyCustomWallpaper}>
+          <div className="flex items-center justify-between gap-3">
+            <label
+              className="text-xs font-semibold text-glass-content"
+              htmlFor="wallpaper-url"
+            >
+              图片地址
+            </label>
+            {selectedWallpaperUrl && (
+              <button
+                className={
+                  "shrink-0 rounded px-1 text-xs font-medium text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-white/70 motion-reduce:transition-none"
+                }
+                type="button"
+                onClick={onClearWallpaper}
+              >
+                恢复默认
+              </button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <input
+              className="h-9 min-w-0 flex-1 rounded-lg border border-glass-border bg-white/60 px-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-500 focus:bg-white/80 focus-visible:ring-2 focus-visible:ring-white/70 motion-reduce:transition-none"
+              id="wallpaper-url"
+              type="url"
+              inputMode="url"
+              value={customImageUrl}
+              onChange={(event) => {
+                setCustomImageUrl(event.target.value);
+                setCustomImageError("");
+              }}
+            />
+            <button
+              className="h-9 shrink-0 rounded-lg bg-glass-selected px-3 text-sm font-semibold text-glass-selected-content outline-none transition hover:bg-glass-strong/90 focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-75 motion-reduce:transition-none"
+              type="submit"
+              disabled={
+                isApplyingCustomImage || customImageUrl.trim().length === 0
+              }
+            >
+              {isApplyingCustomImage ? "加载中" : "应用"}
+            </button>
+          </div>
+          {customImageError ? (
+            <p className="text-xs font-semibold text-rose-700">
+              {customImageError}
+            </p>
+          ) : null}
+        </form>
+
+        <div className="space-y-2.5">
           <label
-            className="text-sm font-medium text-glass-strong"
+            className="block text-xs font-semibold text-glass-content"
             htmlFor="wallpaper-overlay"
           >
             壁纸遮罩
           </label>
+          <div>
+            <input
+              id="wallpaper-overlay"
+              className="settings-range"
+              type="range"
+              min={MIN_WALLPAPER_OVERLAY_OPACITY}
+              max={MAX_WALLPAPER_OVERLAY_OPACITY}
+              step={WALLPAPER_OVERLAY_OPACITY_STEP}
+              value={settings.wallpaperOverlayOpacity}
+              aria-label="壁纸遮罩强度"
+              onChange={(event) =>
+                onChangeSettings({
+                  wallpaperOverlayOpacity: Number(event.currentTarget.value),
+                })
+              }
+            />
+            <RangeLabels
+              minLabel="浅"
+              maxLabel="深"
+              defaultValue={DEFAULT_WALLPAPER_OVERLAY_OPACITY}
+              min={MIN_WALLPAPER_OVERLAY_OPACITY}
+              max={MAX_WALLPAPER_OVERLAY_OPACITY}
+              onDecrease={() =>
+                onChangeSettings({
+                  wallpaperOverlayOpacity: adjustRangeValue(
+                    settings.wallpaperOverlayOpacity,
+                    -1,
+                    WALLPAPER_OVERLAY_OPACITY_STEP,
+                    MIN_WALLPAPER_OVERLAY_OPACITY,
+                    MAX_WALLPAPER_OVERLAY_OPACITY,
+                  ),
+                })
+              }
+              onIncrease={() =>
+                onChangeSettings({
+                  wallpaperOverlayOpacity: adjustRangeValue(
+                    settings.wallpaperOverlayOpacity,
+                    1,
+                    WALLPAPER_OVERLAY_OPACITY_STEP,
+                    MIN_WALLPAPER_OVERLAY_OPACITY,
+                    MAX_WALLPAPER_OVERLAY_OPACITY,
+                  ),
+                })
+              }
+              onReset={() =>
+                onChangeSettings({
+                  wallpaperOverlayOpacity: DEFAULT_WALLPAPER_OVERLAY_OPACITY,
+                })
+              }
+            />
+          </div>
         </div>
-        <div>
-          <input
-            id="wallpaper-overlay"
-            className="settings-range"
-            type="range"
-            min={MIN_WALLPAPER_OVERLAY_OPACITY}
-            max={MAX_WALLPAPER_OVERLAY_OPACITY}
-            step={WALLPAPER_OVERLAY_OPACITY_STEP}
-            value={settings.wallpaperOverlayOpacity}
-            aria-label="壁纸遮罩强度"
-            onChange={(event) =>
-              onChangeSettings({
-                wallpaperOverlayOpacity: Number(event.currentTarget.value),
-              })
-            }
-          />
-          <RangeLabels
-            minLabel="清晰"
-            maxLabel="深色"
-            defaultValue={DEFAULT_WALLPAPER_OVERLAY_OPACITY}
-            min={MIN_WALLPAPER_OVERLAY_OPACITY}
-            max={MAX_WALLPAPER_OVERLAY_OPACITY}
-            onDecrease={() =>
-              onChangeSettings({
-                wallpaperOverlayOpacity: adjustRangeValue(
-                  settings.wallpaperOverlayOpacity,
-                  -1,
-                  WALLPAPER_OVERLAY_OPACITY_STEP,
-                  MIN_WALLPAPER_OVERLAY_OPACITY,
-                  MAX_WALLPAPER_OVERLAY_OPACITY,
-                ),
-              })
-            }
-            onIncrease={() =>
-              onChangeSettings({
-                wallpaperOverlayOpacity: adjustRangeValue(
-                  settings.wallpaperOverlayOpacity,
-                  1,
-                  WALLPAPER_OVERLAY_OPACITY_STEP,
-                  MIN_WALLPAPER_OVERLAY_OPACITY,
-                  MAX_WALLPAPER_OVERLAY_OPACITY,
-                ),
-              })
-            }
-            onReset={() =>
-              onChangeSettings({
-                wallpaperOverlayOpacity: DEFAULT_WALLPAPER_OVERLAY_OPACITY,
-              })
-            }
-          />
-        </div>
-      </div>
-
-      <form className="space-y-2" onSubmit={applyCustomWallpaper}>
-        <label
-          className="block text-xs font-semibold text-glass-content"
-          htmlFor="wallpaper-url"
-        >
-          图片 URL
-        </label>
-        <div className="flex gap-2">
-          <input
-            className="h-9 min-w-0 flex-1 rounded-lg border border-glass-border bg-white/60 px-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-500 focus:bg-white/80 focus-visible:ring-2 focus-visible:ring-white/70 motion-reduce:transition-none"
-            id="wallpaper-url"
-            type="url"
-            inputMode="url"
-            value={customImageUrl}
-            placeholder="https://example.com/image.jpg"
-            onChange={(event) => {
-              setCustomImageUrl(event.target.value);
-              setCustomImageError("");
-            }}
-          />
-          <button
-            className="h-9 shrink-0 rounded-lg bg-glass-selected px-3 text-sm font-semibold text-glass-selected-content outline-none transition hover:bg-glass-strong/90 focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-75 motion-reduce:transition-none"
-            type="submit"
-            disabled={
-              isApplyingCustomImage || customImageUrl.trim().length === 0
-            }
-          >
-            {isApplyingCustomImage ? "加载中" : "应用"}
-          </button>
-        </div>
-        {customImageError ? (
-          <p className="text-xs font-semibold text-rose-700">
-            {customImageError}
-          </p>
-        ) : null}
-      </form>
-
-      <div className="flex items-center justify-between gap-3 border-t border-glass-border pt-3">
-        <p className="min-w-0 truncate text-xs font-medium text-glass-content">
-          {selectedWallpaperUrl ?? "当前使用默认壁纸"}
-        </p>
-        <button
-          className="h-8 shrink-0 rounded-lg px-2 text-sm font-medium text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-[0.85] motion-reduce:transition-none"
-          type="button"
-          onClick={onClearWallpaper}
-          disabled={!selectedWallpaperUrl}
-        >
-          恢复默认
-        </button>
       </div>
     </section>
   );
