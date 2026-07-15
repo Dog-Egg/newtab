@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { normalizeStoredWallpaperUrl } from "./wallpaper";
 
 const DEFAULT_LAUNCHER_NODE_SCALE = 1;
 const DEFAULT_WALLPAPER_OVERLAY_OPACITY = 0.35;
@@ -8,14 +8,19 @@ export const LAUNCHER_NODE_SCALE_STEP = 0.01;
 export const MIN_WALLPAPER_OVERLAY_OPACITY = 0;
 export const MAX_WALLPAPER_OVERLAY_OPACITY = 0.8;
 export const WALLPAPER_OVERLAY_OPACITY_STEP = 0.01;
-export const LAUNCHER_SETTINGS_STORAGE_KEY = "launcherSettings";
+export const SETTINGS_STORAGE_KEY = "settings";
 
-export type LauncherSettings = {
+export type Settings = {
+  wallpaperUrl: string | null;
   nodeScale: number;
   wallpaperOverlayOpacity: number;
 };
 
-export function normalizeLauncherSettings(value: unknown): LauncherSettings {
+export function normalizeSettings(value: unknown): Settings {
+  const wallpaperUrl =
+    value && typeof value === "object" && "wallpaperUrl" in value
+      ? normalizeStoredWallpaperUrl(value.wallpaperUrl)
+      : null;
   const nodeScale =
     value && typeof value === "object" && "nodeScale" in value
       ? Number(value.nodeScale)
@@ -25,6 +30,7 @@ export function normalizeLauncherSettings(value: unknown): LauncherSettings {
       ? Number(value.wallpaperOverlayOpacity)
       : DEFAULT_WALLPAPER_OVERLAY_OPACITY;
   return {
+    wallpaperUrl,
     nodeScale: Number.isFinite(nodeScale)
       ? Math.min(
           MAX_LAUNCHER_NODE_SCALE,
@@ -38,27 +44,4 @@ export function normalizeLauncherSettings(value: unknown): LauncherSettings {
         )
       : DEFAULT_WALLPAPER_OVERLAY_OPACITY,
   };
-}
-
-const LauncherSettingsContext = createContext<LauncherSettings>({
-  nodeScale: DEFAULT_LAUNCHER_NODE_SCALE,
-  wallpaperOverlayOpacity: DEFAULT_WALLPAPER_OVERLAY_OPACITY,
-});
-
-export function LauncherSettingsProvider({
-  settings,
-  children,
-}: {
-  settings: LauncherSettings;
-  children: ReactNode;
-}) {
-  return (
-    <LauncherSettingsContext.Provider value={settings}>
-      {children}
-    </LauncherSettingsContext.Provider>
-  );
-}
-
-export function useLauncherSettings() {
-  return useContext(LauncherSettingsContext);
 }

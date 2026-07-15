@@ -1,4 +1,4 @@
-import type { LauncherSettings } from "../Launcher/launcherSettings";
+import type { Settings } from "../Settings/settings";
 import type { ShortcutCategory } from "../Launcher/launcher";
 
 export type StorageUnsubscribe = () => void;
@@ -32,19 +32,10 @@ export type Platform = {
     save: (categoryId: string) => Promise<void>;
     subscribe: (onChange: (categoryId: string) => void) => StorageUnsubscribe;
   };
-  wallpaper: {
-    read: () => Promise<string | null>;
-    save: (wallpaperUrl: string | null) => Promise<void>;
-    subscribe: (
-      onChange: (wallpaperUrl: string | null) => void,
-    ) => StorageUnsubscribe;
-  };
-  launcherSettings: {
-    read: () => Promise<LauncherSettings>;
-    save: (settings: LauncherSettings) => Promise<void>;
-    subscribe: (
-      onChange: (settings: LauncherSettings) => void,
-    ) => StorageUnsubscribe;
+  settings: {
+    read: () => Promise<Settings>;
+    save: (settings: Settings) => Promise<void>;
+    subscribe: (onChange: (settings: Settings) => void) => StorageUnsubscribe;
   };
   searchEngineSettings: {
     read: () => Promise<StoredSearchEngineSettings>;

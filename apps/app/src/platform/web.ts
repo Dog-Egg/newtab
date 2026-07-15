@@ -5,16 +5,12 @@ import {
   normalizeLauncher,
   type ShortcutCategory,
 } from "../Launcher/launcher";
-import {
-  normalizeStoredWallpaperUrl,
-  WALLPAPER_STORAGE_KEY,
-} from "../wallpapers";
 import type { Platform, StoredSearchEngineSettings } from "./types";
 import {
-  LAUNCHER_SETTINGS_STORAGE_KEY,
-  normalizeLauncherSettings,
-  type LauncherSettings,
-} from "../Launcher/launcherSettings";
+  normalizeSettings,
+  SETTINGS_STORAGE_KEY,
+  type Settings,
+} from "../Settings/settings";
 
 const SEARCH_ENGINE_SETTINGS_KEY = "browser-tab.searchEngineSettings.v1";
 
@@ -191,32 +187,12 @@ function readStoredActiveCategoryId() {
   return typeof value === "string" ? value : DEFAULT_CATEGORY.id;
 }
 
-function readStoredWallpaperUrl() {
-  return normalizeStoredWallpaperUrl(
-    readJsonStorageValue(WALLPAPER_STORAGE_KEY),
-  );
+function readStoredSettings() {
+  return normalizeSettings(readJsonStorageValue(SETTINGS_STORAGE_KEY));
 }
 
-function saveStoredWallpaperUrl(wallpaperUrl: string | null) {
-  if (wallpaperUrl) {
-    window.localStorage.setItem(WALLPAPER_STORAGE_KEY, wallpaperUrl);
-    return;
-  }
-
-  window.localStorage.removeItem(WALLPAPER_STORAGE_KEY);
-}
-
-function readStoredLauncherSettings() {
-  return normalizeLauncherSettings(
-    readJsonStorageValue(LAUNCHER_SETTINGS_STORAGE_KEY),
-  );
-}
-
-function saveStoredLauncherSettings(settings: LauncherSettings) {
-  window.localStorage.setItem(
-    LAUNCHER_SETTINGS_STORAGE_KEY,
-    JSON.stringify(settings),
-  );
+function saveStoredSettings(settings: Settings) {
+  window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
 }
 
 export const platform: Platform = {
@@ -253,29 +229,13 @@ export const platform: Platform = {
       return () => window.removeEventListener("storage", handleStorageChange);
     },
   },
-  wallpaper: {
-    read: async () => readStoredWallpaperUrl(),
-    save: async (wallpaperUrl) => saveStoredWallpaperUrl(wallpaperUrl),
+  settings: {
+    read: async () => readStoredSettings(),
+    save: async (settings) => saveStoredSettings(settings),
     subscribe: (onChange) => {
       const handleStorageChange = (event: StorageEvent) => {
-        if (event.key !== WALLPAPER_STORAGE_KEY) {
-          return;
-        }
-
-        onChange(readStoredWallpaperUrl());
-      };
-
-      window.addEventListener("storage", handleStorageChange);
-      return () => window.removeEventListener("storage", handleStorageChange);
-    },
-  },
-  launcherSettings: {
-    read: async () => readStoredLauncherSettings(),
-    save: async (settings) => saveStoredLauncherSettings(settings),
-    subscribe: (onChange) => {
-      const handleStorageChange = (event: StorageEvent) => {
-        if (event.key === LAUNCHER_SETTINGS_STORAGE_KEY) {
-          onChange(readStoredLauncherSettings());
+        if (event.key === SETTINGS_STORAGE_KEY) {
+          onChange(readStoredSettings());
         }
       };
       window.addEventListener("storage", handleStorageChange);

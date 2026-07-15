@@ -1,62 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Toaster } from "sonner";
 import clsx from "clsx";
 import { Settings } from "lucide-react";
-import { platform } from "@platform";
 import { Launcher } from "./Launcher";
 import { SearchEngineBox } from "./SearchEngineBox";
 import { Wallpaper } from "./Wallpaper";
 import { SettingsPanel } from "./Settings";
 import { MainDialogPortal } from "./components/Dialog";
-import {
-  LauncherSettingsProvider,
-  normalizeLauncherSettings,
-  type LauncherSettings,
-} from "./Launcher/launcherSettings";
+import { useSettings } from "./Settings/SettingsProvider";
 
 export function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
-  const [wallpaperUrl, setWallpaperUrl] = useState<string | null>(null);
-  const [launcherSettings, setLauncherSettings] = useState<LauncherSettings>(
-    () => normalizeLauncherSettings(undefined),
-  );
-
-  useEffect(() => {
-    let isCurrent = true;
-    void platform.wallpaper.read().then((value) => {
-      if (isCurrent) setWallpaperUrl(value);
-    });
-    const unsubscribe = platform.wallpaper.subscribe(setWallpaperUrl);
-    return () => {
-      isCurrent = false;
-      unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
-    let isCurrent = true;
-    void platform.launcherSettings.read().then((settings) => {
-      if (isCurrent) setLauncherSettings(settings);
-    });
-    const unsubscribe =
-      platform.launcherSettings.subscribe(setLauncherSettings);
-    return () => {
-      isCurrent = false;
-      unsubscribe();
-    };
-  }, []);
-
-  const saveWallpaper = useCallback((value: string | null) => {
-    setWallpaperUrl(value);
-    void platform.wallpaper.save(value);
-  }, []);
-
-  const saveLauncherSettings = useCallback((settings: LauncherSettings) => {
-    const normalizedSettings = normalizeLauncherSettings(settings);
-    setLauncherSettings(normalizedSettings);
-    void platform.launcherSettings.save(normalizedSettings);
-  }, []);
+  const { settings } = useSettings();
 
   const closeSettings = useCallback(() => {
     settingsButtonRef.current?.focus();
@@ -66,8 +22,8 @@ export function App() {
   return (
     <div className="relative flex min-h-screen min-w-80 overflow-hidden font-sans text-white">
       <Wallpaper
-        wallpaperUrl={wallpaperUrl}
-        overlayOpacity={launcherSettings.wallpaperOverlayOpacity}
+        wallpaperUrl={settings.wallpaperUrl}
+        overlayOpacity={settings.wallpaperOverlayOpacity}
       />
 
       <main className="relative min-h-screen min-w-0 flex-1 overflow-hidden">
@@ -98,27 +54,17 @@ export function App() {
           <Settings aria-hidden="true" className="size-5" />
         </button>
 
-        <LauncherSettingsProvider settings={launcherSettings}>
-          <div className="flex h-screen min-h-0 flex-col pt-16 sm:pt-48">
-            <div className="relative z-20 shrink-0 px-6 sm:px-10">
-              <SearchEngineBox />
-            </div>
-            <Launcher />
+        <div className="flex h-screen min-h-0 flex-col pt-16 sm:pt-48">
+          <div className="relative z-20 shrink-0 px-6 sm:px-10">
+            <SearchEngineBox />
           </div>
-        </LauncherSettingsProvider>
+          <Launcher />
+        </div>
 
         <MainDialogPortal />
       </main>
 
-      <SettingsPanel
-        isOpen={isSettingsOpen}
-        selectedWallpaperUrl={wallpaperUrl}
-        launcherSettings={launcherSettings}
-        onClose={closeSettings}
-        onSelectWallpaper={saveWallpaper}
-        onClearWallpaper={() => saveWallpaper(null)}
-        onChangeLauncherSettings={saveLauncherSettings}
-      />
+      <SettingsPanel isOpen={isSettingsOpen} onClose={closeSettings} />
     </div>
   );
 }

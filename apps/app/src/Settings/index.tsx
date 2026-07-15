@@ -6,8 +6,8 @@ import {
   type FormEvent,
 } from "react";
 import { X } from "lucide-react";
-import { importBrowserBookmarksWithToast } from "./browserBookmarks";
-import { normalizeImageUrl } from "./wallpapers";
+import { importBrowserBookmarksWithToast } from "../browserBookmarks";
+import { normalizeImageUrl } from "./wallpaper";
 import {
   LAUNCHER_NODE_SCALE_STEP,
   MAX_WALLPAPER_OVERLAY_OPACITY,
@@ -15,8 +15,9 @@ import {
   MIN_WALLPAPER_OVERLAY_OPACITY,
   MIN_LAUNCHER_NODE_SCALE,
   WALLPAPER_OVERLAY_OPACITY_STEP,
-  type LauncherSettings,
-} from "./Launcher/launcherSettings";
+  type Settings,
+} from "./settings";
+import { useSettings } from "./SettingsProvider";
 
 function preloadImage(url: string) {
   return new Promise<void>((resolve, reject) => {
@@ -63,8 +64,8 @@ function LauncherSizeSettings({
   settings,
   onChange,
 }: {
-  settings: LauncherSettings;
-  onChange: (settings: LauncherSettings) => void;
+  settings: Settings;
+  onChange: (settings: Partial<Settings>) => void;
 }) {
   return (
     <section className="space-y-2.5 border-b border-glass-border px-2 py-4">
@@ -88,7 +89,6 @@ function LauncherSizeSettings({
           aria-label="快捷方式大小"
           onChange={(event) =>
             onChange({
-              ...settings,
               nodeScale: Number(event.currentTarget.value),
             })
           }
@@ -110,10 +110,10 @@ function WallpaperSettingsSection({
   onChangeSettings,
 }: {
   selectedWallpaperUrl: string | null;
-  settings: LauncherSettings;
+  settings: Settings;
   onSelectWallpaper: (wallpaperUrl: string) => void;
   onClearWallpaper: () => void;
-  onChangeSettings: (settings: LauncherSettings) => void;
+  onChangeSettings: (settings: Partial<Settings>) => void;
 }) {
   const [customImageUrl, setCustomImageUrl] = useState("");
   const [customImageError, setCustomImageError] = useState("");
@@ -171,7 +171,6 @@ function WallpaperSettingsSection({
             aria-label="壁纸遮罩强度"
             onChange={(event) =>
               onChangeSettings({
-                ...settings,
                 wallpaperOverlayOpacity: Number(event.currentTarget.value),
               })
             }
@@ -239,21 +238,12 @@ function WallpaperSettingsSection({
 
 export function SettingsPanel({
   isOpen,
-  selectedWallpaperUrl,
-  launcherSettings,
   onClose,
-  onSelectWallpaper,
-  onClearWallpaper,
-  onChangeLauncherSettings,
 }: {
   isOpen: boolean;
-  selectedWallpaperUrl: string | null;
-  launcherSettings: LauncherSettings;
   onClose: () => void;
-  onSelectWallpaper: (wallpaperUrl: string) => void;
-  onClearWallpaper: () => void;
-  onChangeLauncherSettings: (settings: LauncherSettings) => void;
 }) {
+  const { settings, updateSettings } = useSettings();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -305,16 +295,15 @@ export function SettingsPanel({
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <BrowserBookmarksImportSettings />
-          <LauncherSizeSettings
-            settings={launcherSettings}
-            onChange={onChangeLauncherSettings}
-          />
+          <LauncherSizeSettings settings={settings} onChange={updateSettings} />
           <WallpaperSettingsSection
-            selectedWallpaperUrl={selectedWallpaperUrl}
-            settings={launcherSettings}
-            onSelectWallpaper={onSelectWallpaper}
-            onClearWallpaper={onClearWallpaper}
-            onChangeSettings={onChangeLauncherSettings}
+            selectedWallpaperUrl={settings.wallpaperUrl}
+            settings={settings}
+            onSelectWallpaper={(wallpaperUrl) =>
+              updateSettings({ wallpaperUrl })
+            }
+            onClearWallpaper={() => updateSettings({ wallpaperUrl: null })}
+            onChangeSettings={updateSettings}
           />
         </div>
       </aside>

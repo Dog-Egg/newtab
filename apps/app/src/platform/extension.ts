@@ -5,15 +5,8 @@ import {
   normalizeLauncher,
 } from "../Launcher/launcher";
 import { importBrowserBookmarks } from "../browserBookmarks";
-import {
-  normalizeStoredWallpaperUrl,
-  WALLPAPER_STORAGE_KEY,
-} from "../wallpapers";
 import type { Platform, StoredSearchEngineSettings } from "./types";
-import {
-  LAUNCHER_SETTINGS_STORAGE_KEY,
-  normalizeLauncherSettings,
-} from "../Launcher/launcherSettings";
+import { normalizeSettings, SETTINGS_STORAGE_KEY } from "../Settings/settings";
 
 const SEARCH_ENGINE_SETTINGS_KEY = "browser-tab.searchEngineSettings.v1";
 
@@ -34,20 +27,6 @@ function getChromeStorage<T>(key: string, normalize: (value: unknown) => T) {
 function setChromeStorage(key: string, value: unknown) {
   return new Promise<void>((resolve, reject) => {
     chrome.storage.local.set({ [key]: value }, () => {
-      const error = chrome.runtime.lastError;
-      if (error) {
-        reject(new Error(error.message));
-        return;
-      }
-
-      resolve();
-    });
-  });
-}
-
-function removeChromeStorage(key: string) {
-  return new Promise<void>((resolve, reject) => {
-    chrome.storage.local.remove(key, () => {
       const error = chrome.runtime.lastError;
       if (error) {
         reject(new Error(error.message));
@@ -110,34 +89,11 @@ export const platform: Platform = {
         onChange,
       ),
   },
-  wallpaper: {
-    read: () =>
-      getChromeStorage(WALLPAPER_STORAGE_KEY, normalizeStoredWallpaperUrl),
-    save: (wallpaperUrl) =>
-      wallpaperUrl
-        ? setChromeStorage(WALLPAPER_STORAGE_KEY, wallpaperUrl)
-        : removeChromeStorage(WALLPAPER_STORAGE_KEY),
+  settings: {
+    read: () => getChromeStorage(SETTINGS_STORAGE_KEY, normalizeSettings),
+    save: (settings) => setChromeStorage(SETTINGS_STORAGE_KEY, settings),
     subscribe: (onChange) =>
-      subscribeChromeStorage(
-        WALLPAPER_STORAGE_KEY,
-        normalizeStoredWallpaperUrl,
-        onChange,
-      ),
-  },
-  launcherSettings: {
-    read: () =>
-      getChromeStorage(
-        LAUNCHER_SETTINGS_STORAGE_KEY,
-        normalizeLauncherSettings,
-      ),
-    save: (settings) =>
-      setChromeStorage(LAUNCHER_SETTINGS_STORAGE_KEY, settings),
-    subscribe: (onChange) =>
-      subscribeChromeStorage(
-        LAUNCHER_SETTINGS_STORAGE_KEY,
-        normalizeLauncherSettings,
-        onChange,
-      ),
+      subscribeChromeStorage(SETTINGS_STORAGE_KEY, normalizeSettings, onChange),
   },
   searchEngineSettings: {
     read: () =>

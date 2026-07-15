@@ -50,7 +50,7 @@ import {
 import { Dialog, DialogTitle } from "../components/Dialog";
 import { importBrowserBookmarksWithToast } from "../browserBookmarks";
 import { SiteIcon } from "../components/SiteIcon";
-import { useLauncherSettings } from "./launcherSettings";
+import { useSettings } from "../Settings/SettingsProvider";
 import { DeleteShortcutCollectionDialog } from "./DeleteShortcutCollectionDialog";
 
 type SortableCollisionDetector = NonNullable<
@@ -261,7 +261,9 @@ function MergeTargetFrame({
   active: boolean;
   children: ReactNode;
 }) {
-  const { nodeScale } = useLauncherSettings();
+  const {
+    settings: { nodeScale },
+  } = useSettings();
 
   return (
     <div
@@ -293,7 +295,9 @@ function ShortcutPreview({
   hideTitle?: boolean;
   isMergeTarget?: boolean;
 }) {
-  const { nodeScale } = useLauncherSettings();
+  const {
+    settings: { nodeScale },
+  } = useSettings();
   const previewStyle: CSSProperties = {
     width: 80 * nodeScale,
     gap: 8 * nodeScale,
@@ -368,7 +372,9 @@ function FolderPreview({
   hideTitle?: boolean;
   isMergeTarget?: boolean;
 }) {
-  const { nodeScale } = useLauncherSettings();
+  const {
+    settings: { nodeScale },
+  } = useSettings();
   const previewStyle: CSSProperties = {
     width: 80 * nodeScale,
     gap: 8 * nodeScale,
@@ -694,7 +700,9 @@ function NodeMenu({
   onDelete?: () => void;
   onMove?: (categoryId: string) => void;
 }) {
-  const { nodeScale } = useLauncherSettings();
+  const {
+    settings: { nodeScale },
+  } = useSettings();
   const { categories, categoryId } = useContext(ShortcutCategoriesContext);
 
   const menuItemBaseClass = tw`flex h-9 cursor-default select-none items-center rounded-xl px-3 outline-none transition-colors duration-200 motion-reduce:transition-none`;
@@ -932,7 +940,9 @@ function AddItemDialog({
 }
 
 function AddShortcutButton({ onClick }: { onClick: () => void }) {
-  const { nodeScale } = useLauncherSettings();
+  const {
+    settings: { nodeScale },
+  } = useSettings();
 
   return (
     <button
@@ -976,7 +986,9 @@ export function ShortcutPage({
     targetCategoryId: string,
   ) => void;
 }) {
-  const { nodeScale } = useLauncherSettings();
+  const {
+    settings: { nodeScale },
+  } = useSettings();
   const [shortcuts, setShortcuts] = useState(storedShortcuts);
   const shortcutsRef = useRef(storedShortcuts);
   const [isImportingBookmarks, setIsImportingBookmarks] = useState(false);
