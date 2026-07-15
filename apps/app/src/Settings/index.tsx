@@ -20,7 +20,6 @@ import {
   type Settings,
 } from "./settings";
 import { useSettings } from "./SettingsProvider";
-import clsx from "clsx";
 
 function getRangePosition(value: number, min: number, max: number) {
   return `${((value - min) / (max - min)) * 100}%`;

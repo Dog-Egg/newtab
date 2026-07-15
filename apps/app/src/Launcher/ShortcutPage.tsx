@@ -35,7 +35,6 @@ import { PointerActivationConstraints } from "@dnd-kit/dom";
 import { type SortableDraggable } from "@dnd-kit/dom/sortable";
 import { move } from "@dnd-kit/helpers";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import clsx from "clsx";
 import { ChevronRight, EllipsisVertical, Plus } from "lucide-react";
 import {
@@ -48,6 +47,13 @@ import {
   type ShortcutCategory,
 } from "./launcher";
 import { Dialog, DialogTitle } from "../components/Dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+} from "../components/DropdownMenu";
 import { importBrowserBookmarksWithToast } from "../browserBookmarks";
 import { SiteIcon } from "../components/SiteIcon";
 import { useSettings } from "../Settings/SettingsProvider";
@@ -59,8 +65,6 @@ type SortableCollisionDetector = NonNullable<
 const MERGE_TARGET_PREFIX = "merge:";
 // dnd-kit 用 group 区分多个 sortable 容器：首页是 root，每个 Folder 使用自身 ID。
 const ROOT_SORTABLE_GROUP = "root";
-const tw = String.raw;
-
 const ShortcutCategoriesContext = createContext<{
   categories: ShortcutCategory[];
   categoryId: string;
@@ -705,16 +709,6 @@ function NodeMenu({
   } = useSettings();
   const { categories, categoryId } = useContext(ShortcutCategoriesContext);
 
-  const menuItemBaseClass = tw`flex h-9 cursor-default select-none items-center rounded-xl px-3 outline-none transition-colors duration-200 motion-reduce:transition-none`;
-  const menuItemClass = clsx(
-    menuItemBaseClass,
-    "data-[highlighted]:bg-glass-hover data-[highlighted]:text-glass-strong",
-  );
-  const dangerMenuItemClass = clsx(
-    menuItemBaseClass,
-    "text-red-300 data-[highlighted]:bg-red-500/20 data-[highlighted]:text-red-200",
-  );
-
   return (
     <div
       className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2"
@@ -734,60 +728,42 @@ function NodeMenu({
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
-          <DropdownMenu.Content
-            align="end"
-            sideOffset={6}
-            onCloseAutoFocus={(event) => event.preventDefault()}
-            className="glass-panel z-[80] min-w-44 p-1.5 text-control transition-[opacity,transform] duration-200 data-[state=closed]:scale-95 data-[state=open]:scale-100 data-[state=closed]:opacity-0 data-[state=open]:opacity-100 motion-reduce:transition-none"
-          >
-            <DropdownMenu.Item className={menuItemClass} onSelect={onEdit}>
+          <DropdownMenuContent className="min-w-44">
+            <DropdownMenuItem onSelect={onEdit}>
               {node.type === "folder" ? "修改标题" : "编辑"}
-            </DropdownMenu.Item>
+            </DropdownMenuItem>
             {onMove && categories.length > 1 ? (
               <DropdownMenu.Sub>
-                <DropdownMenu.SubTrigger
-                  className={clsx(
-                    menuItemClass,
-                    "data-[state=open]:bg-glass-hover data-[state=open]:text-glass-strong",
-                  )}
-                >
+                <DropdownMenuSubTrigger>
                   <span className="flex-1">移动到其他分类</span>
                   <ChevronRight
                     className="size-3.5"
                     strokeWidth={2.2}
                     aria-hidden="true"
                   />
-                </DropdownMenu.SubTrigger>
+                </DropdownMenuSubTrigger>
                 <DropdownMenu.Portal>
-                  <DropdownMenu.SubContent
-                    sideOffset={6}
-                    alignOffset={-6}
-                    className="glass-panel z-[90] min-w-36 p-1.5 text-control transition-[opacity,transform] duration-200 data-[state=closed]:scale-95 data-[state=open]:scale-100 data-[state=closed]:opacity-0 data-[state=open]:opacity-100 motion-reduce:transition-none"
-                  >
+                  <DropdownMenuSubContent>
                     {categories
                       .filter((category) => category.id !== categoryId)
                       .map((category) => (
-                        <DropdownMenu.Item
+                        <DropdownMenuItem
                           key={category.id}
-                          className={menuItemClass}
                           onSelect={() => onMove(category.id)}
                         >
                           {category.name}
-                        </DropdownMenu.Item>
+                        </DropdownMenuItem>
                       ))}
-                  </DropdownMenu.SubContent>
+                  </DropdownMenuSubContent>
                 </DropdownMenu.Portal>
               </DropdownMenu.Sub>
             ) : null}
             {onDelete ? (
-              <DropdownMenu.Item
-                className={dangerMenuItemClass}
-                onSelect={onDelete}
-              >
+              <DropdownMenuItem variant="danger" onSelect={onDelete}>
                 {node.type === "folder" ? "删除文件夹" : "删除"}
-              </DropdownMenu.Item>
+              </DropdownMenuItem>
             ) : null}
-          </DropdownMenu.Content>
+          </DropdownMenuContent>
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
     </div>

@@ -1,17 +1,25 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import clsx from "clsx";
-import { ChevronDown, Plus } from "lucide-react";
+import {
+  ChevronDown,
+  EllipsisVertical,
+  Plus,
+} from "lucide-react";
 import { platform } from "@platform";
 import type { StoredSearchEngineSettings } from "./platform/types";
 import { Dialog, DialogTitle } from "./components/Dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "./components/DropdownMenu";
 import { SiteIcon } from "./components/SiteIcon";
 
 type SearchEngine = {
   id: string;
   name: string;
   urlFormat: string;
-  isCustom?: boolean;
 };
 
 const DEFAULT_SEARCH_ENGINES: SearchEngine[] = [
@@ -52,7 +60,6 @@ function normalizeCustomEngines(
         id: engine.id,
         name,
         urlFormat,
-        isCustom: true,
       },
     ];
   });
@@ -107,7 +114,10 @@ export function SearchEngineBox() {
     useState<StoredSearchEngineSettings>({});
   const [query, setQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditorDialogOpen, setIsEditorDialogOpen] = useState(false);
+  const [editingEngineId, setEditingEngineId] = useState<string | null>(null);
+  const [enginePendingDeletion, setEnginePendingDeletion] =
+    useState<SearchEngine | null>(null);
   const [customEngineDraft, setCustomEngineDraft] =
     useState(EMPTY_CUSTOM_ENGINE);
 
@@ -115,10 +125,22 @@ export function SearchEngineBox() {
     () => normalizeCustomEngines(storedSettings.customEngines),
     [storedSettings.customEngines],
   );
-  const searchEngines = useMemo(
-    () => [...DEFAULT_SEARCH_ENGINES, ...customEngines],
-    [customEngines],
-  );
+  const searchEngines = useMemo(() => {
+    const customEngineById = new Map(
+      customEngines.map((engine) => [engine.id, engine]),
+    );
+    const defaultEngineIds = new Set(
+      DEFAULT_SEARCH_ENGINES.map((engine) => engine.id),
+    );
+    const visibleDefaultEngines = DEFAULT_SEARCH_ENGINES.filter(
+      (engine) => !storedSettings.hiddenDefaultEngineIds?.includes(engine.id),
+    ).map((engine) => customEngineById.get(engine.id) ?? engine);
+    const addedEngines = customEngines.filter(
+      (engine) => !defaultEngineIds.has(engine.id),
+    );
+
+    return [...visibleDefaultEngines, ...addedEngines];
+  }, [customEngines, storedSettings.hiddenDefaultEngineIds]);
   const selectedEngine =
     searchEngines.find(
       (engine) => engine.id === storedSettings.selectedEngineId,
@@ -172,17 +194,44 @@ export function SearchEngineBox() {
   }
 
   function openAddDialog() {
+    setEditingEngineId(null);
     setCustomEngineDraft(EMPTY_CUSTOM_ENGINE);
     setIsDropdownOpen(false);
-    window.setTimeout(() => setIsAddDialogOpen(true), 0);
+    window.setTimeout(() => setIsEditorDialogOpen(true), 0);
   }
 
-  function handleAddCustomEngine(event: FormEvent<HTMLFormElement>) {
+  function openEditDialog(engine: SearchEngine) {
+    setEditingEngineId(engine.id);
+    setCustomEngineDraft({ name: engine.name, urlFormat: engine.urlFormat });
+    setIsDropdownOpen(false);
+    window.setTimeout(() => setIsEditorDialogOpen(true), 0);
+  }
+
+  function handleSaveCustomEngine(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const name = customEngineDraft.name.trim();
     const urlFormat = customEngineDraft.urlFormat.trim();
     if (!name || !urlFormat) {
+      return;
+    }
+
+    if (editingEngineId) {
+      updateStoredSettings((currentSettings) => ({
+        ...currentSettings,
+        customEngines: (currentSettings.customEngines ?? []).some(
+          (engine) => engine.id === editingEngineId,
+        )
+          ? (currentSettings.customEngines ?? []).map((engine) =>
+              engine.id === editingEngineId
+                ? { ...engine, name, urlFormat }
+                : engine,
+            )
+          : [
+              ...(currentSettings.customEngines ?? []),
+              { id: editingEngineId, name, urlFormat },
+            ],
+      }));
       return;
     }
 
@@ -199,6 +248,37 @@ export function SearchEngineBox() {
         ...(currentSettings.customEngines ?? []),
         nextCustomEngine,
       ],
+    }));
+  }
+
+  function deleteSearchEngine(engine: SearchEngine) {
+    const fallbackEngineId = searchEngines.find(
+      (candidate) => candidate.id !== engine.id,
+    )?.id;
+    if (!fallbackEngineId) {
+      return;
+    }
+
+    const isDefaultEngine = DEFAULT_SEARCH_ENGINES.some(
+      (defaultEngine) => defaultEngine.id === engine.id,
+    );
+    updateStoredSettings((currentSettings) => ({
+      ...currentSettings,
+      selectedEngineId:
+        currentSettings.selectedEngineId === engine.id
+          ? fallbackEngineId
+          : currentSettings.selectedEngineId,
+      hiddenDefaultEngineIds: isDefaultEngine
+        ? Array.from(
+            new Set([
+              ...(currentSettings.hiddenDefaultEngineIds ?? []),
+              engine.id,
+            ]),
+          )
+        : currentSettings.hiddenDefaultEngineIds,
+      customEngines: (currentSettings.customEngines ?? []).filter(
+        (customEngine) => customEngine.id !== engine.id,
+      ),
     }));
   }
 
@@ -246,22 +326,60 @@ export function SearchEngineBox() {
                   aria-label="搜索引擎"
                 >
                   {searchEngines.map((engine) => (
-                    <button
-                      key={engine.id}
-                      className={clsx(
-                        "flex h-16 min-w-[88px] shrink-0 flex-col items-center justify-center gap-1 rounded-xl px-3 text-center text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none",
-                        engine.id === selectedEngine.id &&
-                          "bg-glass-selected text-glass-selected-content shadow-sm",
-                      )}
-                      type="button"
-                      aria-pressed={engine.id === selectedEngine.id}
-                      onClick={() => selectSearchEngine(engine.id)}
-                    >
-                      <SearchEngineGlyph engine={engine} />
-                      <span className="w-full truncate text-xs font-semibold">
-                        {engine.name}
-                      </span>
-                    </button>
+                    <div key={engine.id} className="group relative shrink-0">
+                      <button
+                        className={clsx(
+                          "flex h-16 min-w-[88px] flex-col items-center justify-center gap-1 rounded-xl px-3 text-center text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none",
+                          engine.id === selectedEngine.id &&
+                            "bg-glass-selected text-glass-selected-content shadow-sm",
+                        )}
+                        type="button"
+                        aria-pressed={engine.id === selectedEngine.id}
+                        onClick={() => selectSearchEngine(engine.id)}
+                      >
+                        <SearchEngineGlyph engine={engine} />
+                        <span className="w-full truncate text-xs font-semibold">
+                          {engine.name}
+                        </span>
+                      </button>
+                      <DropdownMenu.Root>
+                        <DropdownMenu.Trigger asChild>
+                          <button
+                            className="absolute right-0.5 top-0.5 grid size-6 place-items-center rounded-full bg-slate-800/80 text-white/80 shadow-sm outline-none transition hover:bg-slate-800 hover:text-white focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-glass-focus data-[state=open]:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                            type="button"
+                            aria-label={`${engine.name}的更多操作`}
+                            title="更多操作"
+                          >
+                            <EllipsisVertical
+                              aria-hidden="true"
+                              className="size-3.5"
+                            />
+                          </button>
+                        </DropdownMenu.Trigger>
+                        <DropdownMenu.Portal>
+                          <DropdownMenuContent className="z-50 text-sm text-glass-content">
+                            <DropdownMenuItem
+                              onSelect={() => openEditDialog(engine)}
+                            >
+                              编辑
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              variant="danger"
+                              disabled={searchEngines.length === 1}
+                              onSelect={() => {
+                                setIsDropdownOpen(false);
+                                window.setTimeout(
+                                  () => setEnginePendingDeletion(engine),
+                                  0,
+                                );
+                              }}
+                            >
+                              删除
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu.Portal>
+                      </DropdownMenu.Root>
+                    </div>
                   ))}
                   <button
                     className="grid h-16 min-w-[88px] shrink-0 place-items-center rounded-xl border border-dashed border-glass-border text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
@@ -292,21 +410,21 @@ export function SearchEngineBox() {
         </div>
       </div>
 
-      {isAddDialogOpen ? (
+      {isEditorDialogOpen ? (
         <Dialog
           className="max-w-xl p-6 sm:p-8"
-          onClose={() => setIsAddDialogOpen(false)}
+          onClose={() => setIsEditorDialogOpen(false)}
         >
           {(close) => (
             <form
               onSubmit={(event) => {
-                handleAddCustomEngine(event);
+                handleSaveCustomEngine(event);
                 if (canSaveCustomEngine) close();
               }}
-              aria-label="新增搜索引擎"
+              aria-label={editingEngineId ? "编辑搜索引擎" : "新增搜索引擎"}
             >
               <DialogTitle className="text-xl font-semibold">
-                新增搜索引擎
+                {editingEngineId ? "编辑搜索引擎" : "新增搜索引擎"}
               </DialogTitle>
 
               <label className="mt-6 block text-sm font-semibold text-glass-content">
@@ -356,6 +474,43 @@ export function SearchEngineBox() {
                 </button>
               </div>
             </form>
+          )}
+        </Dialog>
+      ) : null}
+
+      {enginePendingDeletion ? (
+        <Dialog
+          className="max-w-md p-7"
+          onClose={() => setEnginePendingDeletion(null)}
+        >
+          {(close) => (
+            <>
+              <DialogTitle className="text-xl font-semibold">
+                删除搜索引擎
+              </DialogTitle>
+              <p className="mt-3 text-sm leading-6 text-glass-content">
+                确定要删除“{enginePendingDeletion.name}”吗？此操作无法撤销。
+              </p>
+              <div className="mt-7 flex justify-end gap-3">
+                <button
+                  className="h-10 rounded-xl px-6 text-sm font-semibold text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus"
+                  type="button"
+                  onClick={close}
+                >
+                  取消
+                </button>
+                <button
+                  className="h-10 rounded-xl bg-red-500 px-6 text-sm font-semibold text-white outline-none transition hover:bg-red-600 focus-visible:ring-2 focus-visible:ring-glass-focus"
+                  type="button"
+                  onClick={() => {
+                    deleteSearchEngine(enginePendingDeletion);
+                    close();
+                  }}
+                >
+                  删除
+                </button>
+              </div>
+            </>
           )}
         </Dialog>
       ) : null}

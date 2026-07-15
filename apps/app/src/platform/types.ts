@@ -7,6 +7,7 @@ export type StorageUnsubscribe = () => void;
 
 export type StoredSearchEngineSettings = {
   selectedEngineId?: string;
+  hiddenDefaultEngineIds?: string[];
   customEngines?: Array<{
     id: string;
     name: string;
