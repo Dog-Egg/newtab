@@ -52,6 +52,12 @@ export const en = {
       "The image failed to load. Check that the URL is accessible.",
   },
   launcher: {
+    defaultCategories: {
+      home: "Home",
+      work: "Work",
+      inspiration: "Inspiration",
+      life: "Life",
+    },
     home: "Home",
     folder: "Folder",
     categories: "Shortcut categories",

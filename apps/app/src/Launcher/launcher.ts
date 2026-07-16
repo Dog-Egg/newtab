@@ -182,14 +182,13 @@ export type ShortcutCategory = {
 export const LAUNCHER_STORAGE_KEY = "launcher";
 export const ACTIVE_CATEGORY_ID_STORAGE_KEY = "activeCategoryId";
 
-export const DEFAULT_CATEGORY: ShortcutCategory = {
-  id: "default",
-  name: "Home",
-  shortcuts: [],
-};
+export const DEFAULT_CATEGORY_ID = "default";
 
-export function normalizeLauncher(value: unknown): ShortcutCategory[] {
-  if (!Array.isArray(value)) return [DEFAULT_CATEGORY];
+export function normalizeLauncher(
+  value: unknown,
+  defaultCategory: ShortcutCategory,
+): ShortcutCategory[] {
+  if (!Array.isArray(value)) return [defaultCategory];
 
   const categories = value.flatMap<ShortcutCategory>((item) => {
     if (!item || typeof item !== "object") return [];
@@ -212,11 +211,9 @@ export function normalizeLauncher(value: unknown): ShortcutCategory[] {
       all.findIndex((candidate) => candidate.id === category.id) === index,
   );
   const hasDefault = uniqueCategories.some(
-    (category) => category.id === DEFAULT_CATEGORY.id,
+    (category) => category.id === DEFAULT_CATEGORY_ID,
   );
-  return hasDefault
-    ? uniqueCategories
-    : [DEFAULT_CATEGORY, ...uniqueCategories];
+  return hasDefault ? uniqueCategories : [defaultCategory, ...uniqueCategories];
 }
 
 export function normalizeActiveCategoryId(
@@ -226,5 +223,5 @@ export function normalizeActiveCategoryId(
   return typeof value === "string" &&
     categories.some((category) => category.id === value)
     ? value
-    : DEFAULT_CATEGORY.id;
+    : DEFAULT_CATEGORY_ID;
 }

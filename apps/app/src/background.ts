@@ -1,6 +1,6 @@
 import {
   LAUNCHER_STORAGE_KEY,
-  DEFAULT_CATEGORY,
+  DEFAULT_CATEGORY_ID,
   normalizeLauncher,
   type Shortcut,
   type ShortcutCategory,
@@ -13,6 +13,14 @@ const MENU_ID = "save-to-tab";
 const CATEGORY_MENU_ID_PREFIX = `${MENU_ID}:category:`;
 const defaultLocale = getLocaleFromLanguage(chrome.i18n.getUILanguage());
 
+function createDefaultCategory(locale: "en" | "zh-CN"): ShortcutCategory {
+  return {
+    id: DEFAULT_CATEGORY_ID,
+    name: locale === "zh-CN" ? "首页" : "Home",
+    shortcuts: [],
+  };
+}
+
 function createContextMenu() {
   chrome.storage.local.get(
     [SETTINGS_STORAGE_KEY, LAUNCHER_STORAGE_KEY],
@@ -21,7 +29,10 @@ function createContextMenu() {
         items[SETTINGS_STORAGE_KEY],
         defaultLocale,
       );
-      const categories = normalizeLauncher(items[LAUNCHER_STORAGE_KEY]);
+      const categories = normalizeLauncher(
+        items[LAUNCHER_STORAGE_KEY],
+        createDefaultCategory(locale),
+      );
 
       chrome.contextMenus.removeAll(() => {
         chrome.contextMenus.create({
@@ -46,9 +57,21 @@ function createContextMenu() {
 
 function getCategories() {
   return new Promise<ShortcutCategory[]>((resolve) => {
-    chrome.storage.local.get(LAUNCHER_STORAGE_KEY, (items) => {
-      resolve(normalizeLauncher(items[LAUNCHER_STORAGE_KEY]));
-    });
+    chrome.storage.local.get(
+      [SETTINGS_STORAGE_KEY, LAUNCHER_STORAGE_KEY],
+      (items) => {
+        const { locale } = normalizeSettings(
+          items[SETTINGS_STORAGE_KEY],
+          defaultLocale,
+        );
+        resolve(
+          normalizeLauncher(
+            items[LAUNCHER_STORAGE_KEY],
+            createDefaultCategory(locale),
+          ),
+        );
+      },
+    );
   });
 }
 
@@ -93,7 +116,7 @@ async function saveShortcut(
     (category) => category.id === targetCategoryId,
   )
     ? targetCategoryId
-    : DEFAULT_CATEGORY.id;
+    : DEFAULT_CATEGORY_ID;
   const shortcut: Shortcut = {
     type: "item",
     id: url,

@@ -50,6 +50,12 @@ export const zhCN = {
     imageLoadFailed: "图片加载失败，请检查图片地址是否可访问",
   },
   launcher: {
+    defaultCategories: {
+      home: "首页",
+      work: "工作",
+      inspiration: "灵感",
+      life: "生活",
+    },
     home: "首页",
     folder: "文件夹",
     categories: "快捷方式分类",

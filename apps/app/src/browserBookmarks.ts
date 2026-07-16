@@ -4,13 +4,15 @@ import {
   type ShortcutNode,
   ACTIVE_CATEGORY_ID_STORAGE_KEY,
   LAUNCHER_STORAGE_KEY,
-  DEFAULT_CATEGORY,
+  DEFAULT_CATEGORY_ID,
   normalizeActiveCategoryId,
   normalizeLauncher,
   type ShortcutCategory,
 } from "./Launcher/launcher";
 import { toast } from "sonner";
 import i18n from "./i18n";
+import { normalizeLocale } from "./i18n/locale";
+import { createDefaultCategory } from "./Launcher/defaultLauncher";
 
 export type BrowserBookmarksImportResult = {
   importedCount: number;
@@ -50,7 +52,13 @@ function getStoredCategories() {
         return;
       }
 
-      resolve(normalizeLauncher(items[LAUNCHER_STORAGE_KEY]));
+      const locale = normalizeLocale(i18n.resolvedLanguage);
+      resolve(
+        normalizeLauncher(
+          items[LAUNCHER_STORAGE_KEY],
+          createDefaultCategory(locale),
+        ),
+      );
     });
   });
 }
@@ -65,7 +73,7 @@ function getStoredActiveCategoryId() {
       }
 
       const value = items[ACTIVE_CATEGORY_ID_STORAGE_KEY];
-      resolve(typeof value === "string" ? value : DEFAULT_CATEGORY.id);
+      resolve(typeof value === "string" ? value : DEFAULT_CATEGORY_ID);
     });
   });
 }

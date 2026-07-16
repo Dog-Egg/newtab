@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { platform } from "@platform";
 import { CategoryTabs } from "./CategoryTabs";
 import {
-  DEFAULT_CATEGORY,
+  DEFAULT_CATEGORY_ID,
   normalizeActiveCategoryId,
   type ShortcutCategory,
   type ShortcutNode,
@@ -11,14 +11,16 @@ import { DeleteShortcutCollectionDialog } from "./DeleteShortcutCollectionDialog
 import { ShortcutPage } from "./ShortcutPage";
 import { Slider } from "./Slider";
 import { useTranslation } from "react-i18next";
+import { useSettings } from "../Settings/SettingsProvider";
 
 export function Launcher() {
   const { t } = useTranslation();
+  const { settings } = useSettings();
   const [categories, setCategories] = useState<ShortcutCategory[] | null>(null);
-  const [activeCategoryId, setActiveCategoryId] = useState(DEFAULT_CATEGORY.id);
+  const [activeCategoryId, setActiveCategoryId] = useState(DEFAULT_CATEGORY_ID);
   const [pendingDeleteCategory, setPendingDeleteCategory] =
     useState<ShortcutCategory | null>(null);
-  const categoriesRef = useRef<ShortcutCategory[]>([DEFAULT_CATEGORY]);
+  const categoriesRef = useRef<ShortcutCategory[]>([]);
 
   useEffect(() => {
     let isCurrent = true;
@@ -31,7 +33,7 @@ export function Launcher() {
     };
 
     void Promise.all([
-      platform.launcher.read(),
+      platform.launcher.read(settings.locale),
       platform.activeCategoryId.read(),
     ]).then(
       ([storedCategories, storedActiveCategoryId]) => {
@@ -44,7 +46,10 @@ export function Launcher() {
       () => {},
     );
 
-    const unsubscribeCategories = platform.launcher.subscribe(applyCategories);
+    const unsubscribeCategories = platform.launcher.subscribe(
+      settings.locale,
+      applyCategories,
+    );
     const unsubscribeActiveCategory = platform.activeCategoryId.subscribe(
       (categoryId) =>
         setActiveCategoryId(
@@ -56,7 +61,7 @@ export function Launcher() {
       unsubscribeCategories();
       unsubscribeActiveCategory();
     };
-  }, []);
+  }, [settings.locale]);
 
   if (!categories) return null;
   const loadedCategories = categories;
@@ -110,7 +115,7 @@ export function Launcher() {
     const nextCategories = loadedCategories
       .filter((category) => category.id !== categoryId)
       .map((category) =>
-        moveToDefault && category.id === DEFAULT_CATEGORY.id
+        moveToDefault && category.id === DEFAULT_CATEGORY_ID
           ? {
               ...category,
               shortcuts: [
@@ -122,7 +127,7 @@ export function Launcher() {
       );
     saveCategories(nextCategories);
     if (activeCategoryId === categoryId) {
-      selectCategory(DEFAULT_CATEGORY.id);
+      selectCategory(DEFAULT_CATEGORY_ID);
     }
     setPendingDeleteCategory(null);
   }

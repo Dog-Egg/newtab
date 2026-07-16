@@ -8,7 +8,7 @@ import { PointerActivationConstraints } from "@dnd-kit/dom";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 import clsx from "clsx";
 import { Check, House, Pencil, Plus, Settings2, X } from "lucide-react";
-import { DEFAULT_CATEGORY, type ShortcutCategory } from "./launcher";
+import { DEFAULT_CATEGORY_ID, type ShortcutCategory } from "./launcher";
 import { useTranslation } from "react-i18next";
 
 const CATEGORY_SORTABLE_GROUP = "categories";
@@ -31,7 +31,7 @@ function SortableCategory({
   onDelete: () => void;
 }) {
   const { t } = useTranslation();
-  const canDelete = category.id !== DEFAULT_CATEGORY.id;
+  const canDelete = category.id !== DEFAULT_CATEGORY_ID;
   const showActive = isActive && !isManaging;
   const [isEditing, setIsEditing] = useState(false);
   const [draftName, setDraftName] = useState(category.name);
@@ -96,7 +96,7 @@ function SortableCategory({
           disabled={isManaging}
           onClick={onSelect}
         >
-          {category.id === DEFAULT_CATEGORY.id ? (
+          {category.id === DEFAULT_CATEGORY_ID ? (
             <House className="size-3.5" strokeWidth={2.2} aria-hidden="true" />
           ) : null}
           {category.name}

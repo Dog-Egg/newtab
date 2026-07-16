@@ -26,9 +26,10 @@ export type BrowserBookmarksImportResult = {
 export type Platform = {
   defaultLocale: AppLocale;
   launcher: {
-    read: () => Promise<ShortcutCategory[]>;
+    read: (locale: AppLocale) => Promise<ShortcutCategory[]>;
     save: (categories: ShortcutCategory[]) => Promise<void>;
     subscribe: (
+      locale: AppLocale,
       onChange: (categories: ShortcutCategory[]) => void,
     ) => StorageUnsubscribe;
   };

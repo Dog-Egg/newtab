@@ -1,7 +1,7 @@
 import {
   ACTIVE_CATEGORY_ID_STORAGE_KEY,
   LAUNCHER_STORAGE_KEY,
-  DEFAULT_CATEGORY,
+  DEFAULT_CATEGORY_ID,
   normalizeLauncher,
 } from "../Launcher/launcher";
 import { importBrowserBookmarks } from "../browserBookmarks";
@@ -12,8 +12,19 @@ import {
 } from "./types";
 import { normalizeSettings, SETTINGS_STORAGE_KEY } from "../Settings/settings";
 import { getLocaleFromLanguage } from "../i18n/locale";
+import {
+  createDefaultCategory,
+  createDefaultLauncher,
+} from "../Launcher/defaultLauncher";
+import type { AppLocale } from "../i18n";
 
 const defaultLocale = getLocaleFromLanguage(chrome.i18n.getUILanguage());
+
+function normalizeStoredLauncher(value: unknown, locale: AppLocale) {
+  return typeof value === "undefined"
+    ? createDefaultLauncher(locale)
+    : normalizeLauncher(value, createDefaultCategory(locale));
+}
 
 function getChromeStorage<T>(key: string, normalize: (value: unknown) => T) {
   return new Promise<T>((resolve, reject) => {
@@ -76,22 +87,29 @@ function subscribeChromeStorage<T>(
 export const platform: Platform = {
   defaultLocale,
   launcher: {
-    read: () => getChromeStorage(LAUNCHER_STORAGE_KEY, normalizeLauncher),
+    read: (locale) =>
+      getChromeStorage(LAUNCHER_STORAGE_KEY, (value) =>
+        normalizeStoredLauncher(value, locale),
+      ),
     save: (categories) => setChromeStorage(LAUNCHER_STORAGE_KEY, categories),
-    subscribe: (onChange) =>
-      subscribeChromeStorage(LAUNCHER_STORAGE_KEY, normalizeLauncher, onChange),
+    subscribe: (locale, onChange) =>
+      subscribeChromeStorage(
+        LAUNCHER_STORAGE_KEY,
+        (value) => normalizeStoredLauncher(value, locale),
+        onChange,
+      ),
   },
   activeCategoryId: {
     read: () =>
       getChromeStorage(ACTIVE_CATEGORY_ID_STORAGE_KEY, (value) =>
-        typeof value === "string" ? value : DEFAULT_CATEGORY.id,
+        typeof value === "string" ? value : DEFAULT_CATEGORY_ID,
       ),
     save: (categoryId) =>
       setChromeStorage(ACTIVE_CATEGORY_ID_STORAGE_KEY, categoryId),
     subscribe: (onChange) =>
       subscribeChromeStorage(
         ACTIVE_CATEGORY_ID_STORAGE_KEY,
-        (value) => (typeof value === "string" ? value : DEFAULT_CATEGORY.id),
+        (value) => (typeof value === "string" ? value : DEFAULT_CATEGORY_ID),
         onChange,
       ),
   },
