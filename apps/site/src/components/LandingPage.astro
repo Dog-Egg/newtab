@@ -3,6 +3,8 @@ import "../styles/global.css";
 import IframeWindow from "./BrowserWindow/IframeWindow.astro";
 import { translations, type Locale } from "../i18n/translations";
 import logo from "../../../../assets/logo.svg";
+import chromeIcon from "../assets/browser-icons/chrome.png";
+import edgeIcon from "../assets/browser-icons/edge.png";
 
 interface Props {
   locale: Locale;
@@ -313,9 +315,12 @@ const buttonBase =
           <a
             class="grid min-w-[250px] grid-cols-[38px_1fr_auto] items-center gap-3.5 rounded-[14px] border border-[#ccc8c1] bg-white/80 p-4 text-left transition hover:-translate-y-0.5 hover:border-brand hover:shadow-[0_14px_30px_rgba(30,20,15,.08)] max-sm:mx-auto max-sm:w-full max-sm:min-w-0 max-sm:max-w-[360px]"
             href={placeholderUrl}
-            ><span
-              class="size-9 rounded-full bg-[conic-gradient(#e94235_0_33%,#fabb05_0_66%,#34a853_0)] shadow-[inset_0_0_0_9px_#4285f4]"
-              aria-hidden="true"></span><span
+            ><img
+              class="size-9 object-contain"
+              src={chromeIcon.src}
+              alt=""
+              aria-hidden="true"
+            /><span
               ><small class="mb-1 block text-[9px] text-[#88837d]"
                 >{t.download.storeLabel}</small
               ><strong class="text-sm">Google Chrome</strong></span
@@ -324,10 +329,12 @@ const buttonBase =
           <a
             class="grid min-w-[250px] grid-cols-[38px_1fr_auto] items-center gap-3.5 rounded-[14px] border border-[#ccc8c1] bg-white/80 p-4 text-left transition hover:-translate-y-0.5 hover:border-brand hover:shadow-[0_14px_30px_rgba(30,20,15,.08)] max-sm:mx-auto max-sm:w-full max-sm:min-w-0 max-sm:max-w-[360px]"
             href={placeholderUrl}
-            ><span
-              class="grid size-9 place-items-center rounded-full bg-gradient-to-br from-[#0aa5f5] to-[#0dcc93] font-serif text-2xl font-bold text-white"
-              aria-hidden="true">e</span
-            ><span
+            ><img
+              class="size-9 object-contain"
+              src={edgeIcon.src}
+              alt=""
+              aria-hidden="true"
+            /><span
               ><small class="mb-1 block text-[9px] text-[#88837d]"
                 >{t.download.storeLabel}</small
               ><strong class="text-sm">Microsoft Edge</strong></span
