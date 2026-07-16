@@ -58,10 +58,16 @@ export function Slider<T extends { id: string }>({
   }, [activeIndex, emblaApi]);
 
   return (
-    <div ref={viewportRef} className="h-full">
-      <div className="flex min-h-full touch-pan-y">
+    <div ref={viewportRef} className="h-full overflow-hidden">
+      <div className="flex h-full touch-pan-y">
         {items.map((item) => (
-          <div key={item.id} className="min-w-0 flex-[0_0_100%]">
+          // 每个 Category 必须拥有独立的垂直滚动容器。若由 Slider 外层统一滚动，
+          // 从较高页面切到较矮页面时会沿用同一个 scrollTop，导致内容从顶部溢出。
+          // 同时将轨道和 slide 固定为视口高度，避免轨道被最高的页面撑开。
+          <div
+            key={item.id}
+            className="h-full min-w-0 flex-[0_0_100%] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
             {renderItem(item)}
           </div>
         ))}

@@ -134,7 +134,7 @@ export function Launcher() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="min-h-[15rem] flex-1 overflow-y-auto [-webkit-mask-image:linear-gradient(to_bottom,transparent_0,black_2rem,black_calc(100%_-_3rem),transparent_100%)] [mask-image:linear-gradient(to_bottom,transparent_0,black_2rem,black_calc(100%_-_3rem),transparent_100%)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="min-h-[15rem] flex-1 overflow-hidden [-webkit-mask-image:linear-gradient(to_bottom,transparent_0,black_2rem,black_calc(100%_-_3rem),transparent_100%)] [mask-image:linear-gradient(to_bottom,transparent_0,black_2rem,black_calc(100%_-_3rem),transparent_100%)]">
         <Slider
           items={loadedCategories}
           activeId={activeCategoryId}
