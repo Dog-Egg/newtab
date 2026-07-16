@@ -128,7 +128,7 @@ export type ShortcutSortableGroups = Record<string, ShortcutNode[]>;
 
 /**
  * 把持久化使用的树形结构投影成 dnd-kit 可直接排序的 group Record。
- * rootGroup 保存首页节点，每个 Folder ID 对应它自己的 children group。
+ * rootGroup 保存主页节点，每个 Folder ID 对应它自己的 children group。
  */
 export function createShortcutSortableGroups(
   nodes: ShortcutNode[],

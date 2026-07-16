@@ -69,7 +69,7 @@ export const translations = {
     title: "BrowserTab — 打开新标签，也打开好状态",
     description:
       "BrowserTab 是一款开源、免费的浏览器新标签页扩展，让常用网站、搜索与日常灵感回到触手可及的位置。",
-    homeLabel: "BrowserTab 首页",
+    homeLabel: "BrowserTab 主页",
     navLabel: "主导航",
     nav: {
       features: "特色",

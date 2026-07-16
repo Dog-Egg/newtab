@@ -2,7 +2,6 @@ import {
   ACTIVE_CATEGORY_ID_STORAGE_KEY,
   LAUNCHER_STORAGE_KEY,
   DEFAULT_CATEGORY_ID,
-  normalizeLauncher,
 } from "../Launcher/launcher";
 import { importBrowserBookmarks } from "../browserBookmarks";
 import {
@@ -12,19 +11,8 @@ import {
 } from "./types";
 import { normalizeSettings, SETTINGS_STORAGE_KEY } from "../Settings/settings";
 import { getLocaleFromLanguage } from "../i18n/locale";
-import {
-  createDefaultCategory,
-  createDefaultLauncher,
-} from "../Launcher/defaultLauncher";
-import type { AppLocale } from "../i18n";
-
+import { normalizeStoredLauncher } from "../Launcher/defaultLauncher";
 const defaultLocale = getLocaleFromLanguage(chrome.i18n.getUILanguage());
-
-function normalizeStoredLauncher(value: unknown, locale: AppLocale) {
-  return typeof value === "undefined"
-    ? createDefaultLauncher(locale)
-    : normalizeLauncher(value, createDefaultCategory(locale));
-}
 
 function getChromeStorage<T>(key: string, normalize: (value: unknown) => T) {
   return new Promise<T>((resolve, reject) => {

@@ -1,5 +1,11 @@
-import { DEFAULT_CATEGORY_ID, type ShortcutCategory } from "./launcher";
-import i18n, { type AppLocale } from "../i18n";
+import {
+  DEFAULT_CATEGORY_ID,
+  normalizeLauncher,
+  type ShortcutCategory,
+} from "./launcher";
+import type { AppLocale } from "../i18n";
+import { en } from "../i18n/locales/en";
+import { zhCN } from "../i18n/locales/zh-CN";
 
 let defaultShortcutOrder = 0;
 
@@ -27,115 +33,206 @@ function defaultFolder(
   };
 }
 
-export function createDefaultLauncher(locale: AppLocale): ShortcutCategory[] {
+function createDefaultLauncher(locale: AppLocale): ShortcutCategory[] {
   defaultShortcutOrder = 0;
-  const t = i18n.getFixedT(locale);
+  const names = getDefaultCategoryNames(locale);
+  const title = (original: string, zhCN?: string) =>
+    locale === "zh-CN" && zhCN ? zhCN : original;
+  const shortcut = (original: string, url: string, zhCN?: string) =>
+    defaultShortcut(title(original, zhCN), url);
+  const folder = (
+    id: string,
+    original: string,
+    children: ReturnType<typeof defaultShortcut>[],
+    zhCN?: string,
+  ) => defaultFolder(id, title(original, zhCN), children);
 
   return [
     {
-      ...createDefaultCategory(locale),
+      ...createEmptyDefaultCategory(locale),
       shortcuts: [
-        defaultShortcut("YouTube", "https://www.youtube.com"),
-        defaultShortcut("Wikipedia", "https://www.wikipedia.org"),
-        defaultShortcut("Reddit", "https://www.reddit.com"),
-        defaultShortcut("ChatGPT", "https://chatgpt.com"),
-        defaultShortcut("GitHub", "https://github.com"),
-        defaultShortcut("WhatsApp", "https://www.whatsapp.com"),
-        defaultFolder("social", "Social", [
-          defaultShortcut("Facebook", "https://www.facebook.com"),
-          defaultShortcut("Instagram", "https://www.instagram.com"),
-          defaultShortcut("X", "https://x.com"),
-          defaultShortcut("LinkedIn", "https://www.linkedin.com"),
-        ]),
-        defaultFolder("entertainment", "Entertainment", [
-          defaultShortcut("Netflix", "https://www.netflix.com"),
-          defaultShortcut("Spotify", "https://open.spotify.com"),
-          defaultShortcut("Twitch", "https://www.twitch.tv"),
-          defaultShortcut("Disney+", "https://www.disneyplus.com"),
-        ]),
+        shortcut("YouTube", "https://www.youtube.com"),
+        folder(
+          "daily",
+          "Daily",
+          [
+            shortcut("Gmail", "https://mail.google.com"),
+            shortcut(
+              "Google Calendar",
+              "https://calendar.google.com",
+              "谷歌日历",
+            ),
+          ],
+          "日常",
+        ),
+        shortcut("X", "https://x.com"),
+        shortcut("Reddit", "https://www.reddit.com"),
+        shortcut("Discord", "https://discord.com"),
+        shortcut("Spotify", "https://open.spotify.com"),
+        folder(
+          "social",
+          "Social",
+          [
+            shortcut("Instagram", "https://www.instagram.com"),
+            shortcut("WhatsApp", "https://www.whatsapp.com"),
+            shortcut("Telegram", "https://telegram.org"),
+          ],
+          "社交",
+        ),
+        shortcut("Facebook", "https://www.facebook.com"),
+        shortcut("Wikipedia", "https://www.wikipedia.org", "维基百科"),
+        shortcut("LinkedIn", "https://www.linkedin.com", "领英"),
+        shortcut("PayPal", "https://www.paypal.com"),
+        folder(
+          "shopping",
+          "Shopping",
+          [
+            shortcut("Amazon", "https://www.amazon.com", "亚马逊"),
+            shortcut("Etsy", "https://www.etsy.com"),
+          ],
+          "购物",
+        ),
+        shortcut("eBay", "https://www.ebay.com"),
+        shortcut("Netflix", "https://www.netflix.com"),
+        shortcut("Disney+", "https://www.disneyplus.com"),
+        shortcut("Twitch", "https://www.twitch.tv"),
+        shortcut("Prime Video", "https://www.primevideo.com"),
+        folder(
+          "tools",
+          "Tools",
+          [
+            shortcut(
+              "Google Translate",
+              "https://translate.google.com",
+              "谷歌翻译",
+            ),
+            shortcut("Speedtest", "https://www.speedtest.net"),
+            shortcut("Internet Archive", "https://archive.org", "互联网档案馆"),
+          ],
+          "工具",
+        ),
+        shortcut("Apple", "https://www.apple.com", "苹果"),
+        shortcut("IKEA", "https://www.ikea.com", "宜家"),
+        shortcut("SoundCloud", "https://soundcloud.com"),
+        shortcut("IMDb", "https://www.imdb.com"),
+        folder(
+          "news",
+          "News",
+          [
+            shortcut("BBC", "https://www.bbc.com"),
+            shortcut("Reuters", "https://www.reuters.com", "路透社"),
+          ],
+          "新闻",
+        ),
+        shortcut("The New York Times", "https://www.nytimes.com", "纽约时报"),
+        shortcut("AP News", "https://apnews.com", "美联社"),
+        folder(
+          "travel",
+          "Travel",
+          [
+            shortcut("Tripadvisor", "https://www.tripadvisor.com", "猫途鹰"),
+            shortcut("Skyscanner", "https://www.skyscanner.com", "天巡"),
+            shortcut("Uber", "https://www.uber.com"),
+          ],
+          "旅行",
+        ),
+        shortcut("Booking.com", "https://www.booking.com"),
+        shortcut("Proton Mail", "https://mail.proton.me"),
       ],
     },
     {
       id: "category-work",
-      name: t("launcher.defaultCategories.work"),
+      name: names.work,
       shortcuts: [
-        defaultShortcut("Notion", "https://www.notion.so"),
-        defaultShortcut("Figma", "https://www.figma.com"),
-        defaultShortcut("Zoom", "https://zoom.us"),
-        defaultShortcut("Slack", "https://slack.com"),
-        defaultShortcut("Trello", "https://trello.com"),
-        defaultFolder("google-workspace", "Google Workspace", [
-          defaultShortcut("Gmail", "https://mail.google.com"),
-          defaultShortcut("Google Drive", "https://drive.google.com"),
-          defaultShortcut("Google Calendar", "https://calendar.google.com"),
-          defaultShortcut("Google Docs", "https://docs.google.com"),
-        ]),
-        defaultFolder("development", "Development", [
-          defaultShortcut("Stack Overflow", "https://stackoverflow.com"),
-          defaultShortcut("MDN", "https://developer.mozilla.org"),
-          defaultShortcut("Vercel", "https://vercel.com"),
-          defaultShortcut("npm", "https://www.npmjs.com"),
-        ]),
+        shortcut("Notion", "https://www.notion.so"),
+        folder(
+          "development",
+          "Development",
+          [
+            shortcut("GitHub", "https://github.com"),
+            shortcut("Stack Overflow", "https://stackoverflow.com"),
+            shortcut("MDN", "https://developer.mozilla.org"),
+          ],
+          "开发",
+        ),
+        shortcut("Figma", "https://www.figma.com"),
+        shortcut("Slack", "https://slack.com"),
+        folder(
+          "google-workspace",
+          "Google",
+          [
+            shortcut(
+              "Google Drive",
+              "https://drive.google.com",
+              "谷歌云端硬盘",
+            ),
+            shortcut("Google Docs", "https://docs.google.com", "谷歌文档"),
+          ],
+          "谷歌",
+        ),
+        shortcut("ChatGPT", "https://chatgpt.com"),
+        shortcut("Zoom", "https://zoom.us"),
+        shortcut("Trello", "https://trello.com"),
+        shortcut("Vercel", "https://vercel.com"),
       ],
     },
     {
       id: "category-inspiration",
-      name: t("launcher.defaultCategories.inspiration"),
+      name: names.inspiration,
       shortcuts: [
-        defaultShortcut("Behance", "https://www.behance.net"),
-        defaultShortcut("Dribbble", "https://dribbble.com"),
-        defaultShortcut("Pinterest", "https://www.pinterest.com"),
-        defaultShortcut("Medium", "https://medium.com"),
-        defaultShortcut("Adobe", "https://www.adobe.com"),
-        defaultFolder("design-resources", "Design Resources", [
-          defaultShortcut("Unsplash", "https://unsplash.com"),
-          defaultShortcut("Pexels", "https://www.pexels.com"),
-          defaultShortcut("Framer", "https://www.framer.com"),
-          defaultShortcut("Coolors", "https://coolors.co"),
-        ]),
-        defaultFolder("learning", "Learning", [
-          defaultShortcut("Coursera", "https://www.coursera.org"),
-          defaultShortcut("Khan Academy", "https://www.khanacademy.org"),
-          defaultShortcut("Udemy", "https://www.udemy.com"),
-          defaultShortcut("Duolingo", "https://www.duolingo.com"),
-        ]),
-      ],
-    },
-    {
-      id: "category-life",
-      name: t("launcher.defaultCategories.life"),
-      shortcuts: [
-        defaultShortcut("Telegram", "https://telegram.org"),
-        defaultShortcut("Proton", "https://proton.me"),
-        defaultShortcut("Apple", "https://www.apple.com"),
-        defaultShortcut("PayPal", "https://www.paypal.com"),
-        defaultFolder("shopping", "Shopping", [
-          defaultShortcut("Amazon", "https://www.amazon.com"),
-          defaultShortcut("eBay", "https://www.ebay.com"),
-          defaultShortcut("Etsy", "https://www.etsy.com"),
-          defaultShortcut("IKEA", "https://www.ikea.com"),
-        ]),
-        defaultFolder("travel", "Travel", [
-          defaultShortcut("Booking.com", "https://www.booking.com"),
-          defaultShortcut("Airbnb", "https://www.airbnb.com"),
-          defaultShortcut("Tripadvisor", "https://www.tripadvisor.com"),
-          defaultShortcut("Google Maps", "https://www.google.com/maps"),
-        ]),
-        defaultFolder("news", "News", [
-          defaultShortcut("BBC", "https://www.bbc.com"),
-          defaultShortcut("CNN", "https://www.cnn.com"),
-          defaultShortcut("Reuters", "https://www.reuters.com"),
-          defaultShortcut("AP News", "https://apnews.com"),
-        ]),
+        shortcut("Pinterest", "https://www.pinterest.com"),
+        folder(
+          "reading",
+          "Reading",
+          [
+            shortcut("Medium", "https://medium.com"),
+            shortcut("Coursera", "https://www.coursera.org"),
+          ],
+          "阅读",
+        ),
+        shortcut("Unsplash", "https://unsplash.com"),
+        shortcut("Dribbble", "https://dribbble.com"),
+        folder(
+          "somewhere",
+          "Somewhere",
+          [
+            shortcut("Google Maps", "https://www.google.com/maps", "谷歌地图"),
+            shortcut("Airbnb", "https://www.airbnb.com"),
+          ],
+          "去处",
+        ),
+        shortcut("Behance", "https://www.behance.net"),
+        folder(
+          "resources",
+          "Resources",
+          [
+            shortcut("Pexels", "https://www.pexels.com"),
+            shortcut("Framer", "https://www.framer.com"),
+            shortcut("Coolors", "https://coolors.co"),
+          ],
+          "资源",
+        ),
+        shortcut("Duolingo", "https://www.duolingo.com", "多邻国"),
+        shortcut("Are.na", "https://www.are.na"),
       ],
     },
   ];
 }
 
-export function createDefaultCategory(locale: AppLocale): ShortcutCategory {
+function createEmptyDefaultCategory(locale: AppLocale): ShortcutCategory {
   return {
     id: DEFAULT_CATEGORY_ID,
-    name: i18n.getFixedT(locale)("launcher.defaultCategories.home"),
+    name: getDefaultCategoryNames(locale).home,
     shortcuts: [],
   };
+}
+
+export function normalizeStoredLauncher(value: unknown, locale: AppLocale) {
+  return typeof value === "undefined"
+    ? createDefaultLauncher(locale)
+    : normalizeLauncher(value, createEmptyDefaultCategory(locale));
+}
+
+function getDefaultCategoryNames(locale: AppLocale) {
+  return (locale === "zh-CN" ? zhCN : en).launcher.defaultCategories;
 }

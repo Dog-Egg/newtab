@@ -56,7 +56,6 @@ export const en = {
       home: "Home",
       work: "Work",
       inspiration: "Inspiration",
-      life: "Life",
     },
     home: "Home",
     folder: "Folder",

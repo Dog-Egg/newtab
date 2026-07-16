@@ -6,13 +6,12 @@ import {
   LAUNCHER_STORAGE_KEY,
   DEFAULT_CATEGORY_ID,
   normalizeActiveCategoryId,
-  normalizeLauncher,
   type ShortcutCategory,
 } from "./Launcher/launcher";
 import { toast } from "sonner";
 import i18n from "./i18n";
 import { normalizeLocale } from "./i18n/locale";
-import { createDefaultCategory } from "./Launcher/defaultLauncher";
+import { normalizeStoredLauncher } from "./Launcher/defaultLauncher";
 
 export type BrowserBookmarksImportResult = {
   importedCount: number;
@@ -53,12 +52,7 @@ function getStoredCategories() {
       }
 
       const locale = normalizeLocale(i18n.resolvedLanguage);
-      resolve(
-        normalizeLauncher(
-          items[LAUNCHER_STORAGE_KEY],
-          createDefaultCategory(locale),
-        ),
-      );
+      resolve(normalizeStoredLauncher(items[LAUNCHER_STORAGE_KEY], locale));
     });
   });
 }

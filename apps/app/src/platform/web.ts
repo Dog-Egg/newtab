@@ -2,7 +2,7 @@ import {
   ACTIVE_CATEGORY_ID_STORAGE_KEY,
   LAUNCHER_STORAGE_KEY,
   DEFAULT_CATEGORY_ID,
-  normalizeLauncher,
+  type ShortcutCategory,
 } from "../Launcher/launcher";
 import {
   SEARCH_ENGINE_SETTINGS_KEY,
@@ -15,10 +15,7 @@ import {
   type Settings,
 } from "../Settings/settings";
 import { getLocaleFromLanguage } from "../i18n/locale";
-import {
-  createDefaultCategory,
-  createDefaultLauncher,
-} from "../Launcher/defaultLauncher";
+import { normalizeStoredLauncher } from "../Launcher/defaultLauncher";
 import type { AppLocale } from "../i18n";
 
 const defaultLocale = getLocaleFromLanguage(
@@ -27,7 +24,7 @@ const defaultLocale = getLocaleFromLanguage(
 
 function readJsonStorageValue(key: string) {
   const saved = window.sessionStorage.getItem(key);
-  if (!saved) {
+  if (saved === null) {
     return undefined;
   }
 
@@ -56,14 +53,10 @@ function saveStoredSearchEngineSettings(settings: StoredSearchEngineSettings) {
 
 function readStoredLauncher(locale: AppLocale) {
   const storedValue = readJsonStorageValue(LAUNCHER_STORAGE_KEY);
-  if (typeof storedValue === "undefined") {
-    return createDefaultLauncher(locale);
-  }
-
-  return normalizeLauncher(storedValue, createDefaultCategory(locale));
+  return normalizeStoredLauncher(storedValue, locale);
 }
 
-function saveStoredLauncher(categories: ReturnType<typeof normalizeLauncher>) {
+function saveStoredLauncher(categories: ShortcutCategory[]) {
   window.sessionStorage.setItem(
     LAUNCHER_STORAGE_KEY,
     JSON.stringify(categories),

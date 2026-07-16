@@ -2,12 +2,12 @@
  * 启动器交互说明：
  *
  * - 点击快捷方式会打开对应页面；点击文件夹会打开文件夹对话框。
- * - 首页中的快捷方式和文件夹均可拖拽排序。
- * - 首页快捷方式可拖到另一个快捷方式或文件夹上进行合并：
+ * - 主页中的快捷方式和文件夹均可拖拽排序。
+ * - 主页快捷方式可拖到另一个快捷方式或文件夹上进行合并：
  *   两个快捷方式会组成新文件夹，快捷方式拖到已有文件夹上则加入该文件夹。
  * - 文件夹内的快捷方式可独立拖拽排序。
  * - 将文件夹内的快捷方式拖出文件夹边界，会立即关闭文件夹对话框；本次拖拽
- *   继续进行，可直接把该快捷方式放到首页中的目标位置。
+ *   继续进行，可直接把该快捷方式放到主页中的目标位置。
  */
 
 import {
@@ -63,7 +63,7 @@ type SortableCollisionDetector = NonNullable<
   Parameters<typeof useSortable>[0]["collisionDetector"]
 >;
 const MERGE_TARGET_PREFIX = "merge:";
-// dnd-kit 用 group 区分多个 sortable 容器：首页是 root，每个 Folder 使用自身 ID。
+// dnd-kit 用 group 区分多个 sortable 容器：主页是 root，每个 Folder 使用自身 ID。
 const ROOT_SORTABLE_GROUP = "root";
 const ShortcutCategoriesContext = createContext<{
   categories: ShortcutCategory[];
@@ -112,7 +112,7 @@ const reorderCollisionDetector: SortableCollisionDetector = ({
   const source = dragOperation.source;
   const sourceCurrent = dragOperation.shape?.current;
 
-  // Dialog 覆盖在首页网格上方，但碰撞系统仍能看到遮罩后的 root sortables。
+  // Dialog 覆盖在主页网格上方，但碰撞系统仍能看到遮罩后的 root sortables。
   // 指针还在 Folder 面板内时忽略这些候选项；一旦越界，立即选择离指针最近的
   // root sortable，让 onDragOver 投影数据并关闭 Dialog，无需等待拖拽项与目标重叠。
   if (

@@ -51,12 +51,11 @@ export const zhCN = {
   },
   launcher: {
     defaultCategories: {
-      home: "首页",
+      home: "主页",
       work: "工作",
       inspiration: "灵感",
-      life: "生活",
     },
-    home: "首页",
+    home: "主页",
     folder: "文件夹",
     categories: "快捷方式分类",
     categoryName: "分类名称",
@@ -75,7 +74,7 @@ export const zhCN = {
     collectionPrompt_other:
       "“{{name}}”中有 {{count}} 个快捷方式。你希望如何处理？",
     deleteCategoryTitle: "删除分类",
-    keepCategoryShortcuts: "仅删除分类，快捷方式移到首页",
+    keepCategoryShortcuts: "仅删除分类，快捷方式移到主页",
     deleteCategoryAll: "删除分类及其中的所有快捷方式",
     folderTitle: "文件夹标题",
     editTitle: "修改标题",

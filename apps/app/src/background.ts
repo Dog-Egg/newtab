@@ -1,25 +1,17 @@
 import {
   LAUNCHER_STORAGE_KEY,
   DEFAULT_CATEGORY_ID,
-  normalizeLauncher,
   type Shortcut,
   type ShortcutCategory,
   type ShortcutNode,
 } from "./Launcher/launcher";
 import { normalizeSettings, SETTINGS_STORAGE_KEY } from "./Settings/settings";
 import { getLocaleFromLanguage } from "./i18n/locale";
+import { normalizeStoredLauncher } from "./Launcher/defaultLauncher";
 
 const MENU_ID = "save-to-tab";
 const CATEGORY_MENU_ID_PREFIX = `${MENU_ID}:category:`;
 const defaultLocale = getLocaleFromLanguage(chrome.i18n.getUILanguage());
-
-function createDefaultCategory(locale: "en" | "zh-CN"): ShortcutCategory {
-  return {
-    id: DEFAULT_CATEGORY_ID,
-    name: locale === "zh-CN" ? "首页" : "Home",
-    shortcuts: [],
-  };
-}
 
 function createContextMenu() {
   chrome.storage.local.get(
@@ -29,9 +21,9 @@ function createContextMenu() {
         items[SETTINGS_STORAGE_KEY],
         defaultLocale,
       );
-      const categories = normalizeLauncher(
+      const categories = normalizeStoredLauncher(
         items[LAUNCHER_STORAGE_KEY],
-        createDefaultCategory(locale),
+        locale,
       );
 
       chrome.contextMenus.removeAll(() => {
@@ -64,12 +56,7 @@ function getCategories() {
           items[SETTINGS_STORAGE_KEY],
           defaultLocale,
         );
-        resolve(
-          normalizeLauncher(
-            items[LAUNCHER_STORAGE_KEY],
-            createDefaultCategory(locale),
-          ),
-        );
+        resolve(normalizeStoredLauncher(items[LAUNCHER_STORAGE_KEY], locale));
       },
     );
   });
@@ -101,7 +88,7 @@ function removeShortcutUrl(
     if (node.type === "item") return node.url === url ? [] : [node];
 
     const children = node.children.filter((item) => item.url !== url);
-    // 删除最后一个子项后也删除空文件夹，避免首页留下无法打开的空壳。
+    // 删除最后一个子项后也删除空文件夹，避免主页留下无法打开的空壳。
     return children.length > 0 ? [{ ...node, children }] : [];
   });
 }
