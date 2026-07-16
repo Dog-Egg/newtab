@@ -2,8 +2,10 @@ import {
   type ShortcutFolder,
   type ShortcutItem,
   type ShortcutNode,
+  ACTIVE_CATEGORY_ID_STORAGE_KEY,
   LAUNCHER_STORAGE_KEY,
   DEFAULT_CATEGORY,
+  normalizeActiveCategoryId,
   normalizeLauncher,
   type ShortcutCategory,
 } from "./Launcher/launcher";
@@ -49,6 +51,21 @@ function getStoredCategories() {
       }
 
       resolve(normalizeLauncher(items[LAUNCHER_STORAGE_KEY]));
+    });
+  });
+}
+
+function getStoredActiveCategoryId() {
+  return new Promise<string>((resolve, reject) => {
+    chrome.storage.local.get(ACTIVE_CATEGORY_ID_STORAGE_KEY, (items) => {
+      const error = chrome.runtime.lastError;
+      if (error) {
+        reject(new Error(error.message));
+        return;
+      }
+
+      const value = items[ACTIVE_CATEGORY_ID_STORAGE_KEY];
+      resolve(typeof value === "string" ? value : DEFAULT_CATEGORY.id);
     });
   });
 }
@@ -247,10 +264,16 @@ export async function importBrowserBookmarks(): Promise<BrowserBookmarksImportRe
     };
   }
 
-  const [categories, browserBookmarkTree] = await Promise.all([
-    getStoredCategories(),
-    getBrowserBookmarkTree(),
-  ]);
+  const [categories, storedActiveCategoryId, browserBookmarkTree] =
+    await Promise.all([
+      getStoredCategories(),
+      getStoredActiveCategoryId(),
+      getBrowserBookmarkTree(),
+    ]);
+  const activeCategoryId = normalizeActiveCategoryId(
+    storedActiveCategoryId,
+    categories,
+  );
   const existingShortcuts = categories.flatMap(
     (category) => category.shortcuts,
   );
@@ -261,7 +284,7 @@ export async function importBrowserBookmarks(): Promise<BrowserBookmarksImportRe
   if (importedShortcuts.length > 0) {
     await setStoredCategories(
       categories.map((category) =>
-        category.id === DEFAULT_CATEGORY.id
+        category.id === activeCategoryId
           ? {
               ...category,
               shortcuts: [...category.shortcuts, ...importedShortcuts],

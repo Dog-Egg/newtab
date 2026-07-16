@@ -54,7 +54,6 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "../components/DropdownMenu";
-import { importBrowserBookmarksWithToast } from "../browserBookmarks";
 import { SiteIcon } from "../components/SiteIcon";
 import { useSettings } from "../Settings/SettingsProvider";
 import { useTranslation } from "react-i18next";
@@ -978,7 +977,6 @@ export function ShortcutPage({
   } = useSettings();
   const [shortcuts, setShortcuts] = useState(storedShortcuts);
   const shortcutsRef = useRef(storedShortcuts);
-  const [isImportingBookmarks, setIsImportingBookmarks] = useState(false);
   // 预览直接使用 draggable.data.node，不再用 ID 回到业务数组做二次查找。
   const [activeNode, setActiveNode] = useState<ShortcutNode | null>(null);
   const [renameFolderId, setRenameFolderId] = useState<string | null>(null);
@@ -1175,15 +1173,6 @@ export function ShortcutPage({
     : undefined;
   const displayedFolder = closingFolder ?? openFolder;
 
-  async function handleImportBrowserBookmarks() {
-    setIsImportingBookmarks(true);
-    try {
-      await importBrowserBookmarksWithToast();
-    } finally {
-      setIsImportingBookmarks(false);
-    }
-  }
-
   return (
     <ShortcutCategoriesContext.Provider value={{ categories, categoryId }}>
       <DragDropProvider
@@ -1201,72 +1190,54 @@ export function ShortcutPage({
         onDragEnd={handleDragEnd}
       >
         <section className="relative z-10 mx-auto flex min-h-full w-full max-w-6xl flex-col px-6 pb-8 pt-12 sm:px-10 sm:pt-14">
-          {shortcuts.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center gap-5">
-              <AddShortcutButton onClick={() => setIsAddingItem(true)} />
-              {categories.every(
-                (category) => category.shortcuts.length === 0,
-              ) ? (
-                <button
-                  type="button"
-                  className="rounded-2xl bg-white/20 px-6 py-3 text-base font-semibold text-white shadow-lg backdrop-blur-md transition hover:bg-white/30 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-60"
-                  disabled={isImportingBookmarks}
-                  onClick={() => void handleImportBrowserBookmarks()}
-                >
-                  导入浏览器收藏夹
-                </button>
-              ) : null}
-            </div>
-          ) : (
-            <ul
-              className="grid justify-center gap-x-3 gap-y-5 sm:gap-x-4"
-              style={{
-                gridTemplateColumns: `repeat(auto-fit, ${Math.round(88 * nodeScale)}px)`,
-              }}
-            >
-              {shortcuts.map((node, index) => (
-                <SortableNode
-                  key={node.id}
-                  node={node}
-                  index={index}
-                  onOpenFolder={(folder) => {
+          <ul
+            className="grid justify-center gap-x-3 gap-y-5 sm:gap-x-4"
+            style={{
+              gridTemplateColumns: `repeat(auto-fit, ${Math.round(88 * nodeScale)}px)`,
+            }}
+          >
+            {shortcuts.map((node, index) => (
+              <SortableNode
+                key={node.id}
+                node={node}
+                index={index}
+                onOpenFolder={(folder) => {
+                  setClosingFolder(null);
+                  setRenameFolderId(null);
+                  setOpenFolderId(folder.id);
+                }}
+                onEdit={(selectedNode) => {
+                  if (selectedNode.type === "folder") {
                     setClosingFolder(null);
-                    setRenameFolderId(null);
-                    setOpenFolderId(folder.id);
-                  }}
-                  onEdit={(selectedNode) => {
-                    if (selectedNode.type === "folder") {
-                      setClosingFolder(null);
-                      setRenameFolderId(selectedNode.id);
-                      setOpenFolderId(selectedNode.id);
-                    } else {
-                      setEditingItem(selectedNode);
-                    }
-                  }}
-                  onDelete={(selectedNode) => {
-                    if (selectedNode.type === "folder") {
-                      setPendingDeleteFolder(selectedNode);
-                      return;
-                    }
-                    saveShortcuts(
-                      shortcuts.filter(
-                        (candidate) => candidate.id !== selectedNode.id,
-                      ),
-                    );
-                  }}
-                  onMove={(selectedNode, categoryId) => {
-                    const sourceShortcuts = shortcuts.filter(
+                    setRenameFolderId(selectedNode.id);
+                    setOpenFolderId(selectedNode.id);
+                  } else {
+                    setEditingItem(selectedNode);
+                  }
+                }}
+                onDelete={(selectedNode) => {
+                  if (selectedNode.type === "folder") {
+                    setPendingDeleteFolder(selectedNode);
+                    return;
+                  }
+                  saveShortcuts(
+                    shortcuts.filter(
                       (candidate) => candidate.id !== selectedNode.id,
-                    );
-                    shortcutsRef.current = sourceShortcuts;
-                    setShortcuts(sourceShortcuts);
-                    onMove(sourceShortcuts, selectedNode, categoryId);
-                  }}
-                />
-              ))}
-              <AddShortcutButton onClick={() => setIsAddingItem(true)} />
-            </ul>
-          )}
+                    ),
+                  );
+                }}
+                onMove={(selectedNode, categoryId) => {
+                  const sourceShortcuts = shortcuts.filter(
+                    (candidate) => candidate.id !== selectedNode.id,
+                  );
+                  shortcutsRef.current = sourceShortcuts;
+                  setShortcuts(sourceShortcuts);
+                  onMove(sourceShortcuts, selectedNode, categoryId);
+                }}
+              />
+            ))}
+            <AddShortcutButton onClick={() => setIsAddingItem(true)} />
+          </ul>
         </section>
         {/* 使用独立浮层展示拖拽项，避免受到列表布局和透明度样式影响。 */}
         <DragOverlay>
