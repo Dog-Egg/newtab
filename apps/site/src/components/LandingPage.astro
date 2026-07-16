@@ -2,6 +2,7 @@
 import "../styles/global.css";
 import IframeWindow from "./BrowserWindow/IframeWindow.astro";
 import { translations, type Locale } from "../i18n/translations";
+import logo from "../../../../assets/logo.svg";
 
 interface Props {
   locale: Locale;
@@ -30,6 +31,7 @@ const buttonBase =
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={t.description} />
     <meta name="theme-color" content="#ff4f24" />
+    <link rel="icon" type="image/svg+xml" href={logo.src} />
     <link rel="canonical" href={isEnglish ? "/" : "/zh/"} />
     <link rel="alternate" hreflang="en" href="/" />
     <link rel="alternate" hreflang="zh-CN" href="/zh/" />
@@ -45,20 +47,12 @@ const buttonBase =
         href="#top"
         aria-label={t.homeLabel}
       >
-        <span
-          class="relative grid size-7 rotate-[8deg] place-items-center rounded-lg bg-brand"
+        <img
+          class="size-7 rotate-[8deg]"
+          src={logo.src}
+          alt=""
           aria-hidden="true"
-        >
-          <span
-            class="absolute left-1.5 top-1.5 size-1.5 border-l-2 border-t-2 border-white"
-          ></span><span
-            class="absolute right-1.5 top-1.5 size-1.5 border-r-2 border-t-2 border-white"
-          ></span><span
-            class="absolute bottom-1.5 left-1.5 size-1.5 border-b-2 border-l-2 border-white"
-          ></span><span
-            class="absolute bottom-1.5 right-1.5 size-1.5 border-b-2 border-r-2 border-white"
-          ></span>
-        </span>
+        />
         <span>BrowserTab</span>
       </a>
       <nav
@@ -349,10 +343,9 @@ const buttonBase =
       <a
         class="inline-flex w-max items-center gap-3 font-bold tracking-[-.03em]"
         href="#top"
-        ><span
-          class="grid size-7 place-items-center rounded-lg bg-brand text-xs text-white"
-          aria-hidden="true">B</span
-        ><span>BrowserTab</span></a
+        ><img class="size-7" src={logo.src} alt="" aria-hidden="true" /><span
+          >BrowserTab</span
+        ></a
       >
       <p class="text-muted max-md:hidden">{t.footerTagline}</p>
       <div

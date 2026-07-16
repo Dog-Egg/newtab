@@ -92,6 +92,9 @@ importers:
       postcss:
         specifier: ^8.5.16
         version: 8.5.16
+      sharp:
+        specifier: ^0.35.3
+        version: 0.35.3
       tailwindcss:
         specifier: ^3.4.19
         version: 3.4.19(yaml@2.9.0)
@@ -5707,8 +5710,7 @@ snapshots:
 
   "@floating-ui/utils@0.2.11": {}
 
-  "@img/colour@1.1.0":
-    optional: true
+  "@img/colour@1.1.0": {}
 
   "@img/sharp-darwin-arm64@0.35.3":
     optionalDependencies:
@@ -7581,7 +7583,6 @@ snapshots:
       "@img/sharp-win32-arm64": 0.35.3
       "@img/sharp-win32-ia32": 0.35.3
       "@img/sharp-win32-x64": 0.35.3
-    optional: true
 
   shiki@4.3.1:
     dependencies:

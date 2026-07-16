@@ -1,4 +1,6 @@
 ---
+import logo from "../../../../../assets/logo.svg";
+
 interface Props {
   url?: string;
   title?: string;
@@ -48,8 +50,15 @@ const minHeightValue =
           class="pointer-events-none absolute -right-2 bottom-0 size-2 rounded-bl-lg shadow-[-4px_4px_0_4px_#fff]"
           aria-hidden="true"></span>
 
+        <img
+          class="size-3.5 shrink-0"
+          src={logo.src}
+          alt=""
+          aria-hidden="true"
+        />
+
         <span
-          class="ml-2 min-w-0 flex-1 truncate text-left text-xs font-medium leading-4 text-[#494949]"
+          class="ml-1.5 min-w-0 flex-1 truncate text-left text-xs font-medium leading-4 text-[#494949]"
         >
           {title}
         </span>
