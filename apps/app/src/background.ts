@@ -9,26 +9,39 @@ import {
 import { normalizeSettings, SETTINGS_STORAGE_KEY } from "./Settings/settings";
 import { getLocaleFromLanguage } from "./i18n/locale";
 
-const MENU_ID = "save-to-browser-tab";
+const MENU_ID = "save-to-tab";
+const CATEGORY_MENU_ID_PREFIX = `${MENU_ID}:category:`;
 const defaultLocale = getLocaleFromLanguage(chrome.i18n.getUILanguage());
 
 function createContextMenu() {
-  chrome.storage.local.get(SETTINGS_STORAGE_KEY, (items) => {
-    const { locale } = normalizeSettings(
-      items[SETTINGS_STORAGE_KEY],
-      defaultLocale,
-    );
-    chrome.contextMenus.removeAll(() => {
-      chrome.contextMenus.create({
-        id: MENU_ID,
-        title:
-          locale === "zh-CN"
-            ? "添加快捷方式到 BrowserTab"
-            : "Add shortcut to BrowserTab",
-        contexts: ["page"],
+  chrome.storage.local.get(
+    [SETTINGS_STORAGE_KEY, LAUNCHER_STORAGE_KEY],
+    (items) => {
+      const { locale } = normalizeSettings(
+        items[SETTINGS_STORAGE_KEY],
+        defaultLocale,
+      );
+      const categories = normalizeLauncher(items[LAUNCHER_STORAGE_KEY]);
+
+      chrome.contextMenus.removeAll(() => {
+        chrome.contextMenus.create({
+          id: MENU_ID,
+          title:
+            locale === "zh-CN" ? "添加网站到分类" : "Add Website to Category",
+          contexts: ["page"],
+        });
+
+        for (const category of categories) {
+          chrome.contextMenus.create({
+            id: `${CATEGORY_MENU_ID_PREFIX}${encodeURIComponent(category.id)}`,
+            parentId: MENU_ID,
+            title: category.name,
+            contexts: ["page"],
+          });
+        }
       });
-    });
-  });
+    },
+  );
 }
 
 function getCategories() {
@@ -70,8 +83,17 @@ function removeShortcutUrl(
   });
 }
 
-async function saveShortcut(url: string, title?: string) {
+async function saveShortcut(
+  url: string,
+  title: string | undefined,
+  targetCategoryId: string,
+) {
   const categories = await getCategories();
+  const resolvedCategoryId = categories.some(
+    (category) => category.id === targetCategoryId,
+  )
+    ? targetCategoryId
+    : DEFAULT_CATEGORY.id;
   const shortcut: Shortcut = {
     type: "item",
     id: url,
@@ -84,7 +106,7 @@ async function saveShortcut(url: string, title?: string) {
     categories.map((category) => ({
       ...category,
       shortcuts:
-        category.id === DEFAULT_CATEGORY.id
+        category.id === resolvedCategoryId
           ? [shortcut, ...removeShortcutUrl(category.shortcuts, url)]
           : removeShortcutUrl(category.shortcuts, url),
     })),
@@ -94,20 +116,28 @@ async function saveShortcut(url: string, title?: string) {
 chrome.runtime.onInstalled.addListener(createContextMenu);
 chrome.runtime.onStartup.addListener(createContextMenu);
 chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === "local" && changes[SETTINGS_STORAGE_KEY]) {
+  if (
+    areaName === "local" &&
+    (changes[SETTINGS_STORAGE_KEY] || changes[LAUNCHER_STORAGE_KEY])
+  ) {
     createContextMenu();
   }
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId !== MENU_ID) {
+  const menuItemId = String(info.menuItemId);
+  if (!menuItemId.startsWith(CATEGORY_MENU_ID_PREFIX)) {
     return;
   }
+
+  const categoryId = decodeURIComponent(
+    menuItemId.slice(CATEGORY_MENU_ID_PREFIX.length),
+  );
 
   const url = tab?.url ?? info.pageUrl;
   if (!url || !isWebUrl(url)) {
     return;
   }
 
-  void saveShortcut(url, tab?.title);
+  void saveShortcut(url, tab?.title, categoryId);
 });
