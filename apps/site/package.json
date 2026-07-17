@@ -1,10 +1,10 @@
 {
-  "name": "@browser-tab/site",
+  "name": "@newtab/site",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "prepare:app": "pnpm --filter @browser-tab/app build:web && node scripts/sync-app.mjs",
+    "prepare:app": "pnpm --filter @newtab/app build:web && node scripts/sync-app.mjs",
     "dev": "pnpm prepare:app && astro dev",
     "build": "pnpm prepare:app && astro check && astro build",
     "typecheck": "astro check",

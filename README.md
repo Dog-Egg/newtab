@@ -1,6 +1,6 @@
-# Browser Tab
+# NewTab
 
-Monorepo for the Browser Tab app and its official site.
+Monorepo for the NewTab app and its official site.
 
 ## Apps
 

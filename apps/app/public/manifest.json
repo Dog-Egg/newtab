@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Browser Tab",
+  "name": "NewTab",
   "version": "0.1.0",
   "description": "A simple React new tab replacement.",
   "icons": {
@@ -9,7 +9,11 @@
     "48": "icons/logo-48.png",
     "128": "icons/logo-128.png"
   },
-  "permissions": ["bookmarks", "contextMenus", "storage"],
+  "permissions": [
+    "bookmarks",
+    "contextMenus",
+    "storage"
+  ],
   "background": {
     "service_worker": "background.js",
     "type": "module"
