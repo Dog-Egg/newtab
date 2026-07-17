@@ -8,6 +8,7 @@ import {
 
 const WALLPAPER_FADE_DURATION_MS = 520;
 const DEFAULT_WALLPAPER_URL =
+  import.meta.env.VITE_DEFAULT_WALLPAPER_URL?.trim() ||
   "https://images.unsplash.com/photo-1515268064940-5150b7c29f35";
 
 function getWallpaperLayerStyle(wallpaperUrl: string): CSSProperties {
