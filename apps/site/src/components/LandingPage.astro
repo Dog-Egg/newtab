@@ -2,7 +2,7 @@
 import "../styles/global.css";
 import IframeWindow from "./BrowserWindow/IframeWindow.astro";
 import { translations, type Locale } from "../i18n/translations";
-import { productName as PRODUCT_NAME } from "../../../../package.json";
+import projectConfig from "../../../../project.config.json";
 import logo from "../../../../assets/logo.svg";
 import chromeIcon from "../assets/browser-icons/chrome.png";
 import edgeIcon from "../assets/browser-icons/edge.png";
@@ -12,13 +12,14 @@ interface Props {
 }
 
 const { locale } = Astro.props;
+const PRODUCT_NAME = projectConfig.product.name;
 const t = translations[locale];
 const isEnglish = locale === "en";
 const languageUrl = isEnglish ? "/zh/" : "/";
 const languageLabel = isEnglish ? "中文" : "English";
 const appUrl = `/app/index.html?lang=${isEnglish ? "en" : "zh-CN"}`;
 
-const placeholderUrl = "https://example.com";
+const { source: sourceUrl, stores } = projectConfig.links;
 const gridPaper =
   "bg-paper bg-[linear-gradient(rgba(30,30,30,.075)_1px,transparent_1px),linear-gradient(90deg,rgba(30,30,30,.075)_1px,transparent_1px)] bg-[size:56px_56px]";
 const sectionKicker =
@@ -78,7 +79,7 @@ const buttonBase =
         >
         <a
           class="inline-flex gap-2 rounded-full bg-brand px-5 py-3 text-[13px] font-semibold text-white transition hover:-translate-y-0.5 max-sm:px-3.5"
-          href={placeholderUrl}
+          href={stores.chrome}
           >{t.nav.download} <span class="max-sm:hidden">↓</span></a
         >
       </div>
@@ -127,7 +128,7 @@ const buttonBase =
                 buttonBase,
                 "bg-brand text-white shadow-[0_10px_24px_rgba(255,79,36,.2)]",
               ]}
-              href={placeholderUrl}>{t.hero.chrome} <span>→</span></a
+              href={stores.chrome}>{t.hero.chrome} <span>→</span></a
             >
           </div>
           <div
@@ -285,7 +286,7 @@ const buttonBase =
           </p>
           <a
             class:list={[buttonBase, "self-start bg-white text-ink"]}
-            href={placeholderUrl}>{t.source.link} <span>↗</span></a
+            href={sourceUrl}>{t.source.link} <span>↗</span></a
           >
         </div>
       </section>
@@ -315,7 +316,7 @@ const buttonBase =
         <div class="flex justify-center gap-3.5 max-sm:flex-col">
           <a
             class="grid min-w-[250px] grid-cols-[38px_1fr_auto] items-center gap-3.5 rounded-[14px] border border-[#ccc8c1] bg-white/80 p-4 text-left transition hover:-translate-y-0.5 hover:border-brand hover:shadow-[0_14px_30px_rgba(30,20,15,.08)] max-sm:mx-auto max-sm:w-full max-sm:min-w-0 max-sm:max-w-[360px]"
-            href={placeholderUrl}
+            href={stores.chrome}
             ><img
               class="size-9 object-contain"
               src={chromeIcon.src}
@@ -329,7 +330,7 @@ const buttonBase =
           >
           <a
             class="grid min-w-[250px] grid-cols-[38px_1fr_auto] items-center gap-3.5 rounded-[14px] border border-[#ccc8c1] bg-white/80 p-4 text-left transition hover:-translate-y-0.5 hover:border-brand hover:shadow-[0_14px_30px_rgba(30,20,15,.08)] max-sm:mx-auto max-sm:w-full max-sm:min-w-0 max-sm:max-w-[360px]"
-            href={placeholderUrl}
+            href={stores.edge}
             ><img
               class="size-9 object-contain"
               src={edgeIcon.src}
@@ -359,7 +360,7 @@ const buttonBase =
       <div
         class="flex gap-6 justify-self-end max-sm:w-full max-sm:justify-start"
       >
-        <a class="hover:text-brand" href={placeholderUrl}>GitHub</a><a
+        <a class="hover:text-brand" href={sourceUrl}>GitHub</a><a
           class="hover:text-brand"
           href="#features">{t.nav.features}</a
         ><a class="hover:text-brand" href="#demo">{t.nav.demo}</a><a

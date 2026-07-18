@@ -1,0 +1,12 @@
+{
+  "product": {
+    "name": "NewTab"
+  },
+  "links": {
+    "source": "https://github.com/Dog-Egg/newtab",
+    "stores": {
+      "chrome": "https://example.com",
+      "edge": "https://example.com"
+    }
+  }
+}

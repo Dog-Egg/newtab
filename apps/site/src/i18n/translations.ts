@@ -1,4 +1,6 @@
-import { productName as PRODUCT_NAME } from "../../../../package.json";
+import projectConfig from "../../../../project.config.json";
+
+const PRODUCT_NAME = projectConfig.product.name;
 
 export type Locale = "en" | "zh";
 

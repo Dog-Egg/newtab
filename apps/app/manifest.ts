@@ -1,4 +1,6 @@
-import { productName } from "../../package.json";
+import projectConfig from "../../project.config.json";
+
+const productName = projectConfig.product.name;
 
 export const manifest = {
   manifest_version: 3,

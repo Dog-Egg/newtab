@@ -1,6 +1,8 @@
 ---
 import BrowserWindow from "./index.astro";
-import { productName as PRODUCT_NAME } from "../../../../../package.json";
+import projectConfig from "../../../../../project.config.json";
+
+const PRODUCT_NAME = projectConfig.product.name;
 
 interface Props {
   url: string;
