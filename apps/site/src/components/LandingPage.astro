@@ -17,6 +17,7 @@ const t = translations[locale];
 const isEnglish = locale === "en";
 const languageUrl = isEnglish ? "/zh/" : "/";
 const languageLabel = isEnglish ? "中文" : "English";
+const privacyUrl = isEnglish ? "/privacy/" : "/zh/privacy/";
 const appUrl = `/app/index.html?lang=${isEnglish ? "en" : "zh-CN"}`;
 
 const { source: sourceUrl, stores } = projectConfig.links;
@@ -373,8 +374,8 @@ const buttonBase =
           href="#features">{t.nav.features}</a
         ><a class="hover:text-brand" href="#demo">{t.nav.demo}</a><a
           class="hover:text-brand"
-          href={languageUrl}>{languageLabel}</a
-        >
+          href={privacyUrl}>{t.nav.privacy}</a
+        ><a class="hover:text-brand" href={languageUrl}>{languageLabel}</a>
       </div>
       <small
         class="col-span-full w-full border-t border-line pt-5 text-[#aaa59e]"

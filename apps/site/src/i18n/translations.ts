@@ -8,7 +8,7 @@ export const translations = {
   en: {
     lang: "en",
     title: `${PRODUCT_NAME} — A better start for every new tab`,
-    description: `${PRODUCT_NAME} is a free, ad-free, and open-source new tab extension. No sign-in is required, and it does not access your data.`,
+    description: `${PRODUCT_NAME} is a free, ad-free, and open-source new tab extension. No sign-in is required, and your shortcuts and preferences stay in your browser.`,
     homeLabel: `${PRODUCT_NAME} home`,
     navLabel: "Main navigation",
     nav: {
@@ -16,12 +16,13 @@ export const translations = {
       demo: "Live Demo",
       openSource: "Open Source",
       download: "Get Extension",
+      privacy: "Privacy",
     },
     hero: {
       badge: "FREE · AD-FREE · OPEN SOURCE",
       line1: "Open a new tab.",
       line2: "Start with clarity.",
-      description: `${PRODUCT_NAME} is a simple new tab extension. It is free, ad-free, and open source, requires no sign-in, and does not access your data.`,
+      description: `${PRODUCT_NAME} is a simple new tab extension. It is free, ad-free, and open source, requires no sign-in, and keeps your shortcuts and preferences in your browser.`,
       try: "Try the live demo",
       browserCta: {
         chrome: "Add to Chrome",
@@ -29,7 +30,7 @@ export const translations = {
         choose: "Choose your browser",
         pending: "The extension is coming soon. Stay tuned!",
       },
-      benefits: ["No sign-in", "Does not access your data", "Open source"],
+      benefits: ["No sign-in", "Local-first", "Open source"],
     },
     demo: {
       label: "LIVE DEMO",
@@ -53,7 +54,7 @@ export const translations = {
         ],
         [
           "Naturally lightweight",
-          "No sign-in, no ads, and no access to your data. Install it and start using it right away.",
+          "No sign-in and no ads. Your shortcuts and preferences stay in your browser.",
         ],
       ],
     },
@@ -77,7 +78,7 @@ export const translations = {
   zh: {
     lang: "zh-CN",
     title: `${PRODUCT_NAME} — 打开新标签，简单又顺手`,
-    description: `${PRODUCT_NAME} 是一款免费、无广告、开源的浏览器新标签页扩展。无需登录，也不获取用户数据。`,
+    description: `${PRODUCT_NAME} 是一款免费、无广告、开源的浏览器新标签页扩展。无需登录，快捷方式和偏好设置保存在浏览器本地。`,
     homeLabel: `${PRODUCT_NAME} 主页`,
     navLabel: "主导航",
     nav: {
@@ -85,12 +86,13 @@ export const translations = {
       demo: "在线体验",
       openSource: "开源",
       download: "获取扩展",
+      privacy: "隐私政策",
     },
     hero: {
       badge: "免费 · 无广告 · 开源",
       line1: "打开新标签，",
       line2: "简单又顺手。",
-      description: `${PRODUCT_NAME} 是一个简单的新标签页扩展。免费、无广告、开源，无需登录，也不获取用户数据。`,
+      description: `${PRODUCT_NAME} 是一个简单的新标签页扩展。免费、无广告、开源，无需登录，快捷方式和偏好设置保存在浏览器本地。`,
       try: "先体验一下",
       browserCta: {
         chrome: "添加到 Chrome",
@@ -98,7 +100,7 @@ export const translations = {
         choose: "选择你的浏览器",
         pending: "插件正在上架中，敬请期待。",
       },
-      benefits: ["无需登录", "不获取用户数据", "开放源代码"],
+      benefits: ["无需登录", "数据本地保存", "开放源代码"],
     },
     demo: {
       label: "在线体验",
@@ -112,17 +114,11 @@ export const translations = {
       description: `每次打开新标签页，都能快速找到需要的内容。${PRODUCT_NAME} 把常用功能放在清晰、顺手的位置。`,
       link: "获取扩展",
       items: [
-        [
-          "一眼就懂",
-          "搜索和快捷入口清晰直观，无需额外学习。",
-        ],
-        [
-          "由你定义",
-          "可以按自己的习惯设置常用网站、搜索引擎和页面布局。",
-        ],
+        ["一眼就懂", "搜索和快捷入口清晰直观，无需额外学习。"],
+        ["由你定义", "可以按自己的习惯设置常用网站、搜索引擎和页面布局。"],
         [
           "简单直接",
-          "无需登录，没有广告，也不获取用户数据。安装后即可使用。",
+          "无需登录，没有广告。快捷方式和偏好设置保存在浏览器本地。",
         ],
       ],
     },

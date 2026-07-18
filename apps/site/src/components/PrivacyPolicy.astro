@@ -1,0 +1,320 @@
+---
+import "../styles/global.css";
+import projectConfig from "../../../../project.config.json";
+import logo from "../../../../assets/logo.svg";
+
+interface Props {
+  locale: "en" | "zh";
+}
+
+const { locale } = Astro.props;
+const isEnglish = locale === "en";
+const PRODUCT_NAME = projectConfig.product.name;
+const homeUrl = isEnglish ? "/" : "/zh/";
+const languageUrl = isEnglish ? "/zh/privacy/" : "/privacy/";
+const languageLabel = isEnglish ? "中文" : "English";
+const sourceUrl = projectConfig.links.source;
+const issuesUrl = `${sourceUrl}/issues`;
+
+const copy = isEnglish
+  ? {
+      lang: "en",
+      title: `Privacy Policy — ${PRODUCT_NAME}`,
+      description: `How ${PRODUCT_NAME} handles browser bookmarks, shortcuts, settings, and third-party requests.`,
+      label: "PRIVACY POLICY",
+      heading: "Your new tab should stay yours.",
+      summary: `${PRODUCT_NAME} has no account system, advertising, analytics, or developer-operated data server. Your shortcuts and preferences are stored locally in your browser. Some features make requests to services you choose or to image providers, as explained below.`,
+      effective: "Effective July 18, 2026",
+      home: "Back to NewTab",
+      contents: "On this page",
+      sections: [
+        [
+          "scope",
+          "1. Scope",
+          `<p>This policy describes how the ${PRODUCT_NAME} browser extension handles information. It applies to the Chrome and Edge versions of the extension.</p>`,
+        ],
+        [
+          "data",
+          "2. Information handled by the extension",
+          `<p>${PRODUCT_NAME} handles only the information needed to provide its new-tab features:</p><ul><li><strong>Shortcuts and bookmarks:</strong> website titles, URLs, category and folder names, and related ordering information that you create or choose to import.</li><li><strong>Current page information:</strong> the title and URL of the page are used only when you select the “Add Website to Category” command from the right-click menu.</li><li><strong>Preferences:</strong> language, selected and custom search engines, hidden search engines, wallpaper URL, shortcut size, wallpaper overlay, and similar display settings.</li></ul><p>The extension does not request your name, email address, payment information, passwords, precise location, personal communications, or health information.</p>`,
+        ],
+        [
+          "local-storage",
+          "3. Local storage and retention",
+          `<p>Shortcuts, imported bookmarks, and preferences are stored with the browser’s local extension storage. They are not uploaded to a server operated by the ${PRODUCT_NAME} developer and are not synchronized through a ${PRODUCT_NAME} account.</p><p>Data remains in your browser until you edit or delete it, clear the extension’s data, or uninstall the extension. Uninstalling the extension normally removes its local extension storage.</p>`,
+        ],
+        [
+          "permissions",
+          "4. Browser permissions",
+          `<ul><li><strong>bookmarks:</strong> reads your browser bookmark tree only after you explicitly choose to import bookmarks. The imported titles, URLs, and folders become local ${PRODUCT_NAME} shortcuts.</li><li><strong>contextMenus:</strong> adds a right-click command that lets you save the current page title and URL to a category you select.</li><li><strong>storage:</strong> saves shortcuts, categories, search-engine settings, language, wallpaper settings, and other preferences locally.</li></ul>`,
+        ],
+        [
+          "external-services",
+          "5. Requests to external services",
+          `<p>${PRODUCT_NAME} does not send data to a developer-operated backend. The following user-facing features may contact third parties:</p><ul><li><strong>Search:</strong> when you submit a search, your query is sent directly to the search engine you selected (for example, Google, Bing, or a custom provider). That provider’s privacy policy applies.</li><li><strong>Opening shortcuts:</strong> when you open a shortcut, your browser connects to the destination website as it normally would.</li><li><strong>Wallpapers:</strong> the default wallpaper is loaded from Unsplash. If you set a custom wallpaper URL, your browser requests the image from that provider. The provider may receive standard request information such as your IP address and browser details.</li><li><strong>Website icons:</strong> builds configured to show remote website logos may send the domain portion of a saved shortcut to logo.dev to request an icon. The full page path, bookmark title, and your other shortcuts are not included in that icon request.</li></ul><p>${PRODUCT_NAME} does not control these third-party services. Their own privacy policies govern the information they receive.</p>`,
+        ],
+        [
+          "sharing",
+          "6. Sharing, selling, and advertising",
+          `<p>We do not sell user data. We do not use or transfer user data for personalized advertising, retargeting, creditworthiness, lending, or unrelated purposes. We do not allow people to read your locally stored shortcuts or settings.</p><p>Any transmission initiated by the extension is limited to providing a feature you requested, such as performing a search, opening a site, or loading an image.</p>`,
+        ],
+        [
+          "limited-use",
+          "7. Chrome Web Store Limited Use disclosure",
+          `<p>${PRODUCT_NAME}’s use and transfer of information received from Google APIs complies with the <a href="https://developer.chrome.com/docs/webstore/program-policies/user-data-faq" rel="noreferrer">Chrome Web Store User Data Policy</a>, including the Limited Use requirements.</p><p>Information accessed through extension permissions is used only to provide or improve the extension’s single purpose and user-facing features. It is not transferred except as necessary to provide those features, comply with applicable law, protect security, or as part of a permitted business transfer. It is never used for personalized advertising, and humans are not permitted to read it except in the limited circumstances allowed by that policy.</p>`,
+        ],
+        [
+          "security",
+          "8. Security",
+          `<p>${PRODUCT_NAME} minimizes data handling by keeping extension data in browser-managed local storage. External resources included by the extension use HTTPS. No method of storage or transmission is completely secure, but we limit access and transmission to what the disclosed features require.</p>`,
+        ],
+        [
+          "children",
+          "9. Children’s privacy",
+          `<p>${PRODUCT_NAME} is a general-purpose browser tool and is not directed to children. We do not knowingly collect personal information from children.</p>`,
+        ],
+        [
+          "changes",
+          "10. Changes to this policy",
+          `<p>We may update this policy when the extension’s features or legal requirements change. The effective date at the top of this page will be updated when material changes are made.</p>`,
+        ],
+        [
+          "contact",
+          "11. Contact",
+          `<p>Questions or privacy requests can be submitted through <a href="${issuesUrl}">GitHub Issues</a>. Because ${PRODUCT_NAME} does not operate user accounts or a data server, we generally cannot access or recover data stored in your browser.</p>`,
+        ],
+      ],
+    }
+  : {
+      lang: "zh-CN",
+      title: `隐私政策 — ${PRODUCT_NAME}`,
+      description: `${PRODUCT_NAME} 如何处理浏览器书签、快捷方式、设置及第三方请求。`,
+      label: "隐私政策",
+      heading: "你的新标签页，应该只属于你。",
+      summary: `${PRODUCT_NAME} 没有账号系统、广告、数据分析或开发者运营的数据服务器。快捷方式和偏好设置保存在浏览器本地。部分功能会向你选择的服务或图片提供商发起请求，具体说明如下。`,
+      effective: "生效日期：2026 年 7 月 18 日",
+      home: "返回 NewTab",
+      contents: "本页目录",
+      sections: [
+        [
+          "scope",
+          "1. 适用范围",
+          `<p>本政策说明 ${PRODUCT_NAME} 浏览器扩展如何处理信息，适用于 Chrome 和 Edge 版本。</p>`,
+        ],
+        [
+          "data",
+          "2. 扩展处理的信息",
+          `<p>${PRODUCT_NAME} 仅处理实现新标签页功能所需的信息：</p><ul><li><strong>快捷方式和书签：</strong>你创建或选择导入的网站标题、网址、分类及文件夹名称，以及相关排序信息。</li><li><strong>当前网页信息：</strong>仅当你在右键菜单中选择“将网站添加到分类”时，扩展才会使用当前网页的标题和网址。</li><li><strong>偏好设置：</strong>语言、选中及自定义的搜索引擎、隐藏的搜索引擎、壁纸网址、快捷方式大小、壁纸遮罩和类似显示设置。</li></ul><p>扩展不会要求你的姓名、电子邮箱、付款信息、密码、精确位置、私人通信或健康信息。</p>`,
+        ],
+        [
+          "local-storage",
+          "3. 本地存储与保留期限",
+          `<p>快捷方式、导入的书签和偏好设置使用浏览器的扩展本地存储保存，不会上传到 ${PRODUCT_NAME} 开发者运营的服务器，也不会通过 ${PRODUCT_NAME} 账号同步。</p><p>这些数据会保留在浏览器中，直至你编辑或删除它们、清除扩展数据，或卸载扩展。卸载扩展通常会同时删除其本地扩展存储。</p>`,
+        ],
+        [
+          "permissions",
+          "4. 浏览器权限",
+          `<ul><li><strong>bookmarks：</strong>仅在你主动选择导入书签后读取浏览器书签树。导入的标题、网址和文件夹会成为保存在本地的 ${PRODUCT_NAME} 快捷方式。</li><li><strong>contextMenus：</strong>在右键菜单中添加命令，让你把当前网页的标题和网址保存到所选分类。</li><li><strong>storage：</strong>在本地保存快捷方式、分类、搜索引擎设置、语言、壁纸设置及其他偏好。</li></ul>`,
+        ],
+        [
+          "external-services",
+          "5. 向外部服务发起的请求",
+          `<p>${PRODUCT_NAME} 不会把数据发送到开发者运营的后端。以下面向用户的功能可能连接第三方：</p><ul><li><strong>搜索：</strong>当你提交搜索时，搜索词会直接发送给你选择的搜索引擎（例如 Google、Bing 或自定义提供商），并受该提供商隐私政策约束。</li><li><strong>打开快捷方式：</strong>打开快捷方式时，浏览器会像正常访问网站一样连接目标网站。</li><li><strong>壁纸：</strong>默认壁纸从 Unsplash 加载。如果你设置自定义壁纸网址，浏览器会向相应提供商请求图片。提供商可能收到 IP 地址、浏览器信息等标准请求信息。</li><li><strong>网站图标：</strong>如果某个构建版本启用了远程网站标志，扩展可能把已保存快捷方式的域名部分发送给 logo.dev 以请求图标。该请求不会包含完整页面路径、书签标题或其他快捷方式。</li></ul><p>${PRODUCT_NAME} 无法控制这些第三方服务；它们收到的信息受各自隐私政策约束。</p>`,
+        ],
+        [
+          "sharing",
+          "6. 分享、出售与广告",
+          `<p>我们不会出售用户数据，不会将用户数据用于或传输给第三方以提供个性化广告、再营销、信用评估、贷款或其他无关用途，也不会允许任何人读取你保存在本地的快捷方式或设置。</p><p>扩展发起的任何传输仅限于提供你主动请求的功能，例如执行搜索、打开网站或加载图片。</p>`,
+        ],
+        [
+          "limited-use",
+          "7. Chrome 应用商店“有限使用”披露",
+          `<p>${PRODUCT_NAME} 对从 Google API 获得的信息的使用和传输遵守 <a href="https://developer.chrome.com/docs/webstore/program-policies/user-data-faq" rel="noreferrer">Chrome 应用商店用户数据政策</a>，包括“有限使用”要求。</p><p>通过扩展权限访问的信息仅用于提供或改进扩展的单一用途及面向用户的功能。除提供这些功能、遵守适用法律、保护安全或政策允许的业务转移所必需外，不会传输这些信息；绝不会用于个性化广告。除该政策允许的有限情形外，也不允许人工读取这些信息。</p>`,
+        ],
+        [
+          "security",
+          "8. 安全",
+          `<p>${PRODUCT_NAME} 通过把扩展数据保存在浏览器管理的本地存储中来减少数据处理。扩展包含的外部资源使用 HTTPS。任何存储或传输方式都无法保证绝对安全，但我们将访问和传输限制在已披露功能所需范围内。</p>`,
+        ],
+        [
+          "children",
+          "9. 儿童隐私",
+          `<p>${PRODUCT_NAME} 是一款通用浏览器工具，并非专门面向儿童。我们不会有意收集儿童的个人信息。</p>`,
+        ],
+        [
+          "changes",
+          "10. 政策变更",
+          `<p>当扩展功能或法律要求发生变化时，我们可能更新本政策。如有重大变更，页面顶部的生效日期也会随之更新。</p>`,
+        ],
+        [
+          "contact",
+          "11. 联系方式",
+          `<p>如有隐私问题或请求，可通过 <a href="${issuesUrl}">GitHub Issues</a> 联系。由于 ${PRODUCT_NAME} 不运营用户账号或数据服务器，我们通常无法访问或恢复保存在你浏览器中的数据。</p>`,
+        ],
+      ],
+    };
+---
+
+<!doctype html>
+<html lang={copy.lang} class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={copy.description} />
+    <meta name="theme-color" content="#ff4f24" />
+    <link rel="icon" type="image/svg+xml" href={logo.src} />
+    <link rel="canonical" href={isEnglish ? "/privacy/" : "/zh/privacy/"} />
+    <link rel="alternate" hreflang="en" href="/privacy/" />
+    <link rel="alternate" hreflang="zh-CN" href="/zh/privacy/" />
+    <link rel="alternate" hreflang="x-default" href="/privacy/" />
+    <title>{copy.title}</title>
+  </head>
+  <body class="m-0 bg-paper font-sans text-ink antialiased">
+    <header
+      class="sticky top-0 z-50 flex h-[76px] items-center justify-between border-b border-black/10 bg-paper/90 px-[clamp(24px,6vw,96px)] backdrop-blur-2xl max-md:h-[66px] max-md:px-5"
+    >
+      <a
+        class="inline-flex items-center gap-3 font-bold tracking-[-.03em]"
+        href={homeUrl}
+        aria-label={copy.home}
+      >
+        <img
+          class="size-7 rotate-[8deg]"
+          src={logo.src}
+          alt=""
+          aria-hidden="true"
+        />
+        <span>{PRODUCT_NAME}</span>
+      </a>
+      <div
+        class="flex items-center gap-5 text-[13px] font-medium text-[#66625d]"
+      >
+        <a
+          class="transition-colors hover:text-brand"
+          href={languageUrl}
+          hreflang={isEnglish ? "zh-CN" : "en"}>{languageLabel}</a
+        >
+        <a
+          class="rounded-full bg-ink px-4 py-2.5 text-white transition hover:-translate-y-0.5"
+          href={homeUrl}>← {copy.home}</a
+        >
+      </div>
+    </header>
+
+    <main>
+      <section
+        class="border-b border-line bg-paper bg-[linear-gradient(rgba(30,30,30,.075)_1px,transparent_1px),linear-gradient(90deg,rgba(30,30,30,.075)_1px,transparent_1px)] bg-[size:56px_56px] px-6 py-[clamp(72px,10vw,132px)]"
+      >
+        <div class="mx-auto max-w-[1040px]">
+          <div
+            class="font-mono text-[11px] uppercase tracking-[.14em] text-brand"
+          >
+            {copy.label}
+          </div>
+          <h1
+            class="mb-7 mt-6 max-w-[820px] text-[clamp(48px,7vw,86px)] font-normal leading-[1.02] tracking-[-.06em]"
+          >
+            {copy.heading}
+          </h1>
+          <p
+            class="max-w-[760px] text-[clamp(16px,1.5vw,19px)] leading-[1.8] text-muted"
+          >
+            {copy.summary}
+          </p>
+          <p
+            class="mt-8 font-mono text-[11px] uppercase tracking-[.1em] text-caption"
+          >
+            {copy.effective}
+          </p>
+        </div>
+      </section>
+
+      <div
+        class="mx-auto grid max-w-[1180px] grid-cols-[240px_minmax(0,760px)] gap-[clamp(48px,8vw,110px)] px-6 py-[clamp(72px,9vw,120px)] max-md:grid-cols-1"
+      >
+        <aside class="self-start md:sticky md:top-[110px]">
+          <div
+            class="border-b border-line pb-3 font-mono text-[10px] uppercase tracking-[.12em] text-caption"
+          >
+            {copy.contents}
+          </div>
+          <nav
+            class="mt-4 flex flex-col gap-2 text-[13px] leading-6 text-muted"
+            aria-label={copy.contents}
+          >
+            {
+              copy.sections.map(([id, title]) => (
+                <a class="transition-colors hover:text-brand" href={`#${id}`}>
+                  {title}
+                </a>
+              ))
+            }
+          </nav>
+        </aside>
+
+        <article class="privacy-copy min-w-0">
+          {
+            copy.sections.map(([id, title, html]) => (
+              <section
+                id={id}
+                class="scroll-mt-28 border-b border-line pb-11 pt-1 first:pt-0 last:border-0"
+              >
+                <h2>{title}</h2>
+                <Fragment set:html={html} />
+              </section>
+            ))
+          }
+        </article>
+      </div>
+    </main>
+
+    <footer
+      class="flex flex-wrap items-center justify-between gap-5 border-t border-line bg-[#f1efe9] px-[clamp(24px,6vw,96px)] py-9 text-xs"
+    >
+      <span>© 2026 {PRODUCT_NAME}</span>
+      <div class="flex gap-6 text-muted">
+        <a class="hover:text-brand" href={homeUrl}>{copy.home}</a>
+        <a class="hover:text-brand" href={sourceUrl}>GitHub</a>
+        <a class="hover:text-brand" href={languageUrl}>{languageLabel}</a>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style is:global>
+  .privacy-copy section + section {
+    margin-top: 2.75rem;
+  }
+  .privacy-copy h2 {
+    margin: 0 0 1.25rem;
+    font-size: clamp(1.5rem, 2.5vw, 2rem);
+    font-weight: 600;
+    letter-spacing: -0.035em;
+  }
+  .privacy-copy p {
+    margin: 0 0 1rem;
+    color: #66625d;
+    font-size: 15px;
+    line-height: 1.9;
+  }
+  .privacy-copy ul {
+    margin: 0 0 1.25rem;
+    padding-left: 1.25rem;
+    color: #66625d;
+    font-size: 15px;
+    line-height: 1.9;
+  }
+  .privacy-copy li + li {
+    margin-top: 0.65rem;
+  }
+  .privacy-copy strong {
+    color: #1e1e1c;
+    font-weight: 600;
+  }
+  .privacy-copy a {
+    color: #d63f1b;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+</style>
