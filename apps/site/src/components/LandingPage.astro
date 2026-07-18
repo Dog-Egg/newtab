@@ -159,7 +159,7 @@ const buttonBase =
           <div
             class="absolute -top-[15px] left-1/2 z-[4] -translate-x-1/2 whitespace-nowrap rounded-full bg-ink px-[13px] py-2 font-mono text-[9px] tracking-[.12em] text-white"
           >
-            LIVE DEMO
+            {t.demo.label}
           </div>
           <IframeWindow
             url={appUrl}
@@ -174,7 +174,7 @@ const buttonBase =
         class="mx-auto max-w-[1300px] px-12 py-[130px] max-md:px-6 max-md:py-[90px]"
         id="features"
       >
-        <div class={sectionKicker}>WHY {PRODUCT_NAME.toUpperCase()} / 01</div>
+        <div class={sectionKicker}>{t.features.label} / 01</div>
         <div
           class="grid grid-cols-[1.4fr_.6fr] items-end gap-[100px] py-12 pb-[70px] max-md:grid-cols-1 max-md:gap-[30px] max-sm:pb-[50px]"
         >
@@ -281,7 +281,7 @@ const buttonBase =
           class="flex flex-col justify-center px-[clamp(42px,7vw,110px)] py-20 max-sm:px-6 max-sm:py-[65px]"
         >
           <div class:list={[sectionKicker, "border-white/15 text-[#888]"]}>
-            OPEN SOURCE / 02
+            {t.source.label} / 02
           </div>
           <h2
             class="mb-0 mt-[42px] text-[clamp(46px,5vw,72px)] font-normal leading-[1.02] tracking-[-.06em]"
@@ -310,7 +310,7 @@ const buttonBase =
         <div
           class="inline-flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[.12em] text-caption"
         >
-          GET STARTED / 03
+          {t.download.label} / 03
         </div>
         <h2
           class="mb-0 mt-[30px] text-[clamp(48px,6vw,82px)] font-normal leading-[1.02] tracking-[-.06em] max-sm:text-[46px]"
@@ -383,7 +383,7 @@ const buttonBase =
       </div>
       <small
         class="col-span-full w-full border-t border-line pt-5 text-[#aaa59e]"
-        >© 2026 {PRODUCT_NAME} · Open source with care.</small
+        >© 2026 {PRODUCT_NAME} · {t.footerNote}</small
       >
     </footer>
     <script>
