@@ -79,7 +79,7 @@ const buttonBase =
         >
         <a
           class="inline-flex gap-2 rounded-full bg-brand px-5 py-3 text-[13px] font-semibold text-white transition hover:-translate-y-0.5 max-sm:px-3.5"
-          href={stores.chrome}
+          href="#download"
           >{t.nav.download} <span class="max-sm:hidden">↓</span></a
         >
       </div>
@@ -124,11 +124,19 @@ const buttonBase =
               >{t.hero.try} <span>↘</span></a
             >
             <a
+              id="browser-store-cta"
               class:list={[
                 buttonBase,
                 "bg-brand text-white shadow-[0_10px_24px_rgba(255,79,36,.2)]",
               ]}
-              href={stores.chrome}>{t.hero.chrome} <span>→</span></a
+              href="#download"
+              data-chrome-url={stores.chrome}
+              data-edge-url={stores.edge}
+              data-chrome-label={t.hero.browserCta.chrome}
+              data-edge-label={t.hero.browserCta.edge}
+              data-choose-label={t.hero.browserCta.choose}
+              ><span data-browser-store-label>{t.hero.browserCta.choose}</span>
+              <span>→</span></a
             >
           </div>
           <div
@@ -373,5 +381,27 @@ const buttonBase =
         >© 2026 {PRODUCT_NAME} · Open source with care.</small
       >
     </footer>
+    <script>
+      import { detectSupportedBrowser } from "../utils/browser";
+
+      const browserStoreCta = document.querySelector("#browser-store-cta");
+
+      if (browserStoreCta instanceof HTMLAnchorElement) {
+        const label = browserStoreCta.querySelector(
+          "[data-browser-store-label]",
+        );
+        const browser = detectSupportedBrowser();
+
+        if (browser === "edge") {
+          browserStoreCta.href = browserStoreCta.dataset.edgeUrl ?? "#download";
+          if (label) label.textContent = browserStoreCta.dataset.edgeLabel ?? "";
+        } else if (browser === "chrome") {
+          browserStoreCta.href = browserStoreCta.dataset.chromeUrl ?? "#download";
+          if (label) label.textContent = browserStoreCta.dataset.chromeLabel ?? "";
+        } else if (label) {
+          label.textContent = browserStoreCta.dataset.chooseLabel ?? "";
+        }
+      }
+    </script>
   </body>
 </html>

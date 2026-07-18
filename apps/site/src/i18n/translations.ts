@@ -15,7 +15,7 @@ export const translations = {
       features: "Features",
       demo: "Live Demo",
       openSource: "Open Source",
-      download: "Download",
+      download: "Get Extension",
     },
     hero: {
       badge: "OPEN SOURCE · FREE · BUILT FOR EVERY OPEN",
@@ -23,7 +23,11 @@ export const translations = {
       line2: "Start with clarity.",
       description: `${PRODUCT_NAME} is a lightweight, flexible new tab extension. Keep search, favorite sites, and your digital routine in one place that feels truly yours.`,
       try: "Try the live demo",
-      chrome: "Add to Chrome",
+      browserCta: {
+        chrome: "Add to Chrome",
+        edge: "Get from Edge Add-ons",
+        choose: "Choose your browser",
+      },
       benefits: ["Free forever", "No sign-in", "Open source"],
     },
     demo: {
@@ -74,7 +78,7 @@ export const translations = {
       features: "特色",
       demo: "在线体验",
       openSource: "开源",
-      download: "立即下载",
+      download: "获取扩展",
     },
     hero: {
       badge: "开源 · 免费 · 为每一次打开",
@@ -82,7 +86,11 @@ export const translations = {
       line2: "也打开好状态。",
       description: `${PRODUCT_NAME} 是一个轻巧、自由的新标签页扩展。把搜索、常用网站和你的数字日常，收进一个真正属于你的起点。`,
       try: "先体验一下",
-      chrome: "添加到 Chrome",
+      browserCta: {
+        chrome: "添加到 Chrome",
+        edge: "添加到 Edge",
+        choose: "选择你的浏览器",
+      },
       benefits: ["永久免费", "无需登录", "开源透明"],
     },
     demo: {
