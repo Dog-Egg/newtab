@@ -288,8 +288,10 @@ export function SearchEngineBox() {
       return;
     }
 
-    window.location.assign(
+    window.open(
       buildSearchUrl(selectedEngine.urlFormat, trimmedQuery),
+      "_parent",
+      "noreferrer",
     );
   }
 

@@ -355,8 +355,8 @@ function ShortcutLink({
       ref={dragHandleRef}
       className="flex touch-none select-none justify-center rounded-[30px] outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
       href={shortcut.url}
-      target={import.meta.env.MODE === "web" ? "_parent" : undefined}
-      rel={import.meta.env.MODE === "web" ? "noreferrer" : undefined}
+      target="_parent"
+      rel="noreferrer"
     >
       <ShortcutPreview
         shortcut={shortcut}
