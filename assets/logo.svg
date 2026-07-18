@@ -4,7 +4,6 @@
   role="img"
   aria-labelledby="logo-title"
 >
-  <title id="logo-title">NewTab</title>
   <defs>
     <path
       id="corner-mark"

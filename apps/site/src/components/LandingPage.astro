@@ -2,6 +2,7 @@
 import "../styles/global.css";
 import IframeWindow from "./BrowserWindow/IframeWindow.astro";
 import { translations, type Locale } from "../i18n/translations";
+import { productName as PRODUCT_NAME } from "../../../../package.json";
 import logo from "../../../../assets/logo.svg";
 import chromeIcon from "../assets/browser-icons/chrome.png";
 import edgeIcon from "../assets/browser-icons/edge.png";
@@ -55,7 +56,7 @@ const buttonBase =
           alt=""
           aria-hidden="true"
         />
-        <span>NewTab</span>
+        <span>{PRODUCT_NAME}</span>
       </a>
       <nav
         class="flex gap-10 text-[13px] text-[#66625d] max-md:hidden"
@@ -163,7 +164,7 @@ const buttonBase =
         class="mx-auto max-w-[1300px] px-12 py-[130px] max-md:px-6 max-md:py-[90px]"
         id="features"
       >
-        <div class={sectionKicker}>WHY NEWTAB / 01</div>
+        <div class={sectionKicker}>WHY {PRODUCT_NAME.toUpperCase()} / 01</div>
         <div
           class="grid grid-cols-[1.4fr_.6fr] items-end gap-[100px] py-12 pb-[70px] max-md:grid-cols-1 max-md:gap-[30px] max-sm:pb-[50px]"
         >
@@ -351,7 +352,7 @@ const buttonBase =
         class="inline-flex w-max items-center gap-3 font-bold tracking-[-.03em]"
         href="#top"
         ><img class="size-7" src={logo.src} alt="" aria-hidden="true" /><span
-          >NewTab</span
+          >{PRODUCT_NAME}</span
         ></a
       >
       <p class="text-muted max-md:hidden">{t.footerTagline}</p>
@@ -368,7 +369,7 @@ const buttonBase =
       </div>
       <small
         class="col-span-full w-full border-t border-line pt-5 text-[#aaa59e]"
-        >© 2026 NewTab · Open source with care.</small
+        >© 2026 {PRODUCT_NAME} · Open source with care.</small
       >
     </footer>
   </body>

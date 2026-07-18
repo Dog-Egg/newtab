@@ -1,5 +1,6 @@
 ---
 import BrowserWindow from "./index.astro";
+import { productName as PRODUCT_NAME } from "../../../../../package.json";
 
 interface Props {
   url: string;
@@ -10,7 +11,7 @@ interface Props {
 
 const {
   url,
-  title = "Interactive NewTab product demo",
+  title = `Interactive ${PRODUCT_NAME} product demo`,
   tabTitle = "New Tab",
   scale = 1,
 } = Astro.props;
