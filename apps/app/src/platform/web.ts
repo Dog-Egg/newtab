@@ -15,7 +15,7 @@ import {
   type Settings,
 } from "../Settings/settings";
 import { getLocaleFromLanguage } from "../i18n/locale";
-import { normalizeStoredLauncher } from "../Launcher/defaultLauncher";
+import { normalizeStoredWebLauncher } from "../Launcher/defaultLauncher";
 import type { AppLocale } from "../i18n";
 
 const defaultLocale = getLocaleFromLanguage(
@@ -53,7 +53,7 @@ function saveStoredSearchEngineSettings(settings: StoredSearchEngineSettings) {
 
 function readStoredLauncher(locale: AppLocale) {
   const storedValue = readJsonStorageValue(LAUNCHER_STORAGE_KEY);
-  return normalizeStoredLauncher(storedValue, locale);
+  return normalizeStoredWebLauncher(storedValue, locale);
 }
 
 function saveStoredLauncher(categories: ShortcutCategory[]) {

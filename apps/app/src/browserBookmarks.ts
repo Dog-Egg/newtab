@@ -11,7 +11,7 @@ import {
 import { toast } from "sonner";
 import i18n from "./i18n";
 import { normalizeLocale } from "./i18n/locale";
-import { normalizeStoredLauncher } from "./Launcher/defaultLauncher";
+import { normalizeStoredExtensionLauncher } from "./Launcher/defaultLauncher";
 
 export type BrowserBookmarksImportResult = {
   importedCount: number;
@@ -52,7 +52,9 @@ function getStoredCategories() {
       }
 
       const locale = normalizeLocale(i18n.resolvedLanguage);
-      resolve(normalizeStoredLauncher(items[LAUNCHER_STORAGE_KEY], locale));
+      resolve(
+        normalizeStoredExtensionLauncher(items[LAUNCHER_STORAGE_KEY], locale),
+      );
     });
   });
 }

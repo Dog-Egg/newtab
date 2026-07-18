@@ -7,7 +7,7 @@ import {
 } from "./Launcher/launcher";
 import { normalizeSettings, SETTINGS_STORAGE_KEY } from "./Settings/settings";
 import { getLocaleFromLanguage } from "./i18n/locale";
-import { normalizeStoredLauncher } from "./Launcher/defaultLauncher";
+import { normalizeStoredExtensionLauncher } from "./Launcher/defaultLauncher";
 
 const MENU_ID = "save-to-tab";
 const CATEGORY_MENU_ID_PREFIX = `${MENU_ID}:category:`;
@@ -21,7 +21,7 @@ function createContextMenu() {
         items[SETTINGS_STORAGE_KEY],
         defaultLocale,
       );
-      const categories = normalizeStoredLauncher(
+      const categories = normalizeStoredExtensionLauncher(
         items[LAUNCHER_STORAGE_KEY],
         locale,
       );
@@ -56,7 +56,9 @@ function getCategories() {
           items[SETTINGS_STORAGE_KEY],
           defaultLocale,
         );
-        resolve(normalizeStoredLauncher(items[LAUNCHER_STORAGE_KEY], locale));
+        resolve(
+          normalizeStoredExtensionLauncher(items[LAUNCHER_STORAGE_KEY], locale),
+        );
       },
     );
   });

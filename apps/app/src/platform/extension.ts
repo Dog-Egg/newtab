@@ -11,7 +11,7 @@ import {
 } from "./types";
 import { normalizeSettings, SETTINGS_STORAGE_KEY } from "../Settings/settings";
 import { getLocaleFromLanguage } from "../i18n/locale";
-import { normalizeStoredLauncher } from "../Launcher/defaultLauncher";
+import { normalizeStoredExtensionLauncher } from "../Launcher/defaultLauncher";
 const defaultLocale = getLocaleFromLanguage(chrome.i18n.getUILanguage());
 
 function getChromeStorage<T>(key: string, normalize: (value: unknown) => T) {
@@ -77,13 +77,13 @@ export const platform: Platform = {
   launcher: {
     read: (locale) =>
       getChromeStorage(LAUNCHER_STORAGE_KEY, (value) =>
-        normalizeStoredLauncher(value, locale),
+        normalizeStoredExtensionLauncher(value, locale),
       ),
     save: (categories) => setChromeStorage(LAUNCHER_STORAGE_KEY, categories),
     subscribe: (locale, onChange) =>
       subscribeChromeStorage(
         LAUNCHER_STORAGE_KEY,
-        (value) => normalizeStoredLauncher(value, locale),
+        (value) => normalizeStoredExtensionLauncher(value, locale),
         onChange,
       ),
   },

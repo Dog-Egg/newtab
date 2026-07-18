@@ -7,45 +7,39 @@ import type { AppLocale } from "../i18n";
 import { en } from "../i18n/locales/en";
 import { zhCN } from "../i18n/locales/zh-CN";
 
-let defaultShortcutOrder = 0;
-
-function defaultShortcut(title: string, url: string) {
-  return {
+function createDefaultNodeFactory(locale: AppLocale) {
+  let order = 0;
+  const localize = (original: string, zhCN?: string) =>
+    locale === "zh-CN" && zhCN ? zhCN : original;
+  const shortcut = (original: string, url: string, zhCN?: string) => ({
     type: "item" as const,
     id: url,
-    title,
+    title: localize(original, zhCN),
     url,
-    createdAt: ++defaultShortcutOrder,
-  };
-}
-
-function defaultFolder(
-  id: string,
-  title: string,
-  children: ReturnType<typeof defaultShortcut>[],
-) {
-  return {
-    type: "folder" as const,
-    id: `folder-${id}`,
-    title,
-    children,
-    createdAt: ++defaultShortcutOrder,
-  };
-}
-
-function createDefaultLauncher(locale: AppLocale): ShortcutCategory[] {
-  defaultShortcutOrder = 0;
-  const names = getDefaultCategoryNames(locale);
-  const title = (original: string, zhCN?: string) =>
-    locale === "zh-CN" && zhCN ? zhCN : original;
-  const shortcut = (original: string, url: string, zhCN?: string) =>
-    defaultShortcut(title(original, zhCN), url);
+    createdAt: ++order,
+  });
   const folder = (
     id: string,
     original: string,
-    children: ReturnType<typeof defaultShortcut>[],
+    children: ReturnType<typeof shortcut>[],
     zhCN?: string,
-  ) => defaultFolder(id, title(original, zhCN), children);
+  ) => ({
+    type: "folder" as const,
+    id: `folder-${id}`,
+    title: localize(original, zhCN),
+    children,
+    createdAt: ++order,
+  });
+
+  return {
+    shortcut,
+    folder,
+  };
+}
+
+function createWebDefaultLauncher(locale: AppLocale): ShortcutCategory[] {
+  const names = getDefaultCategoryNames(locale);
+  const { shortcut, folder } = createDefaultNodeFactory(locale);
 
   return [
     {
@@ -219,6 +213,44 @@ function createDefaultLauncher(locale: AppLocale): ShortcutCategory[] {
   ];
 }
 
+function createExtensionDefaultLauncher(locale: AppLocale): ShortcutCategory[] {
+  const names = getDefaultCategoryNames(locale);
+  const { shortcut, folder } = createDefaultNodeFactory(locale);
+
+  return [
+    {
+      ...createEmptyDefaultCategory(locale),
+      shortcuts: [
+        shortcut("YouTube", "https://www.youtube.com"),
+        shortcut("Gmail", "https://mail.google.com"),
+        folder(
+          "social",
+          "Social",
+          [
+            shortcut("X", "https://x.com"),
+            shortcut("Reddit", "https://www.reddit.com"),
+          ],
+          "社交",
+        ),
+        shortcut("Spotify", "https://open.spotify.com"),
+        shortcut("Wikipedia", "https://www.wikipedia.org", "维基百科"),
+      ],
+    },
+    {
+      id: "category-work",
+      name: names.work,
+      shortcuts: [
+        shortcut("GitHub", "https://github.com"),
+        shortcut("ChatGPT", "https://chatgpt.com"),
+        shortcut("Notion", "https://www.notion.so"),
+        shortcut("Google Drive", "https://drive.google.com", "谷歌云端硬盘"),
+        shortcut("Figma", "https://www.figma.com"),
+        shortcut("Slack", "https://slack.com"),
+      ],
+    },
+  ];
+}
+
 function createEmptyDefaultCategory(locale: AppLocale): ShortcutCategory {
   return {
     id: DEFAULT_CATEGORY_ID,
@@ -227,9 +259,18 @@ function createEmptyDefaultCategory(locale: AppLocale): ShortcutCategory {
   };
 }
 
-export function normalizeStoredLauncher(value: unknown, locale: AppLocale) {
+export function normalizeStoredWebLauncher(value: unknown, locale: AppLocale) {
   return typeof value === "undefined"
-    ? createDefaultLauncher(locale)
+    ? createWebDefaultLauncher(locale)
+    : normalizeLauncher(value, createEmptyDefaultCategory(locale));
+}
+
+export function normalizeStoredExtensionLauncher(
+  value: unknown,
+  locale: AppLocale,
+) {
+  return typeof value === "undefined"
+    ? createExtensionDefaultLauncher(locale)
     : normalizeLauncher(value, createEmptyDefaultCategory(locale));
 }
 
