@@ -135,6 +135,7 @@ const buttonBase =
               data-chrome-label={t.hero.browserCta.chrome}
               data-edge-label={t.hero.browserCta.edge}
               data-choose-label={t.hero.browserCta.choose}
+              data-store-pending-message={t.hero.browserCta.pending}
               ><span data-browser-store-label>{t.hero.browserCta.choose}</span>
               <span>→</span></a
             >
@@ -325,6 +326,8 @@ const buttonBase =
           <a
             class="grid min-w-[250px] grid-cols-[38px_1fr_auto] items-center gap-3.5 rounded-[14px] border border-[#ccc8c1] bg-white/80 p-4 text-left transition hover:-translate-y-0.5 hover:border-brand hover:shadow-[0_14px_30px_rgba(30,20,15,.08)] max-sm:mx-auto max-sm:w-full max-sm:min-w-0 max-sm:max-w-[360px]"
             href={stores.chrome}
+            data-store-url={stores.chrome}
+            data-store-pending-message={t.hero.browserCta.pending}
             ><img
               class="size-9 object-contain"
               src={chromeIcon.src}
@@ -339,6 +342,8 @@ const buttonBase =
           <a
             class="grid min-w-[250px] grid-cols-[38px_1fr_auto] items-center gap-3.5 rounded-[14px] border border-[#ccc8c1] bg-white/80 p-4 text-left transition hover:-translate-y-0.5 hover:border-brand hover:shadow-[0_14px_30px_rgba(30,20,15,.08)] max-sm:mx-auto max-sm:w-full max-sm:min-w-0 max-sm:max-w-[360px]"
             href={stores.edge}
+            data-store-url={stores.edge}
+            data-store-pending-message={t.hero.browserCta.pending}
             ><img
               class="size-9 object-contain"
               src={edgeIcon.src}
@@ -393,15 +398,32 @@ const buttonBase =
         const browser = detectSupportedBrowser();
 
         if (browser === "edge") {
-          browserStoreCta.href = browserStoreCta.dataset.edgeUrl ?? "#download";
-          if (label) label.textContent = browserStoreCta.dataset.edgeLabel ?? "";
+          const storeUrl = browserStoreCta.dataset.edgeUrl ?? "";
+          browserStoreCta.dataset.storeUrl = storeUrl;
+          browserStoreCta.href = storeUrl || "#download";
+          if (label)
+            label.textContent = browserStoreCta.dataset.edgeLabel ?? "";
         } else if (browser === "chrome") {
-          browserStoreCta.href = browserStoreCta.dataset.chromeUrl ?? "#download";
-          if (label) label.textContent = browserStoreCta.dataset.chromeLabel ?? "";
+          const storeUrl = browserStoreCta.dataset.chromeUrl ?? "";
+          browserStoreCta.dataset.storeUrl = storeUrl;
+          browserStoreCta.href = storeUrl || "#download";
+          if (label)
+            label.textContent = browserStoreCta.dataset.chromeLabel ?? "";
         } else if (label) {
           label.textContent = browserStoreCta.dataset.chooseLabel ?? "";
         }
       }
+
+      document.querySelectorAll("[data-store-url]").forEach((storeLink) => {
+        if (!(storeLink instanceof HTMLAnchorElement)) return;
+
+        storeLink.addEventListener("click", (event) => {
+          if (storeLink.dataset.storeUrl?.trim()) return;
+
+          event.preventDefault();
+          window.alert(storeLink.dataset.storePendingMessage ?? "");
+        });
+      });
     </script>
   </body>
 </html>
