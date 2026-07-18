@@ -4,9 +4,11 @@ const productName = projectConfig.product.name;
 
 export const manifest = {
   manifest_version: 3,
-  name: productName,
+  default_locale: "en",
+  name: "__MSG_extensionName__",
+  short_name: productName,
   version: "0.1.0",
-  description: "A simple new tab replacement.",
+  description: "__MSG_extensionDescription__",
   icons: {
     "16": "icons/logo-16.png",
     "32": "icons/logo-32.png",
