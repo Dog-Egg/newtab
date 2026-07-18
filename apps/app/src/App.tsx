@@ -1,18 +1,45 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Toaster } from "sonner";
 import clsx from "clsx";
 import { Settings } from "lucide-react";
 import { Launcher } from "./Launcher";
 import { SearchEngineBox } from "./SearchEngineBox";
 import { Wallpaper } from "./Wallpaper";
-import { SettingsPanel } from "./Settings";
 import { MainDialogPortal } from "./components/Dialog";
+import { Drawer } from "./components/Drawer";
 import { useSettings } from "./Settings/SettingsProvider";
 import { useTranslation } from "react-i18next";
+
+const SettingsContent = lazy(() =>
+  import("./Settings").then(({ SettingsContent }) => ({
+    default: SettingsContent,
+  })),
+);
+
+function SettingsContentSkeleton() {
+  return (
+    <div className="animate-pulse space-y-7 px-2 py-6" aria-hidden="true">
+      {["w-20", "w-28", "w-24"].map((width) => (
+        <div key={width} className="space-y-3">
+          <div className={`h-4 ${width} rounded-full bg-white/15`} />
+          <div className="h-10 w-full rounded-xl bg-white/10" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function App() {
   const { t, i18n } = useTranslation();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [hasOpenedSettings, setHasOpenedSettings] = useState(false);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const { settings } = useSettings();
 
@@ -53,7 +80,10 @@ export function App() {
             isSettingsOpen && "opacity-0",
           )}
           type="button"
-          onClick={() => setIsSettingsOpen((isOpen) => !isOpen)}
+          onClick={() => {
+            setHasOpenedSettings(true);
+            setIsSettingsOpen((isOpen) => !isOpen);
+          }}
           aria-label={t("app.openSettings")}
           aria-expanded={isSettingsOpen}
         >
@@ -70,7 +100,19 @@ export function App() {
         <MainDialogPortal />
       </main>
 
-      <SettingsPanel isOpen={isSettingsOpen} onClose={closeSettings} />
+      <Drawer
+        isOpen={isSettingsOpen}
+        title={t("settings.title")}
+        titleId="settings-drawer-title"
+        closeLabel={t("settings.close")}
+        onClose={closeSettings}
+      >
+        {hasOpenedSettings ? (
+          <Suspense fallback={<SettingsContentSkeleton />}>
+            <SettingsContent />
+          </Suspense>
+        ) : null}
+      </Drawer>
     </div>
   );
 }

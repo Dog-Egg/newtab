@@ -133,7 +133,7 @@ export function Dialog({
               const target = event.target;
               if (
                 target instanceof Element &&
-                target.closest("[data-settings-drawer]")
+                target.closest("[data-drawer]")
               ) {
                 event.preventDefault();
                 return;
