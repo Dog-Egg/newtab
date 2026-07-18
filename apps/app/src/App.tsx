@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Toaster } from "sonner";
 import clsx from "clsx";
 import { Settings } from "lucide-react";
@@ -11,10 +11,14 @@ import { useSettings } from "./Settings/SettingsProvider";
 import { useTranslation } from "react-i18next";
 
 export function App() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const { settings } = useSettings();
+
+  useEffect(() => {
+    document.title = t("app.title");
+  }, [i18n.resolvedLanguage, t]);
 
   const closeSettings = useCallback(() => {
     settingsButtonRef.current?.focus();

@@ -8,7 +8,7 @@ export const zhCN = {
     default: "默认",
     loading: "加载中",
   },
-  app: { openSettings: "打开设置" },
+  app: { title: "新标签页", openSettings: "打开设置" },
   search: {
     selectEngine: "选择搜索引擎，当前为{{name}}",
     engines: "搜索引擎",

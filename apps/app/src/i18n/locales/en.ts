@@ -8,7 +8,7 @@ export const en = {
     default: "Default",
     loading: "Loading",
   },
-  app: { openSettings: "Open settings" },
+  app: { title: "New Tab", openSettings: "Open settings" },
   search: {
     selectEngine: "Select search engine, currently {{name}}",
     engines: "Search engines",

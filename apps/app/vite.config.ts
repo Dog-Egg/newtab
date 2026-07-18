@@ -1,17 +1,7 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { fileURLToPath, URL } from "node:url";
-import { productName } from "../../package.json";
 import { manifest } from "./manifest";
-
-function productNamePlugin(): Plugin {
-  return {
-    name: "product-name",
-    transformIndexHtml(html) {
-      return html.replace("%PRODUCT_NAME%", productName);
-    },
-  };
-}
 
 function extensionManifestPlugin(): Plugin {
   return {
@@ -42,7 +32,6 @@ export default defineConfig(({ mode, command }) => {
     publicDir: isExtension ? "public" : false,
     plugins: [
       react(),
-      productNamePlugin(),
       ...(isExtension && command === "build"
         ? [extensionManifestPlugin()]
         : []),
