@@ -22,6 +22,11 @@ export const en = {
     deleteEngine: "Delete search engine",
     deleteConfirm:
       "Are you sure you want to delete “{{name}}”? This action cannot be undone.",
+    engineSuggestions: "Search engine suggestions",
+    useEngine: "Search with {{name}}",
+    temporaryEngine:
+      "Temporarily searching with {{name}}; select search engine",
+    clearTemporaryEngine: "Stop searching with {{name}}",
   },
   settings: {
     title: "Settings",
