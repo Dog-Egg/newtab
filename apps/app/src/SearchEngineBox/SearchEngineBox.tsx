@@ -369,6 +369,7 @@ export function SearchEngineBox() {
               >
                 <input
                   ref={inputRef}
+                  autoFocus
                   className="min-w-0 flex-1 bg-transparent px-3 text-[15px] text-slate-800 outline-none placeholder:text-slate-600/75 sm:text-base"
                   type="search"
                   role="combobox"
