@@ -11,28 +11,38 @@ import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { platform } from "@platform";
 import type { StoredSearchEngineSettings } from "../platform/types";
+import type { ShortcutCategory } from "../Launcher/launcher";
+import { useSettings } from "../Settings/SettingsProvider";
 import { SearchEngineDialogs } from "./SearchEngineDialog";
 import { SearchEngineSelector } from "./SearchEngineSelector";
 import {
-  SEARCH_ENGINE_SUGGESTIONS_ID,
-  getSearchEngineSuggestionId,
-  SearchEngineSuggestion,
-} from "./SearchEngineSuggestion";
+  SEARCH_SUGGESTIONS_ID,
+  getSearchSuggestionId,
+  SearchSuggestion,
+} from "./SearchSuggestion";
 import {
   buildSearchUrl,
   createCustomEngineId,
   DEFAULT_SEARCH_ENGINES,
   EMPTY_CUSTOM_ENGINE,
-  findSearchEngines,
   normalizeCustomEngines,
   type SearchEngine,
 } from "./searchEngineUtils";
+import {
+  findSearchSuggestions,
+  getSearchSuggestionKey,
+  type SearchSuggestion as SearchSuggestionItem,
+} from "./searchSuggestionUtils";
 
 export function SearchEngineBox() {
   const { t } = useTranslation();
+  const { settings } = useSettings();
   const inputRef = useRef<HTMLInputElement>(null);
   const [storedSettings, setStoredSettings] =
     useState<StoredSearchEngineSettings>({});
+  const [shortcutCategories, setShortcutCategories] = useState<
+    ShortcutCategory[]
+  >([]);
   const [query, setQuery] = useState("");
   const [temporaryEngineId, setTemporaryEngineId] = useState<string | null>(
     null,
@@ -44,7 +54,9 @@ export function SearchEngineBox() {
   const [retainedSuggestionQuery, setRetainedSuggestionQuery] = useState<
     string | null
   >(null);
-  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState<
+    number | null
+  >(null);
   const [isEditorDialogOpen, setIsEditorDialogOpen] = useState(false);
   const [editingEngineId, setEditingEngineId] = useState<string | null>(null);
   const [enginePendingDeletion, setEnginePendingDeletion] =
@@ -81,22 +93,25 @@ export function SearchEngineBox() {
     : null;
   const effectiveEngine = temporaryEngine ?? selectedEngine;
   const suggestionQuery = retainedSuggestionQuery ?? query;
-  const suggestedEngines = findSearchEngines(
-    searchEngines,
-    suggestionQuery,
-  ).filter(
-    (engine) => engine.id !== selectedEngine.id || engine.id === temporaryEngineId,
-  );
-  const visibleSuggestedEngines =
-    dismissedSuggestionQuery === suggestionQuery ? [] : suggestedEngines;
-  const activeSuggestedEngine =
-    visibleSuggestedEngines[
-      Math.min(activeSuggestionIndex, visibleSuggestedEngines.length - 1)
-    ] ?? null;
-  const isSuggestionOpen = Boolean(activeSuggestedEngine);
+  const suggestions = findSearchSuggestions({
+    engines: searchEngines,
+    categories: shortcutCategories,
+    input: suggestionQuery,
+    selectedEngineId: selectedEngine.id,
+    temporaryEngineId,
+  });
+  const visibleSuggestions =
+    dismissedSuggestionQuery === suggestionQuery ? [] : suggestions;
+  const activeSuggestion =
+    activeSuggestionIndex === null
+      ? null
+      : (visibleSuggestions[
+          Math.min(activeSuggestionIndex, visibleSuggestions.length - 1)
+        ] ?? null);
+  const isSuggestionOpen = visibleSuggestions.length > 0;
 
   useEffect(() => {
-    setActiveSuggestionIndex(0);
+    setActiveSuggestionIndex(null);
   }, [suggestionQuery]);
 
   useEffect(() => {
@@ -113,6 +128,26 @@ export function SearchEngineBox() {
       isCurrent = false;
     };
   }, []);
+
+  useEffect(() => {
+    let isCurrent = true;
+    const applyCategories = (categories: ShortcutCategory[]) => {
+      if (isCurrent) setShortcutCategories(categories);
+    };
+
+    void platform.launcher
+      .read(settings.locale)
+      .then(applyCategories, () => undefined);
+    const unsubscribe = platform.launcher.subscribe(
+      settings.locale,
+      applyCategories,
+    );
+
+    return () => {
+      isCurrent = false;
+      unsubscribe();
+    };
+  }, [settings.locale]);
 
   function updateStoredSettings(
     update: (
@@ -217,10 +252,9 @@ export function SearchEngineBox() {
   }
 
   function acceptEngineSuggestion(
-    engine = activeSuggestedEngine,
+    engine: SearchEngine,
     retainSuggestions = false,
   ) {
-    if (!engine) return;
     setTemporaryEngineId(engine.id);
     setRetainedSuggestionQuery(retainSuggestions ? suggestionQuery : null);
     setQuery("");
@@ -228,41 +262,58 @@ export function SearchEngineBox() {
     inputRef.current?.focus();
   }
 
-  function selectAdjacentEngineSuggestion(direction: 1 | -1) {
-    if (!activeSuggestedEngine) return;
+  function openShortcutSuggestion(suggestion: SearchSuggestionItem) {
+    if (suggestion.type !== "shortcut") return;
+    window.open(suggestion.shortcut.url, "_parent", "noreferrer");
+  }
 
-    if (retainedSuggestionQuery === null) {
-      acceptEngineSuggestion(activeSuggestedEngine, true);
+  function acceptSuggestion(
+    suggestion: SearchSuggestionItem,
+    retainSuggestions = false,
+  ) {
+    if (suggestion.type === "engine") {
+      acceptEngineSuggestion(suggestion.engine, retainSuggestions);
       return;
     }
 
+    openShortcutSuggestion(suggestion);
+  }
+
+  function selectAdjacentSuggestion(direction: 1 | -1) {
     const nextSuggestionIndex =
-      (activeSuggestionIndex + direction + visibleSuggestedEngines.length) %
-      visibleSuggestedEngines.length;
+      activeSuggestionIndex === null
+        ? direction === 1
+          ? 0
+          : visibleSuggestions.length - 1
+        : (activeSuggestionIndex + direction + visibleSuggestions.length) %
+          visibleSuggestions.length;
+    const nextSuggestion = visibleSuggestions[nextSuggestionIndex];
     setActiveSuggestionIndex(nextSuggestionIndex);
-    acceptEngineSuggestion(visibleSuggestedEngines[nextSuggestionIndex], true);
+    if (nextSuggestion.type === "engine") {
+      acceptEngineSuggestion(nextSuggestion.engine, true);
+    }
   }
 
   function handleInputKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "ArrowDown" && visibleSuggestedEngines.length > 0) {
+    if (event.key === "ArrowDown" && visibleSuggestions.length > 0) {
       event.preventDefault();
-      selectAdjacentEngineSuggestion(1);
+      selectAdjacentSuggestion(1);
       return;
     }
 
-    if (event.key === "ArrowUp" && visibleSuggestedEngines.length > 0) {
+    if (event.key === "ArrowUp" && visibleSuggestions.length > 0) {
       event.preventDefault();
-      selectAdjacentEngineSuggestion(-1);
+      selectAdjacentSuggestion(-1);
       return;
     }
 
-    if (event.key === "Tab" && activeSuggestedEngine) {
+    if (event.key === "Tab" && visibleSuggestions.length > 0) {
       event.preventDefault();
-      selectAdjacentEngineSuggestion(1);
+      selectAdjacentSuggestion(1);
       return;
     }
 
-    if (event.key === "Escape" && visibleSuggestedEngines.length > 0) {
+    if (event.key === "Escape" && visibleSuggestions.length > 0) {
       event.preventDefault();
       setDismissedSuggestionQuery(suggestionQuery);
       setRetainedSuggestionQuery(null);
@@ -283,6 +334,11 @@ export function SearchEngineBox() {
 
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (activeSuggestion?.type === "shortcut") {
+      openShortcutSuggestion(activeSuggestion);
+      return;
+    }
+
     const trimmedQuery = query.trim();
     if (!trimmedQuery) return;
 
@@ -296,9 +352,9 @@ export function SearchEngineBox() {
   return (
     <>
       <Popover.Root
-        open={visibleSuggestedEngines.length > 0}
+        open={visibleSuggestions.length > 0}
         onOpenChange={(isOpen) => {
-          if (!isOpen && visibleSuggestedEngines.length > 0) {
+          if (!isOpen && visibleSuggestions.length > 0) {
             setDismissedSuggestionQuery(suggestionQuery);
             setRetainedSuggestionQuery(null);
           }
@@ -310,7 +366,7 @@ export function SearchEngineBox() {
               className={clsx(
                 "flex h-12 items-center border border-white/50 px-3 text-slate-800 shadow-[0_16px_42px_rgba(15,23,42,0.2)] backdrop-blur-2xl transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-white/95 focus-within:shadow-[0_22px_58px_rgba(15,23,42,0.32)] motion-reduce:transition-none sm:h-[52px]",
                 isSuggestionOpen
-                  ? "rounded-t-glass rounded-b-none border-b-slate-400/20 bg-slate-100"
+                  ? "rounded-b-none rounded-t-glass border-b-slate-400/20 bg-slate-100"
                   : "rounded-glass bg-white/55 focus-within:bg-white/80",
               )}
             >
@@ -339,9 +395,11 @@ export function SearchEngineBox() {
                   ref={inputRef}
                   className="min-w-0 flex-1 bg-transparent px-3 text-[15px] text-slate-800 outline-none placeholder:text-slate-600/75 sm:text-base"
                   type="search"
+                  role="combobox"
                   value={query}
                   onChange={(event) => {
                     setQuery(event.target.value);
+                    setActiveSuggestionIndex(null);
                     setRetainedSuggestionQuery(null);
                     setDismissedSuggestionQuery(null);
                   }}
@@ -349,15 +407,15 @@ export function SearchEngineBox() {
                   placeholder={t("search.placeholder")}
                   aria-label={t("search.placeholder")}
                   aria-autocomplete="list"
-                  aria-expanded={visibleSuggestedEngines.length > 0}
+                  aria-expanded={visibleSuggestions.length > 0}
                   aria-controls={
-                    visibleSuggestedEngines.length > 0
-                      ? SEARCH_ENGINE_SUGGESTIONS_ID
+                    visibleSuggestions.length > 0
+                      ? SEARCH_SUGGESTIONS_ID
                       : undefined
                   }
                   aria-activedescendant={
-                    activeSuggestedEngine
-                      ? getSearchEngineSuggestionId(activeSuggestedEngine.id)
+                    activeSuggestion
+                      ? getSearchSuggestionId(activeSuggestion)
                       : undefined
                   }
                 />
@@ -365,18 +423,15 @@ export function SearchEngineBox() {
             </div>
           </Popover.Anchor>
 
-          {visibleSuggestedEngines.length > 0 && activeSuggestedEngine ? (
-            <SearchEngineSuggestion
-              engines={visibleSuggestedEngines}
-              activeEngineId={activeSuggestedEngine.id}
-              onActiveEngineChange={(engineId) =>
-                setActiveSuggestionIndex(
-                  visibleSuggestedEngines.findIndex(
-                    (engine) => engine.id === engineId,
-                  ),
-                )
+          {visibleSuggestions.length > 0 ? (
+            <SearchSuggestion
+              suggestions={visibleSuggestions}
+              activeSuggestionKey={
+                activeSuggestion
+                  ? getSearchSuggestionKey(activeSuggestion)
+                  : null
               }
-              onAccept={acceptEngineSuggestion}
+              onAccept={acceptSuggestion}
             />
           ) : null}
         </div>

@@ -22,6 +22,7 @@ export const zhCN = {
     deleteEngine: "删除搜索引擎",
     deleteConfirm: "确定要删除“{{name}}”吗？此操作无法撤销。",
     engineSuggestions: "搜索引擎建议",
+    suggestions: "搜索建议",
     useEngine: "使用 {{name}} 搜索",
     temporaryEngine: "临时使用 {{name}} 搜索，点击可选择搜索引擎",
     clearTemporaryEngine: "退出使用{{name}}搜索",

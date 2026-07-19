@@ -23,6 +23,7 @@ export const en = {
     deleteConfirm:
       "Are you sure you want to delete “{{name}}”? This action cannot be undone.",
     engineSuggestions: "Search engine suggestions",
+    suggestions: "Search suggestions",
     useEngine: "Search with {{name}}",
     temporaryEngine:
       "Temporarily searching with {{name}}; select search engine",
