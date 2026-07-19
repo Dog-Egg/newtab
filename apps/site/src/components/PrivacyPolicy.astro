@@ -24,14 +24,14 @@ const copy = isEnglish
       label: "PRIVACY POLICY",
       heading: "Your new tab should stay yours.",
       summary: `${PRODUCT_NAME} has no account system, advertising, analytics, or developer-operated data server. Your shortcuts and preferences are stored locally in your browser. Some features make requests to services you choose or to image providers, as explained below.`,
-      effective: "Effective July 18, 2026",
+      effective: "Effective July 19, 2026",
       home: "Back to NewTab",
       contents: "On this page",
       sections: [
         [
           "scope",
           "1. Scope",
-          `<p>This policy describes how the ${PRODUCT_NAME} browser extension handles information. It applies to the Chrome and Edge versions of the extension.</p>`,
+          `<p>This policy describes how the ${PRODUCT_NAME} browser extension handles information. It applies to every browser version distributed through an official browser extension store or another official channel provided by the developer. If features or permissions differ between browser versions, the disclosures for the features and permissions available in the applicable version will apply.</p>`,
         ],
         [
           "data",
@@ -56,31 +56,36 @@ const copy = isEnglish
         [
           "sharing",
           "6. Sharing, selling, and advertising",
-          `<p>We do not sell user data. We do not use or transfer user data for personalized advertising, retargeting, creditworthiness, lending, or unrelated purposes. We do not allow people to read your locally stored shortcuts or settings.</p><p>Any transmission initiated by the extension is limited to providing a feature you requested, such as performing a search, opening a site, or loading an image.</p>`,
+          `<p>We do not sell user data. We do not use or transfer user data for personalized advertising, retargeting, creditworthiness, lending, or unrelated purposes. The ${PRODUCT_NAME} developer does not receive or have access to your locally stored shortcuts or settings.</p><p>Any transmission initiated by the extension is limited to providing a disclosed feature, such as performing a search, opening a site, displaying the default wallpaper, or loading an image from a URL you provide.</p>`,
         ],
         [
           "limited-use",
-          "7. Chrome Web Store Limited Use disclosure",
-          `<p>${PRODUCT_NAME}’s use and transfer of information received from Google APIs complies with the <a href="https://developer.chrome.com/docs/webstore/program-policies/user-data-faq" rel="noreferrer">Chrome Web Store User Data Policy</a>, including the Limited Use requirements.</p><p>Information accessed through extension permissions is used only to provide or improve the extension’s single purpose and user-facing features. It is not transferred except as necessary to provide those features, comply with applicable law, protect security, or as part of a permitted business transfer. It is never used for personalized advertising, and humans are not permitted to read it except in the limited circumstances allowed by that policy.</p>`,
+          "7. Supplemental disclosure for the Chrome Web Store version",
+          `<p>This section applies only to the version distributed through the Chrome Web Store. ${PRODUCT_NAME}’s use and transfer of information received from Google APIs complies with the <a href="https://developer.chrome.com/docs/webstore/program-policies/user-data-faq" rel="noreferrer">Chrome Web Store User Data Policy</a>, including the Limited Use requirements.</p><p>Information accessed through extension permissions is used only to provide or improve the extension’s single purpose and user-facing features. It is not transferred except as necessary to provide those features, comply with applicable law, protect security, or as part of a permitted business transfer. It is never used for personalized advertising, and humans are not permitted to read it except in the limited circumstances allowed by that policy.</p>`,
+        ],
+        [
+          "edge-store",
+          "8. Supplemental disclosure for the Microsoft Edge Add-ons version",
+          `<p>This section applies only to the version distributed through Microsoft Edge Add-ons. Its data-handling practices are the same as those described in this policy. The extension accesses bookmarks, current-page information, and locally stored settings only to provide its disclosed, user-facing features. This information is not uploaded to a developer-operated server and is not used for advertising, analytics, sale, or purposes unrelated to the extension’s functionality.</p>`,
         ],
         [
           "security",
-          "8. Security",
-          `<p>${PRODUCT_NAME} minimizes data handling by keeping extension data in browser-managed local storage. External resources included by the extension use HTTPS. No method of storage or transmission is completely secure, but we limit access and transmission to what the disclosed features require.</p>`,
+          "9. Security",
+          `<p>${PRODUCT_NAME} minimizes data handling by keeping extension data in browser-managed local storage. External resources configured by the developer use HTTPS. A custom URL you provide is subject to the security of that URL and its provider. No method of storage or transmission is completely secure, but we limit access and transmission to what the disclosed features require.</p>`,
         ],
         [
           "children",
-          "9. Children’s privacy",
+          "10. Children’s privacy",
           `<p>${PRODUCT_NAME} is a general-purpose browser tool and is not directed to children. We do not knowingly collect personal information from children.</p>`,
         ],
         [
           "changes",
-          "10. Changes to this policy",
+          "11. Changes to this policy",
           `<p>We may update this policy when the extension’s features or legal requirements change. The effective date at the top of this page will be updated when material changes are made.</p>`,
         ],
         [
           "contact",
-          "11. Contact",
+          "12. Contact",
           `<p>Questions or privacy requests can be submitted through <a href="${issuesUrl}">GitHub Issues</a>. Because ${PRODUCT_NAME} does not operate user accounts or a data server, we generally cannot access or recover data stored in your browser.</p>`,
         ],
       ],
@@ -92,14 +97,14 @@ const copy = isEnglish
       label: "隐私政策",
       heading: "你的新标签页，应该只属于你。",
       summary: `${PRODUCT_NAME} 没有账号系统、广告、数据分析或开发者运营的数据服务器。快捷方式和偏好设置保存在浏览器本地。部分功能会向你选择的服务或图片提供商发起请求，具体说明如下。`,
-      effective: "生效日期：2026 年 7 月 18 日",
+      effective: "生效日期：2026 年 7 月 19 日",
       home: "返回 NewTab",
       contents: "本页目录",
       sections: [
         [
           "scope",
           "1. 适用范围",
-          `<p>本政策说明 ${PRODUCT_NAME} 浏览器扩展如何处理信息，适用于 Chrome 和 Edge 版本。</p>`,
+          `<p>本政策说明 ${PRODUCT_NAME} 浏览器扩展如何处理信息，适用于通过官方浏览器扩展商店或开发者提供的其他官方渠道分发的所有浏览器版本。如果不同浏览器版本的功能或权限存在差异，则以对应版本实际提供的功能和请求的权限相关说明为准。</p>`,
         ],
         [
           "data",
@@ -124,31 +129,36 @@ const copy = isEnglish
         [
           "sharing",
           "6. 分享、出售与广告",
-          `<p>我们不会出售用户数据，不会将用户数据用于或传输给第三方以提供个性化广告、再营销、信用评估、贷款或其他无关用途，也不会允许任何人读取你保存在本地的快捷方式或设置。</p><p>扩展发起的任何传输仅限于提供你主动请求的功能，例如执行搜索、打开网站或加载图片。</p>`,
+          `<p>我们不会出售用户数据，不会将用户数据用于或传输给第三方以提供个性化广告、再营销、信用评估、贷款或其他无关用途。${PRODUCT_NAME} 开发者不会收到，也无法访问你保存在本地的快捷方式或设置。</p><p>扩展发起的任何传输仅限于提供已披露的功能，例如执行搜索、打开网站、显示默认壁纸，或从你提供的网址加载图片。</p>`,
         ],
         [
           "limited-use",
-          "7. Chrome 应用商店“有限使用”披露",
-          `<p>${PRODUCT_NAME} 对从 Google API 获得的信息的使用和传输遵守 <a href="https://developer.chrome.com/docs/webstore/program-policies/user-data-faq" rel="noreferrer">Chrome 应用商店用户数据政策</a>，包括“有限使用”要求。</p><p>通过扩展权限访问的信息仅用于提供或改进扩展的单一用途及面向用户的功能。除提供这些功能、遵守适用法律、保护安全或政策允许的业务转移所必需外，不会传输这些信息；绝不会用于个性化广告。除该政策允许的有限情形外，也不允许人工读取这些信息。</p>`,
+          "7. Chrome 应用商店版本补充声明",
+          `<p>本节仅适用于通过 Chrome 应用商店分发的版本。${PRODUCT_NAME} 对从 Google API 获得的信息的使用和传输遵守 <a href="https://developer.chrome.com/docs/webstore/program-policies/user-data-faq" rel="noreferrer">Chrome 应用商店用户数据政策</a>，包括“有限使用”要求。</p><p>通过扩展权限访问的信息仅用于提供或改进扩展的单一用途及面向用户的功能。除提供这些功能、遵守适用法律、保护安全或政策允许的业务转移所必需外，不会传输这些信息；绝不会用于个性化广告。除该政策允许的有限情形外，也不允许人工读取这些信息。</p>`,
+        ],
+        [
+          "edge-store",
+          "8. Microsoft Edge 加载项版本补充说明",
+          `<p>本节仅适用于通过 Microsoft Edge 加载项商店分发的版本。该版本的数据处理方式与本政策所述一致。扩展仅为提供已披露的面向用户的功能而访问书签、当前网页信息和本地设置；这些信息不会上传至开发者运营的服务器，也不会用于广告、数据分析、出售或与扩展功能无关的用途。</p>`,
         ],
         [
           "security",
-          "8. 安全",
-          `<p>${PRODUCT_NAME} 通过把扩展数据保存在浏览器管理的本地存储中来减少数据处理。扩展包含的外部资源使用 HTTPS。任何存储或传输方式都无法保证绝对安全，但我们将访问和传输限制在已披露功能所需范围内。</p>`,
+          "9. 安全",
+          `<p>${PRODUCT_NAME} 通过把扩展数据保存在浏览器管理的本地存储中来减少数据处理。开发者配置的外部资源使用 HTTPS；你自行提供的网址则取决于该网址及其提供商的安全性。任何存储或传输方式都无法保证绝对安全，但我们将访问和传输限制在已披露功能所需范围内。</p>`,
         ],
         [
           "children",
-          "9. 儿童隐私",
+          "10. 儿童隐私",
           `<p>${PRODUCT_NAME} 是一款通用浏览器工具，并非专门面向儿童。我们不会有意收集儿童的个人信息。</p>`,
         ],
         [
           "changes",
-          "10. 政策变更",
+          "11. 政策变更",
           `<p>当扩展功能或法律要求发生变化时，我们可能更新本政策。如有重大变更，页面顶部的生效日期也会随之更新。</p>`,
         ],
         [
           "contact",
-          "11. 联系方式",
+          "12. 联系方式",
           `<p>如有隐私问题或请求，可通过 <a href="${issuesUrl}">GitHub Issues</a> 联系。由于 ${PRODUCT_NAME} 不运营用户账号或数据服务器，我们通常无法访问或恢复保存在你浏览器中的数据。</p>`,
         ],
       ],
