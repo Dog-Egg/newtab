@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { platform } from "@platform";
 import { App } from "./App";
+import { LauncherProvider } from "./Launcher/LauncherProvider";
 import { SettingsProvider } from "./Settings/SettingsProvider";
 import { normalizeSettings } from "./Settings/settings";
 import i18n from "./i18n";
@@ -26,10 +27,19 @@ async function main() {
     console.error("Failed to apply the initial locale", error);
   }
 
+  const initialLauncherCategories = await platform.launcher
+    .read(initialSettings.locale)
+    .catch((error: unknown) => {
+      console.error("Failed to read initial launcher", error);
+      return [];
+    });
+
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <SettingsProvider initialSettings={initialSettings}>
-        <App />
+        <LauncherProvider initialCategories={initialLauncherCategories}>
+          <App />
+        </LauncherProvider>
       </SettingsProvider>
     </StrictMode>,
   );

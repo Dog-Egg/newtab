@@ -11,45 +11,38 @@ import { DeleteShortcutCollectionDialog } from "./DeleteShortcutCollectionDialog
 import { ShortcutPage } from "./ShortcutPage";
 import { Slider } from "./Slider";
 import { useTranslation } from "react-i18next";
-import { useSettings } from "../Settings/SettingsProvider";
+import { useLauncher } from "./LauncherProvider";
 
 export function Launcher() {
   const { t } = useTranslation();
-  const { settings } = useSettings();
-  const [categories, setCategories] = useState<ShortcutCategory[] | null>(null);
+  const { categories, saveCategories } = useLauncher();
   const [activeCategoryId, setActiveCategoryId] = useState(DEFAULT_CATEGORY_ID);
   const [pendingDeleteCategory, setPendingDeleteCategory] =
     useState<ShortcutCategory | null>(null);
   const categoriesRef = useRef<ShortcutCategory[]>([]);
 
   useEffect(() => {
-    let isCurrent = true;
-    const applyCategories = (storedCategories: ShortcutCategory[]) => {
-      categoriesRef.current = storedCategories;
-      setCategories(storedCategories);
-      setActiveCategoryId((current) =>
-        normalizeActiveCategoryId(current, storedCategories),
-      );
-    };
+    categoriesRef.current = categories;
+    setActiveCategoryId((current) =>
+      normalizeActiveCategoryId(current, categories),
+    );
+  }, [categories]);
 
-    void Promise.all([
-      platform.launcher.read(settings.locale),
-      platform.activeCategoryId.read(),
-    ]).then(
-      ([storedCategories, storedActiveCategoryId]) => {
+  useEffect(() => {
+    let isCurrent = true;
+    void platform.activeCategoryId.read().then(
+      (storedActiveCategoryId) => {
         if (!isCurrent) return;
-        applyCategories(storedCategories);
         setActiveCategoryId(
-          normalizeActiveCategoryId(storedActiveCategoryId, storedCategories),
+          normalizeActiveCategoryId(
+            storedActiveCategoryId,
+            categoriesRef.current,
+          ),
         );
       },
       () => {},
     );
 
-    const unsubscribeCategories = platform.launcher.subscribe(
-      settings.locale,
-      applyCategories,
-    );
     const unsubscribeActiveCategory = platform.activeCategoryId.subscribe(
       (categoryId) =>
         setActiveCategoryId(
@@ -58,19 +51,11 @@ export function Launcher() {
     );
     return () => {
       isCurrent = false;
-      unsubscribeCategories();
       unsubscribeActiveCategory();
     };
-  }, [settings.locale]);
+  }, []);
 
-  if (!categories) return null;
   const loadedCategories = categories;
-
-  function saveCategories(nextCategories: ShortcutCategory[]) {
-    categoriesRef.current = nextCategories;
-    setCategories(nextCategories);
-    void platform.launcher.save(nextCategories);
-  }
 
   function selectCategory(categoryId: string) {
     if (categoryId === activeCategoryId) return;

@@ -11,8 +11,7 @@ import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { platform } from "@platform";
 import type { StoredSearchEngineSettings } from "../platform/types";
-import type { ShortcutCategory } from "../Launcher/launcher";
-import { useSettings } from "../Settings/SettingsProvider";
+import { useLauncher } from "../Launcher/LauncherProvider";
 import { SearchEngineDialogs } from "./SearchEngineDialog";
 import { SearchEngineSelector } from "./SearchEngineSelector";
 import {
@@ -36,13 +35,10 @@ import {
 
 export function SearchEngineBox() {
   const { t } = useTranslation();
-  const { settings } = useSettings();
+  const { categories: shortcutCategories } = useLauncher();
   const inputRef = useRef<HTMLInputElement>(null);
   const [storedSettings, setStoredSettings] =
     useState<StoredSearchEngineSettings>({});
-  const [shortcutCategories, setShortcutCategories] = useState<
-    ShortcutCategory[]
-  >([]);
   const [query, setQuery] = useState("");
   const [temporaryEngineId, setTemporaryEngineId] = useState<string | null>(
     null,
@@ -128,26 +124,6 @@ export function SearchEngineBox() {
       isCurrent = false;
     };
   }, []);
-
-  useEffect(() => {
-    let isCurrent = true;
-    const applyCategories = (categories: ShortcutCategory[]) => {
-      if (isCurrent) setShortcutCategories(categories);
-    };
-
-    void platform.launcher
-      .read(settings.locale)
-      .then(applyCategories, () => undefined);
-    const unsubscribe = platform.launcher.subscribe(
-      settings.locale,
-      applyCategories,
-    );
-
-    return () => {
-      isCurrent = false;
-      unsubscribe();
-    };
-  }, [settings.locale]);
 
   function updateStoredSettings(
     update: (
