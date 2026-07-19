@@ -22,17 +22,40 @@ const defaultLocale = getLocaleFromLanguage(
   new URLSearchParams(window.location.search).get("lang") ?? "en",
 );
 
+function logStorageOperation(
+  operation: "read" | "write",
+  key: string,
+  value: unknown,
+) {
+  if (import.meta.env.DEV) {
+    console.debug(`[persistence:${operation}]`, {
+      storage: "sessionStorage",
+      key,
+      value,
+    });
+  }
+}
+
 function readJsonStorageValue(key: string) {
   const saved = window.sessionStorage.getItem(key);
   if (saved === null) {
+    logStorageOperation("read", key, undefined);
     return undefined;
   }
 
   try {
-    return JSON.parse(saved);
+    const value: unknown = JSON.parse(saved);
+    logStorageOperation("read", key, value);
+    return value;
   } catch {
+    logStorageOperation("read", key, saved);
     return saved;
   }
+}
+
+function writeJsonStorageValue(key: string, value: unknown) {
+  window.sessionStorage.setItem(key, JSON.stringify(value));
+  logStorageOperation("write", key, value);
 }
 
 function readStoredSearchEngineSettings(): StoredSearchEngineSettings {
@@ -45,10 +68,7 @@ function readStoredSearchEngineSettings(): StoredSearchEngineSettings {
 }
 
 function saveStoredSearchEngineSettings(settings: StoredSearchEngineSettings) {
-  window.sessionStorage.setItem(
-    SEARCH_ENGINE_SETTINGS_KEY,
-    JSON.stringify(settings),
-  );
+  writeJsonStorageValue(SEARCH_ENGINE_SETTINGS_KEY, settings);
 }
 
 function readStoredLauncher(locale: AppLocale) {
@@ -57,10 +77,7 @@ function readStoredLauncher(locale: AppLocale) {
 }
 
 function saveStoredLauncher(categories: ShortcutCategory[]) {
-  window.sessionStorage.setItem(
-    LAUNCHER_STORAGE_KEY,
-    JSON.stringify(categories),
-  );
+  writeJsonStorageValue(LAUNCHER_STORAGE_KEY, categories);
 }
 
 function readStoredActiveCategoryId() {
@@ -76,7 +93,7 @@ function readStoredSettings() {
 }
 
 function saveStoredSettings(settings: Settings) {
-  window.sessionStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  writeJsonStorageValue(SETTINGS_STORAGE_KEY, settings);
 }
 
 export const platform: Platform = {
@@ -100,10 +117,7 @@ export const platform: Platform = {
   activeCategoryId: {
     read: async () => readStoredActiveCategoryId(),
     save: async (categoryId) =>
-      window.sessionStorage.setItem(
-        ACTIVE_CATEGORY_ID_STORAGE_KEY,
-        JSON.stringify(categoryId),
-      ),
+      writeJsonStorageValue(ACTIVE_CATEGORY_ID_STORAGE_KEY, categoryId),
     subscribe: (onChange) => {
       const handleStorageChange = (event: StorageEvent) => {
         if (event.key === ACTIVE_CATEGORY_ID_STORAGE_KEY) {
