@@ -14,6 +14,7 @@
     "build:site": "pnpm --filter @project/site build",
     "preview:app": "pnpm --filter @project/app preview",
     "preview:site": "pnpm --filter @project/site preview",
+    "test": "pnpm --recursive test",
     "typecheck": "pnpm --recursive typecheck",
     "format": "prettier --write .",
     "prepare": "husky || true"

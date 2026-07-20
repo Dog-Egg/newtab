@@ -12,6 +12,7 @@
     "prebuild:ext": "pnpm run generate:extension-icons",
     "build:ext": "tsc && vite build --mode extension",
     "generate:extension-icons": "node scripts/generate-extension-icons.mjs",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview"
   },
@@ -43,6 +44,7 @@
     "sharp": "^0.35.3",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.7.2",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "vitest": "^4.1.10"
   }
 }

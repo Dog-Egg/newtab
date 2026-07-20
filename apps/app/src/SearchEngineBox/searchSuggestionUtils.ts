@@ -50,7 +50,7 @@ function findShortcuts(categories: ShortcutCategory[], input: string) {
         if (seenShortcutIds.has(shortcut.id)) return false;
 
         const matches =
-          shortcut.title.trim().toLowerCase().startsWith(value) ||
+          shortcut.title.trim().toLowerCase().includes(value) ||
           getShortcutUrlMatchValue(shortcut.url).startsWith(urlPrefix);
         if (matches) seenShortcutIds.add(shortcut.id);
         return matches;
