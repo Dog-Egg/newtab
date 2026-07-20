@@ -276,7 +276,7 @@ function MergeTargetFrame({
     >
       <div
         aria-hidden="true"
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/25 shadow-[0_18px_35px_rgba(15,23,42,0.22)] backdrop-blur-md transition-all duration-200 ease-out"
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/30 shadow-[0_18px_35px_rgba(15,23,42,0.22)] transition-all duration-200 ease-out"
         style={{
           width: (active ? 72 : 64) * nodeScale,
           height: (active ? 72 : 64) * nodeScale,
