@@ -25,7 +25,7 @@ export const zhCN = {
     suggestions: "搜索建议",
     useEngine: "使用 {{name}} 搜索",
     temporaryEngine: "临时使用 {{name}} 搜索，点击可选择搜索引擎",
-    clearTemporaryEngine: "退出使用{{name}}搜索",
+    clearTemporaryEngine: "退出使用 {{name}} 搜索",
   },
   settings: {
     title: "设置",

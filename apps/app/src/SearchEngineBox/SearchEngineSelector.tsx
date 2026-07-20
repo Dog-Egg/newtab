@@ -1,6 +1,6 @@
 import * as Popover from "@radix-ui/react-popover";
 import clsx from "clsx";
-import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
+import { ChevronDown, EllipsisVertical, Plus, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
@@ -41,6 +41,7 @@ export function SearchEngineSelector({
   isOpen,
   onOpenChange,
   onSelect,
+  onClearTemporary,
   onAdd,
   onEdit,
   onRequestDelete,
@@ -51,6 +52,7 @@ export function SearchEngineSelector({
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onSelect: (engineId: string) => void;
+  onClearTemporary: () => void;
   onAdd: () => void;
   onEdit: (engine: SearchEngine) => void;
   onRequestDelete: (engine: SearchEngine) => void;
@@ -60,13 +62,28 @@ export function SearchEngineSelector({
   if (temporaryEngine) {
     return (
       <div
-        className="flex h-9 shrink-0 items-center gap-2 px-2.5 text-[15px] tracking-wide text-blue-700 sm:text-base"
+        className="flex h-9 min-w-0 shrink-0 items-center gap-1.5 rounded-xl border border-slate-300/70 bg-white/45 py-1 pl-1.5 pr-1 text-slate-800 shadow-sm"
         aria-label={t("search.temporaryEngine", {
           name: temporaryEngine.name,
         })}
       >
-        <Search aria-hidden="true" className="size-4 shrink-0" />
-        <span>{t("search.useEngine", { name: temporaryEngine.name })}</span>
+        <SearchEngineGlyph engine={temporaryEngine} size="small" />
+        <span className="max-w-28 truncate text-sm font-semibold sm:max-w-36">
+          {temporaryEngine.name}
+        </span>
+        <button
+          className="grid size-7 shrink-0 place-items-center rounded-full text-slate-500 outline-none transition hover:bg-slate-200/75 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
+          type="button"
+          onClick={onClearTemporary}
+          aria-label={t("search.clearTemporaryEngine", {
+            name: temporaryEngine.name,
+          })}
+          title={t("search.clearTemporaryEngine", {
+            name: temporaryEngine.name,
+          })}
+        >
+          <X aria-hidden="true" className="size-4" />
+        </button>
       </div>
     );
   }

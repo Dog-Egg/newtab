@@ -353,6 +353,7 @@ export function SearchEngineBox() {
                 isOpen={isDropdownOpen}
                 onOpenChange={setIsDropdownOpen}
                 onSelect={selectSearchEngine}
+                onClearTemporary={() => setTemporaryEngineId(null)}
                 onAdd={openAddDialog}
                 onEdit={openEditDialog}
                 onRequestDelete={(engine) => {
