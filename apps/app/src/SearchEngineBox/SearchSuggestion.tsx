@@ -37,7 +37,7 @@ export function SearchSuggestion({
   onAccept: (suggestion: SearchSuggestionItem) => void;
 }) {
   const { t } = useTranslation();
-  const activeItemRef = useRef<HTMLButtonElement>(null);
+  const activeItemRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     activeItemRef.current?.scrollIntoView({
@@ -71,21 +71,13 @@ export function SearchSuggestion({
             ? getSearchEngineIconSource(suggestion.engine.urlFormat)
             : suggestion.shortcut.url;
 
-          return (
-            <button
-              ref={isActive ? activeItemRef : undefined}
-              key={suggestionKey}
-              id={getSearchSuggestionId(suggestion)}
-              className={clsx(
-                "flex min-h-14 w-full items-center gap-3 rounded-xl px-3 text-left text-slate-700 outline-none transition-colors hover:bg-slate-200/80 hover:text-slate-950 motion-reduce:transition-none",
-                isActive &&
-                  "bg-white text-slate-950 shadow-sm ring-1 ring-slate-200/80",
-              )}
-              type="button"
-              role="option"
-              aria-selected={isActive}
-              onClick={() => onAccept(suggestion)}
-            >
+          const className = clsx(
+            "flex min-h-14 w-full items-center gap-3 rounded-xl px-3 text-left text-slate-700 outline-none transition-colors hover:bg-slate-200/80 hover:text-slate-950 motion-reduce:transition-none",
+            isActive &&
+              "bg-white text-slate-950 shadow-sm ring-1 ring-slate-200/80",
+          );
+          const content = (
+            <>
               <SiteIcon
                 title={title}
                 url={url}
@@ -121,6 +113,51 @@ export function SearchSuggestion({
                   </span>
                 </>
               )}
+            </>
+          );
+
+          if (!isEngine) {
+            return (
+              <a
+                ref={
+                  isActive
+                    ? (element) => {
+                        activeItemRef.current = element;
+                      }
+                    : undefined
+                }
+                key={suggestionKey}
+                id={getSearchSuggestionId(suggestion)}
+                className={className}
+                href={suggestion.shortcut.url}
+                target="_parent"
+                rel="noreferrer"
+                role="option"
+                aria-selected={isActive}
+              >
+                {content}
+              </a>
+            );
+          }
+
+          return (
+            <button
+              ref={
+                isActive
+                  ? (element) => {
+                      activeItemRef.current = element;
+                    }
+                  : undefined
+              }
+              key={suggestionKey}
+              id={getSearchSuggestionId(suggestion)}
+              className={className}
+              type="button"
+              role="option"
+              aria-selected={isActive}
+              onClick={() => onAccept(suggestion)}
+            >
+              {content}
             </button>
           );
         })}
