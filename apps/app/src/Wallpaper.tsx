@@ -26,17 +26,15 @@ export function Wallpaper({
   wallpaperUrl: string | null;
   overlayOpacity: number;
 }) {
+  const wallpaperUrl = selectedWallpaperUrl ?? DEFAULT_WALLPAPER_URL;
+  // 首次渲染必须直接展示当前壁纸；pending/onLoad 只用于后续切换时的淡入效果。
   const [activeWallpaperUrl, setActiveWallpaperUrl] = useState<string | null>(
-    null,
+    wallpaperUrl,
   );
   const [pendingWallpaperUrl, setPendingWallpaperUrl] = useState<string | null>(
     null,
   );
-  const [isPendingWallpaperVisible, setIsPendingWallpaperVisible] =
-    useState(false);
   const wallpaperRequestIdRef = useRef(0);
-
-  const wallpaperUrl = selectedWallpaperUrl ?? DEFAULT_WALLPAPER_URL;
 
   useEffect(() => {
     const requestId = wallpaperRequestIdRef.current + 1;
@@ -44,11 +42,10 @@ export function Wallpaper({
 
     if (activeWallpaperUrl === wallpaperUrl) {
       setPendingWallpaperUrl(null);
-      setIsPendingWallpaperVisible(false);
       return;
     }
 
-    setIsPendingWallpaperVisible(false);
+    setPendingWallpaperUrl(null);
 
     const image = new Image();
     image.decoding = "async";
@@ -58,11 +55,6 @@ export function Wallpaper({
       }
 
       setPendingWallpaperUrl(wallpaperUrl);
-      window.requestAnimationFrame(() => {
-        if (wallpaperRequestIdRef.current === requestId) {
-          setIsPendingWallpaperVisible(true);
-        }
-      });
     };
     image.src = wallpaperUrl;
 
@@ -73,14 +65,13 @@ export function Wallpaper({
   }, [activeWallpaperUrl, wallpaperUrl]);
 
   const completeWallpaperFade = useCallback(() => {
-    if (!pendingWallpaperUrl || !isPendingWallpaperVisible) {
+    if (!pendingWallpaperUrl || pendingWallpaperUrl !== wallpaperUrl) {
       return;
     }
 
     setActiveWallpaperUrl(pendingWallpaperUrl);
     setPendingWallpaperUrl(null);
-    setIsPendingWallpaperVisible(false);
-  }, [isPendingWallpaperVisible, pendingWallpaperUrl]);
+  }, [pendingWallpaperUrl, wallpaperUrl]);
 
   return (
     <div className="pointer-events-none fixed inset-0 overflow-hidden">
@@ -93,13 +84,13 @@ export function Wallpaper({
 
       {pendingWallpaperUrl ? (
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-0 transition-opacity ease-out"
+          key={pendingWallpaperUrl}
+          className="wallpaper-fade-in absolute inset-0 bg-cover bg-center"
           style={{
             ...getWallpaperLayerStyle(pendingWallpaperUrl),
-            opacity: isPendingWallpaperVisible ? 1 : 0,
-            transitionDuration: `${WALLPAPER_FADE_DURATION_MS}ms`,
+            animationDuration: `${WALLPAPER_FADE_DURATION_MS}ms`,
           }}
-          onTransitionEnd={completeWallpaperFade}
+          onAnimationEnd={completeWallpaperFade}
         />
       ) : null}
 
