@@ -42,21 +42,30 @@ function findShortcuts(categories: ShortcutCategory[], input: string) {
     .replace(/^www\./, "");
   const seenShortcutIds = new Set<string>();
 
-  return categories.flatMap((category) =>
-    category.shortcuts.flatMap((node) => {
-      const shortcuts = node.type === "folder" ? node.children : [node];
+  return categories
+    .flatMap((category) =>
+      category.shortcuts.flatMap((node) => {
+        const shortcuts = node.type === "folder" ? node.children : [node];
 
-      return shortcuts.filter((shortcut) => {
-        if (seenShortcutIds.has(shortcut.id)) return false;
+        return shortcuts.flatMap((shortcut) => {
+          if (seenShortcutIds.has(shortcut.id)) return [];
 
-        const matches =
-          shortcut.title.trim().toLowerCase().includes(value) ||
-          getShortcutUrlMatchValue(shortcut.url).startsWith(urlPrefix);
-        if (matches) seenShortcutIds.add(shortcut.id);
-        return matches;
-      });
-    }),
-  );
+          const titleMatchIndex = shortcut.title
+            .trim()
+            .toLowerCase()
+            .indexOf(value);
+          const matchesUrl = getShortcutUrlMatchValue(shortcut.url).startsWith(
+            urlPrefix,
+          );
+          if (titleMatchIndex < 0 && !matchesUrl) return [];
+
+          seenShortcutIds.add(shortcut.id);
+          return [{ shortcut, matchIndex: Math.max(titleMatchIndex, 0) }];
+        });
+      }),
+    )
+    .sort((left, right) => left.matchIndex - right.matchIndex)
+    .map(({ shortcut }) => shortcut);
 }
 
 export function findSearchSuggestions({

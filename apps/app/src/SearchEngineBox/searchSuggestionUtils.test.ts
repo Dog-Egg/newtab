@@ -21,6 +21,13 @@ const categories: ShortcutCategory[] = [
         url: "https://portal.example.com/dashboard",
         createdAt: 2,
       },
+      {
+        type: "item",
+        id: "design-system",
+        title: "Design System",
+        url: "https://ui.example.com",
+        createdAt: 3,
+      },
     ],
   },
 ];
@@ -42,7 +49,7 @@ function findShortcuts(input: string) {
 
 describe("findSearchSuggestions shortcut matching", () => {
   it("matches text contained anywhere in a shortcut title", () => {
-    expect(findShortcuts("design").map((shortcut) => shortcut.id)).toEqual([
+    expect(findShortcuts("documents").map((shortcut) => shortcut.id)).toEqual([
       "design-docs",
     ]);
   });
@@ -51,6 +58,13 @@ describe("findSearchSuggestions shortcut matching", () => {
     expect(
       findShortcuts("  DOCUMENTS  ").map((shortcut) => shortcut.id),
     ).toEqual(["design-docs"]);
+  });
+
+  it("prioritizes title matches that occur earlier", () => {
+    expect(findShortcuts("design").map((shortcut) => shortcut.id)).toEqual([
+      "design-system",
+      "design-docs",
+    ]);
   });
 
   it("continues to use prefix matching for shortcut URLs", () => {
