@@ -7,6 +7,7 @@ import { SiteIcon } from "../components/SiteIcon";
 import {
   getSearchEngineDomain,
   getSearchEngineIconSource,
+  type TextMatch,
 } from "./searchEngineUtils";
 import {
   getSearchSuggestionKey,
@@ -25,6 +26,53 @@ function getShortcutDomain(url: string) {
   } catch {
     return url;
   }
+}
+
+export function getHighlightedTextParts(text: string, matches: TextMatch[]) {
+  const sortedMatches = [...matches]
+    .filter((match) => match.length > 0 && match.start < text.length)
+    .sort((left, right) => left.start - right.start);
+  const parts: { text: string; isMatch: boolean }[] = [];
+  let startIndex = 0;
+
+  for (const match of sortedMatches) {
+    const matchStart = Math.max(match.start, startIndex);
+    const matchEnd = Math.min(match.start + match.length, text.length);
+    if (matchEnd <= matchStart) continue;
+
+    if (matchStart > startIndex) {
+      parts.push({ text: text.slice(startIndex, matchStart), isMatch: false });
+    }
+    parts.push({
+      text: text.slice(matchStart, matchEnd),
+      isMatch: true,
+    });
+    startIndex = matchEnd;
+  }
+
+  if (startIndex < text.length) {
+    parts.push({ text: text.slice(startIndex), isMatch: false });
+  }
+
+  return parts.length > 0 ? parts : [{ text, isMatch: false }];
+}
+
+function HighlightedText({
+  text,
+  matches,
+}: {
+  text: string;
+  matches: TextMatch[];
+}) {
+  return getHighlightedTextParts(text, matches).map((part, index) =>
+    part.isMatch ? (
+      <strong key={index} className="font-bold">
+        {part.text}
+      </strong>
+    ) : (
+      part.text
+    ),
+  );
 }
 
 export function SearchSuggestion({
@@ -70,6 +118,12 @@ export function SearchSuggestion({
           const url = isEngine
             ? getSearchEngineIconSource(suggestion.engine.urlFormat)
             : suggestion.shortcut.url;
+          const domain = isEngine
+            ? getSearchEngineDomain(suggestion.engine)
+            : getShortcutDomain(suggestion.shortcut.url);
+          const engineActionText = isEngine
+            ? t("search.useEngine", { name: suggestion.engine.name })
+            : "";
 
           const className = clsx(
             "flex min-h-14 w-full items-center gap-3 rounded-xl px-3 text-left text-slate-700 outline-none transition-colors hover:bg-slate-200/80 hover:text-slate-950 motion-reduce:transition-none",
@@ -88,8 +142,13 @@ export function SearchSuggestion({
 
               {isEngine ? (
                 <>
-                  <span className="min-w-0 flex-1 truncate text-sm font-semibold">
-                    {getSearchEngineDomain(suggestion.engine)}
+                  <span className="min-w-0 flex-1 truncate text-sm">
+                    {domain ? (
+                      <HighlightedText
+                        text={domain}
+                        matches={suggestion.matches.domain}
+                      />
+                    ) : null}
                   </span>
                   <span
                     className={clsx(
@@ -100,16 +159,22 @@ export function SearchSuggestion({
                     )}
                   >
                     <Search aria-hidden="true" className="size-4" />
-                    {t("search.useEngine", { name: suggestion.engine.name })}
+                    {engineActionText}
                   </span>
                 </>
               ) : (
                 <>
-                  <span className="min-w-0 flex-1 truncate text-sm font-semibold">
-                    {suggestion.shortcut.title}
+                  <span className="min-w-0 flex-1 truncate text-sm">
+                    <HighlightedText
+                      text={suggestion.shortcut.title}
+                      matches={suggestion.matches.title}
+                    />
                   </span>
                   <span className="max-w-[45%] shrink-0 truncate text-sm text-slate-500">
-                    {getShortcutDomain(suggestion.shortcut.url)}
+                    <HighlightedText
+                      text={domain ?? ""}
+                      matches={suggestion.matches.domain}
+                    />
                   </span>
                 </>
               )}

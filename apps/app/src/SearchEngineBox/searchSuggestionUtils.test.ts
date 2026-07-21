@@ -61,6 +61,21 @@ function findShortcuts(input: string) {
   });
 }
 
+function findShortcutSuggestions(input: string) {
+  return findSearchSuggestions({
+    engines: [],
+    categories,
+    input,
+    selectedEngineId: "",
+    temporaryEngineId: null,
+  }).map((suggestion) => {
+    if (suggestion.type !== "shortcut") {
+      throw new Error("Expected a shortcut suggestion");
+    }
+    return suggestion;
+  });
+}
+
 describe("findSearchSuggestions shortcut matching", () => {
   it("matches text contained anywhere in a shortcut title", () => {
     expect(findShortcuts("documents").map((shortcut) => shortcut.id)).toEqual([
@@ -94,5 +109,36 @@ describe("findSearchSuggestions shortcut matching", () => {
 
   it("does not match a URL by its top-level domain", () => {
     expect(findShortcuts("com")).toEqual([]);
+  });
+
+  it("returns the exact title match range used by the renderer", () => {
+    expect(findShortcutSuggestions("documents")[0].matches).toEqual({
+      title: [{ start: 15, length: 9 }],
+      domain: [],
+    });
+  });
+
+  it("returns domain ranges for matches in different hostname segments", () => {
+    expect(
+      findShortcutSuggestions("cloud").map((suggestion) => ({
+        id: suggestion.shortcut.id,
+        matches: suggestion.matches,
+      })),
+    ).toEqual([
+      {
+        id: "cloudflare-access",
+        matches: {
+          title: [],
+          domain: [{ start: 7, length: 5 }],
+        },
+      },
+      {
+        id: "cloudflare",
+        matches: {
+          title: [],
+          domain: [{ start: 0, length: 5 }],
+        },
+      },
+    ]);
   });
 });

@@ -6,6 +6,16 @@ export type SearchEngine = {
   urlFormat: string;
 };
 
+export type TextMatch = {
+  start: number;
+  length: number;
+};
+
+export type SearchEngineMatches = {
+  name: TextMatch[];
+  domain: TextMatch[];
+};
+
 export type CustomEngineDraft = {
   name: string;
   urlFormat: string;
@@ -104,21 +114,32 @@ function getDomainFromInput(input: string) {
 }
 
 export function findSearchEngines(engines: SearchEngine[], input: string) {
+  return engines.filter((engine) => getSearchEngineMatches(engine, input));
+}
+
+export function getSearchEngineMatches(
+  engine: SearchEngine,
+  input: string,
+): SearchEngineMatches | null {
   const value = input.trim().toLowerCase();
-  if (!value || /\s/.test(value)) return [];
+  if (!value || /\s/.test(value)) return null;
 
   const domainPrefix = value
     .replace(/^[a-z][a-z\d+.-]*:\/\//, "")
     .replace(/^www\./, "")
     .replace(/\/$/, "");
 
-  return engines.filter((engine) => {
-    const domain = getSearchEngineDomain(engine);
-    return (
-      engine.name.toLowerCase().startsWith(value) ||
-      Boolean(domain?.startsWith(domainPrefix))
-    );
-  });
+  const domain = getSearchEngineDomain(engine);
+  const matches: SearchEngineMatches = {
+    name: engine.name.toLowerCase().startsWith(value)
+      ? [{ start: 0, length: value.length }]
+      : [],
+    domain: domain?.startsWith(domainPrefix)
+      ? [{ start: 0, length: domainPrefix.length }]
+      : [],
+  };
+
+  return matches.name.length > 0 || matches.domain.length > 0 ? matches : null;
 }
 
 export function findSearchEngineByDomain(
