@@ -98,7 +98,7 @@ export function SearchSuggestion({
     <Popover.Portal>
       <Popover.Content
         id={SEARCH_SUGGESTIONS_ID}
-        className="glass-panel z-20 max-h-[min(28rem,var(--radix-popover-content-available-height))] w-[var(--radix-popover-trigger-width)] overflow-y-auto rounded-b-glass rounded-t-none border-t-0 border-white/95 bg-slate-100 p-1.5 pt-2 shadow-[0_22px_58px_rgba(15,23,42,0.32)]"
+        className="glass-panel z-20 max-h-[min(50rem,var(--radix-popover-content-available-height))] w-[var(--radix-popover-trigger-width)] overflow-y-auto rounded-b-glass rounded-t-none border-t-0 border-white/95 bg-slate-100 p-1.5 pt-2 shadow-[0_22px_58px_rgba(15,23,42,0.32)]"
         side="bottom"
         align="start"
         sideOffset={-1}
