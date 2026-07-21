@@ -31,7 +31,7 @@ export default defineConfig(({ mode, command }) => {
   return {
     base: "./",
     define: {
-      __APP_VERSION__: JSON.stringify(appVersion.version),
+      __APP_VERSION__: JSON.stringify(appVersion),
     },
     publicDir: isExtension ? "public" : false,
     plugins: [

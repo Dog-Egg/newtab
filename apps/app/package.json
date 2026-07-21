@@ -1,7 +1,6 @@
 {
   "name": "@project/app",
   "version": "0.1.0",
-  "development": true,
   "private": true,
   "type": "module",
   "scripts": {

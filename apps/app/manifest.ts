@@ -8,8 +8,7 @@ export const manifest = {
   default_locale: "en",
   name: "__MSG_extensionName__",
   short_name: productName,
-  version: appVersion.manifestVersion,
-  version_name: appVersion.version,
+  version: appVersion,
   description: "__MSG_extensionDescription__",
   icons: {
     "16": "icons/logo-16.png",
