@@ -15,76 +15,7 @@ import {
   type Settings,
 } from "./settings";
 import { useSettings } from "./SettingsProvider";
-
-function getRangePosition(value: number, min: number, max: number) {
-  return `${((value - min) / (max - min)) * 100}%`;
-}
-
-function adjustRangeValue(
-  value: number,
-  direction: -1 | 1,
-  step: number,
-  min: number,
-  max: number,
-) {
-  const adjustedValue =
-    Math.round((value + direction * step * 10) / step) * step;
-  return Math.min(max, Math.max(min, Number(adjustedValue.toFixed(12))));
-}
-
-function RangeLabels({
-  minLabel,
-  maxLabel,
-  defaultValue,
-  min,
-  max,
-  onDecrease,
-  onIncrease,
-  onReset,
-}: {
-  minLabel: string;
-  maxLabel: string;
-  defaultValue: number;
-  min: number;
-  max: number;
-  onDecrease: () => void;
-  onIncrease: () => void;
-  onReset: () => void;
-}) {
-  const { t } = useTranslation();
-  const labelButtonClass =
-    "absolute rounded px-1 outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none";
-
-  return (
-    <div className="relative mt-0.5 h-5 text-xs font-medium text-white/[0.85]">
-      <button
-        className={`${labelButtonClass} left-0`}
-        type="button"
-        onClick={onDecrease}
-        aria-label={t("settings.decrease", { label: minLabel })}
-      >
-        {minLabel}
-      </button>
-      <button
-        className={`${labelButtonClass} -translate-x-1/2`}
-        style={{ left: getRangePosition(defaultValue, min, max) }}
-        type="button"
-        onClick={onReset}
-        aria-label={t("settings.resetDefault", { value: defaultValue })}
-      >
-        {t("common.default")}
-      </button>
-      <button
-        className={`${labelButtonClass} right-0`}
-        type="button"
-        onClick={onIncrease}
-        aria-label={t("settings.increase", { label: maxLabel })}
-      >
-        {maxLabel}
-      </button>
-    </div>
-  );
-}
+import { SettingsRange } from "./SettingsRange";
 
 function preloadImage(url: string) {
   return new Promise<void>((resolve, reject) => {
@@ -130,9 +61,11 @@ function BrowserBookmarksImportSettings() {
 
 function LauncherSizeSettings({
   settings,
+  onPreview,
   onChange,
 }: {
   settings: Settings;
+  onPreview: (settings: Partial<Settings>) => void;
   onChange: (settings: Partial<Settings>) => void;
 }) {
   const { t } = useTranslation();
@@ -146,53 +79,19 @@ function LauncherSizeSettings({
           {t("settings.shortcutSize")}
         </label>
       </div>
-      <div>
-        <input
-          id="launcher-node-size"
-          className="settings-range"
-          type="range"
-          min={MIN_LAUNCHER_NODE_SCALE}
-          max={MAX_LAUNCHER_NODE_SCALE}
-          step={LAUNCHER_NODE_SCALE_STEP}
-          value={settings.nodeScale}
-          aria-label={t("settings.shortcutSize")}
-          onChange={(event) =>
-            onChange({
-              nodeScale: Number(event.currentTarget.value),
-            })
-          }
-        />
-        <RangeLabels
-          minLabel={t("settings.small")}
-          maxLabel={t("settings.large")}
-          defaultValue={DEFAULT_LAUNCHER_NODE_SCALE}
-          min={MIN_LAUNCHER_NODE_SCALE}
-          max={MAX_LAUNCHER_NODE_SCALE}
-          onDecrease={() =>
-            onChange({
-              nodeScale: adjustRangeValue(
-                settings.nodeScale,
-                -1,
-                LAUNCHER_NODE_SCALE_STEP,
-                MIN_LAUNCHER_NODE_SCALE,
-                MAX_LAUNCHER_NODE_SCALE,
-              ),
-            })
-          }
-          onIncrease={() =>
-            onChange({
-              nodeScale: adjustRangeValue(
-                settings.nodeScale,
-                1,
-                LAUNCHER_NODE_SCALE_STEP,
-                MIN_LAUNCHER_NODE_SCALE,
-                MAX_LAUNCHER_NODE_SCALE,
-              ),
-            })
-          }
-          onReset={() => onChange({ nodeScale: DEFAULT_LAUNCHER_NODE_SCALE })}
-        />
-      </div>
+      <SettingsRange
+        id="launcher-node-size"
+        min={MIN_LAUNCHER_NODE_SCALE}
+        max={MAX_LAUNCHER_NODE_SCALE}
+        step={LAUNCHER_NODE_SCALE_STEP}
+        value={settings.nodeScale}
+        ariaLabel={t("settings.shortcutSize")}
+        minLabel={t("settings.small")}
+        maxLabel={t("settings.large")}
+        defaultValue={DEFAULT_LAUNCHER_NODE_SCALE}
+        onPreview={(nodeScale) => onPreview({ nodeScale })}
+        onCommit={(nodeScale) => onChange({ nodeScale })}
+      />
     </section>
   );
 }
@@ -202,12 +101,14 @@ function WallpaperSettingsSection({
   settings,
   onSelectWallpaper,
   onClearWallpaper,
+  onPreviewSettings,
   onChangeSettings,
 }: {
   selectedWallpaperUrl: string | null;
   settings: Settings;
   onSelectWallpaper: (wallpaperUrl: string) => void;
   onClearWallpaper: () => void;
+  onPreviewSettings: (settings: Partial<Settings>) => void;
   onChangeSettings: (settings: Partial<Settings>) => void;
 }) {
   const { t } = useTranslation();
@@ -312,57 +213,25 @@ function WallpaperSettingsSection({
           >
             {t("settings.wallpaperOverlay")}
           </label>
-          <div>
-            <input
-              id="wallpaper-overlay"
-              className="settings-range"
-              type="range"
-              min={MIN_WALLPAPER_OVERLAY_OPACITY}
-              max={MAX_WALLPAPER_OVERLAY_OPACITY}
-              step={WALLPAPER_OVERLAY_OPACITY_STEP}
-              value={settings.wallpaperOverlayOpacity}
-              aria-label={t("settings.overlayIntensity")}
-              onChange={(event) =>
-                onChangeSettings({
-                  wallpaperOverlayOpacity: Number(event.currentTarget.value),
-                })
-              }
-            />
-            <RangeLabels
-              minLabel={t("settings.light")}
-              maxLabel={t("settings.dark")}
-              defaultValue={DEFAULT_WALLPAPER_OVERLAY_OPACITY}
-              min={MIN_WALLPAPER_OVERLAY_OPACITY}
-              max={MAX_WALLPAPER_OVERLAY_OPACITY}
-              onDecrease={() =>
-                onChangeSettings({
-                  wallpaperOverlayOpacity: adjustRangeValue(
-                    settings.wallpaperOverlayOpacity,
-                    -1,
-                    WALLPAPER_OVERLAY_OPACITY_STEP,
-                    MIN_WALLPAPER_OVERLAY_OPACITY,
-                    MAX_WALLPAPER_OVERLAY_OPACITY,
-                  ),
-                })
-              }
-              onIncrease={() =>
-                onChangeSettings({
-                  wallpaperOverlayOpacity: adjustRangeValue(
-                    settings.wallpaperOverlayOpacity,
-                    1,
-                    WALLPAPER_OVERLAY_OPACITY_STEP,
-                    MIN_WALLPAPER_OVERLAY_OPACITY,
-                    MAX_WALLPAPER_OVERLAY_OPACITY,
-                  ),
-                })
-              }
-              onReset={() =>
-                onChangeSettings({
-                  wallpaperOverlayOpacity: DEFAULT_WALLPAPER_OVERLAY_OPACITY,
-                })
-              }
-            />
-          </div>
+          <SettingsRange
+            id="wallpaper-overlay"
+            min={MIN_WALLPAPER_OVERLAY_OPACITY}
+            max={MAX_WALLPAPER_OVERLAY_OPACITY}
+            step={WALLPAPER_OVERLAY_OPACITY_STEP}
+            value={settings.wallpaperOverlayOpacity}
+            ariaLabel={t("settings.overlayIntensity")}
+            minLabel={t("settings.light")}
+            maxLabel={t("settings.dark")}
+            defaultValue={DEFAULT_WALLPAPER_OVERLAY_OPACITY}
+            onPreview={(wallpaperOverlayOpacity) =>
+              onPreviewSettings({ wallpaperOverlayOpacity })
+            }
+            onCommit={(wallpaperOverlayOpacity) =>
+              onChangeSettings({
+                wallpaperOverlayOpacity,
+              })
+            }
+          />
         </div>
       </div>
     </section>
@@ -371,7 +240,7 @@ function WallpaperSettingsSection({
 
 export function SettingsContent() {
   const { t } = useTranslation();
-  const { settings, updateSettings } = useSettings();
+  const { settings, previewSettings, updateSettings } = useSettings();
 
   return (
     <>
@@ -407,12 +276,17 @@ export function SettingsContent() {
         </div>
       </section>
       <BrowserBookmarksImportSettings />
-      <LauncherSizeSettings settings={settings} onChange={updateSettings} />
+      <LauncherSizeSettings
+        settings={settings}
+        onPreview={previewSettings}
+        onChange={updateSettings}
+      />
       <WallpaperSettingsSection
         selectedWallpaperUrl={settings.wallpaperUrl}
         settings={settings}
         onSelectWallpaper={(wallpaperUrl) => updateSettings({ wallpaperUrl })}
         onClearWallpaper={() => updateSettings({ wallpaperUrl: null })}
+        onPreviewSettings={previewSettings}
         onChangeSettings={updateSettings}
       />
     </>

@@ -13,6 +13,7 @@ import i18n from "../i18n";
 
 type SettingsContextValue = {
   settings: Settings;
+  previewSettings: (update: SettingsUpdate) => void;
   updateSettings: (update: SettingsUpdate) => void;
 };
 
@@ -36,16 +37,7 @@ export function SettingsProvider({
   const [settings, setSettings] = useState(initialSettings);
   const settingsRef = useRef(settings);
 
-  useEffect(() => {
-    const unsubscribe = platform.settings.subscribe((storedSettings) => {
-      settingsRef.current = storedSettings;
-      applyLocale(storedSettings.locale);
-      setSettings(storedSettings);
-    });
-    return unsubscribe;
-  }, []);
-
-  const updateSettings = useCallback((update: SettingsUpdate) => {
+  const applySettingsUpdate = useCallback((update: SettingsUpdate) => {
     const currentSettings = settingsRef.current;
     const patch =
       typeof update === "function" ? update(currentSettings) : update;
@@ -56,13 +48,34 @@ export function SettingsProvider({
     settingsRef.current = normalizedSettings;
     applyLocale(normalizedSettings.locale);
     setSettings(normalizedSettings);
-    void platform.settings.save(normalizedSettings).catch((error: unknown) => {
-      console.error("Failed to save settings", error);
-    });
+    return normalizedSettings;
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = platform.settings.subscribe((storedSettings) => {
+      settingsRef.current = storedSettings;
+      applyLocale(storedSettings.locale);
+      setSettings(storedSettings);
+    });
+    return unsubscribe;
+  }, []);
+
+  const updateSettings = useCallback(
+    (update: SettingsUpdate) => {
+      const normalizedSettings = applySettingsUpdate(update);
+      void platform.settings
+        .save(normalizedSettings)
+        .catch((error: unknown) => {
+          console.error("Failed to save settings", error);
+        });
+    },
+    [applySettingsUpdate],
+  );
+
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings }}>
+    <SettingsContext.Provider
+      value={{ settings, previewSettings: applySettingsUpdate, updateSettings }}
+    >
       {children}
     </SettingsContext.Provider>
   );
