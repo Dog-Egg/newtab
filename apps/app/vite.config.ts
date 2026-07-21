@@ -2,6 +2,7 @@ import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { fileURLToPath, URL } from "node:url";
 import { manifest } from "./manifest";
+import { appVersion } from "./build/version";
 
 function extensionManifestPlugin(): Plugin {
   return {
@@ -29,6 +30,9 @@ export default defineConfig(({ mode, command }) => {
 
   return {
     base: "./",
+    define: {
+      __APP_VERSION__: JSON.stringify(appVersion.version),
+    },
     publicDir: isExtension ? "public" : false,
     plugins: [
       react(),

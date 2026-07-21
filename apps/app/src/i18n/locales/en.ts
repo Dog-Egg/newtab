@@ -56,6 +56,7 @@ export const en = {
     invalidImageUrl: "Enter a valid http or https image URL",
     imageLoadFailed:
       "The image failed to load. Check that the URL is accessible.",
+    version: "Version {{version}}",
   },
   launcher: {
     defaultCategories: {

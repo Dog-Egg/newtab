@@ -1,4 +1,5 @@
 import projectConfig from "../../project.config.json";
+import { appVersion } from "./build/version";
 
 const productName = projectConfig.product.name;
 
@@ -7,7 +8,8 @@ export const manifest = {
   default_locale: "en",
   name: "__MSG_extensionName__",
   short_name: productName,
-  version: "0.1.0",
+  version: appVersion.manifestVersion,
+  version_name: appVersion.version,
   description: "__MSG_extensionDescription__",
   icons: {
     "16": "icons/logo-16.png",

@@ -106,6 +106,7 @@ export function App() {
         titleId="settings-drawer-title"
         closeLabel={t("settings.close")}
         onClose={closeSettings}
+        footer={t("settings.version", { version: __APP_VERSION__ })}
       >
         {hasOpenedSettings ? (
           <Suspense fallback={<SettingsContentSkeleton />}>
