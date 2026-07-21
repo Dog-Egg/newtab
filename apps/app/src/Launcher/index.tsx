@@ -68,6 +68,13 @@ export function Launcher() {
 
   const loadedCategories = categories;
 
+  function persistCategories(nextCategories: ShortcutCategory[]) {
+    // Keep subscription validation in sync immediately. Storage callbacks can
+    // arrive before the categories effect runs after adding or deleting a tab.
+    categoriesRef.current = nextCategories;
+    saveCategories(nextCategories);
+  }
+
   function selectCategory(categoryId: string) {
     if (categoryId === activeCategoryId) return;
     setActiveCategoryId(categoryId);
@@ -78,7 +85,7 @@ export function Launcher() {
     categoryId: string,
     shortcuts: ShortcutNode[],
   ) {
-    saveCategories(
+    persistCategories(
       loadedCategories.map((category) =>
         category.id === categoryId ? { ...category, shortcuts } : category,
       ),
@@ -91,7 +98,7 @@ export function Launcher() {
     shortcut: ShortcutNode,
     targetCategoryId: string,
   ) {
-    saveCategories(
+    persistCategories(
       loadedCategories.map((category) => {
         if (category.id === sourceCategoryId) {
           return { ...category, shortcuts: sourceShortcuts };
@@ -121,7 +128,7 @@ export function Launcher() {
             }
           : category,
       );
-    saveCategories(nextCategories);
+    persistCategories(nextCategories);
     if (activeCategoryId === categoryId) {
       selectCategory(DEFAULT_CATEGORY_ID);
     }
@@ -132,6 +139,11 @@ export function Launcher() {
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-[15rem] flex-1 overflow-hidden [-webkit-mask-image:linear-gradient(to_bottom,transparent_0,black_2rem,black_calc(100%_-_3rem),transparent_100%)] [mask-image:linear-gradient(to_bottom,transparent_0,black_2rem,black_calc(100%_-_3rem),transparent_100%)]">
         <Slider
+          // Embla keeps its selected index while its slide list changes. Remount
+          // for structural changes so a newly active category opens its own page.
+          key={JSON.stringify(
+            loadedCategories.map((category) => category.id),
+          )}
           items={loadedCategories}
           activeId={activeCategoryId}
           onSelect={selectCategory}
@@ -162,11 +174,11 @@ export function Launcher() {
           activeCategoryId={activeCategoryId}
           onSelect={selectCategory}
           onAdd={(category) => {
-            saveCategories([...loadedCategories, category]);
+            persistCategories([...loadedCategories, category]);
             selectCategory(category.id);
           }}
           onRename={(categoryId, name) =>
-            saveCategories(
+            persistCategories(
               loadedCategories.map((category) =>
                 category.id === categoryId ? { ...category, name } : category,
               ),
@@ -184,7 +196,7 @@ export function Launcher() {
               deleteCategory(categoryId, false);
             }
           }}
-          onReorder={saveCategories}
+          onReorder={persistCategories}
         />
       </div>
 
