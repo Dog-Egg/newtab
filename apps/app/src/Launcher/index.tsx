@@ -16,23 +16,33 @@ import { useLauncher } from "./LauncherProvider";
 export function Launcher() {
   const { t } = useTranslation();
   const { categories, saveCategories } = useLauncher();
-  const [activeCategoryId, setActiveCategoryId] = useState(DEFAULT_CATEGORY_ID);
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [pendingDeleteCategory, setPendingDeleteCategory] =
     useState<ShortcutCategory | null>(null);
-  const categoriesRef = useRef<ShortcutCategory[]>([]);
+  const categoriesRef = useRef(categories);
 
   useEffect(() => {
     categoriesRef.current = categories;
     setActiveCategoryId((current) =>
-      normalizeActiveCategoryId(current, categories),
+      current === null ? null : normalizeActiveCategoryId(current, categories),
     );
   }, [categories]);
 
   useEffect(() => {
     let isCurrent = true;
+    let receivedSubscriptionUpdate = false;
+    const unsubscribeActiveCategory = platform.activeCategoryId.subscribe(
+      (categoryId) => {
+        receivedSubscriptionUpdate = true;
+        setActiveCategoryId(
+          normalizeActiveCategoryId(categoryId, categoriesRef.current),
+        );
+      },
+    );
+
     void platform.activeCategoryId.read().then(
       (storedActiveCategoryId) => {
-        if (!isCurrent) return;
+        if (!isCurrent || receivedSubscriptionUpdate) return;
         setActiveCategoryId(
           normalizeActiveCategoryId(
             storedActiveCategoryId,
@@ -40,20 +50,21 @@ export function Launcher() {
           ),
         );
       },
-      () => {},
+      () => {
+        if (!isCurrent || receivedSubscriptionUpdate) return;
+        setActiveCategoryId(DEFAULT_CATEGORY_ID);
+      },
     );
 
-    const unsubscribeActiveCategory = platform.activeCategoryId.subscribe(
-      (categoryId) =>
-        setActiveCategoryId(
-          normalizeActiveCategoryId(categoryId, categoriesRef.current),
-        ),
-    );
     return () => {
       isCurrent = false;
       unsubscribeActiveCategory();
     };
   }, []);
+
+  // Only the launcher waits for its persisted selection. The rest of App can
+  // render immediately, while this avoids flashing the default category first.
+  if (activeCategoryId === null) return null;
 
   const loadedCategories = categories;
 
