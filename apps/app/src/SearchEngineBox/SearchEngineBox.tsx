@@ -285,7 +285,8 @@ export function SearchEngineBox() {
 
     if (event.key === "Tab" && visibleSuggestions.length > 0) {
       event.preventDefault();
-      selectAdjacentSuggestion(1);
+      // Match focus navigation: Tab moves forward, while Shift+Tab moves backward.
+      selectAdjacentSuggestion(event.shiftKey ? -1 : 1);
       return;
     }
 
