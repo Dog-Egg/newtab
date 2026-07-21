@@ -13,23 +13,31 @@ export function getSearchSuggestionKey(suggestion: SearchSuggestion) {
     : `shortcut:${suggestion.shortcut.id}`;
 }
 
-function getShortcutUrlMatchValue(url: string) {
+function getShortcutUrlMatchValues(url: string) {
   try {
     const parsedUrl = new URL(url);
     const hostname = parsedUrl.hostname
       .toLowerCase()
       .replace(/^www\./, "")
       .replace(/\.$/, "");
-    return `${hostname}${parsedUrl.pathname}${parsedUrl.search}`
-      .toLowerCase()
-      .replace(/\/$/, "");
+    const hostnameParts = hostname.split(".");
+
+    return [
+      `${hostname}${parsedUrl.pathname}${parsedUrl.search}`
+        .toLowerCase()
+        .replace(/\/$/, ""),
+      ...hostnameParts.slice(0, -1),
+    ];
   } catch {
-    return url
+    const normalizedUrl = url
       .trim()
       .toLowerCase()
       .replace(/^[a-z][a-z\d+.-]*:\/\//, "")
       .replace(/^www\./, "")
       .replace(/\/$/, "");
+    const hostname = normalizedUrl.split(/[/?#]/, 1)[0];
+
+    return [normalizedUrl, ...hostname.split(".").slice(0, -1)];
   }
 }
 
@@ -54,8 +62,8 @@ function findShortcuts(categories: ShortcutCategory[], input: string) {
             .trim()
             .toLowerCase()
             .indexOf(value);
-          const matchesUrl = getShortcutUrlMatchValue(shortcut.url).startsWith(
-            urlPrefix,
+          const matchesUrl = getShortcutUrlMatchValues(shortcut.url).some(
+            (matchValue) => matchValue.startsWith(urlPrefix),
           );
           if (titleMatchIndex < 0 && !matchesUrl) return [];
 

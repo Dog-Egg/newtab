@@ -28,6 +28,20 @@ const categories: ShortcutCategory[] = [
         url: "https://ui.example.com",
         createdAt: 3,
       },
+      {
+        type: "item",
+        id: "cloudflare-access",
+        title: "Internal Gateway",
+        url: "https://myteam.cloudflareaccess.com/",
+        createdAt: 4,
+      },
+      {
+        type: "item",
+        id: "cloudflare",
+        title: "Public Website",
+        url: "https://cloudflare.com/",
+        createdAt: 5,
+      },
     ],
   },
 ];
@@ -67,10 +81,18 @@ describe("findSearchSuggestions shortcut matching", () => {
     ]);
   });
 
-  it("continues to use prefix matching for shortcut URLs", () => {
+  it("matches prefixes at the start of any non-TLD hostname segment", () => {
     expect(
       findShortcuts("portal.example").map((shortcut) => shortcut.id),
     ).toEqual(["dashboard"]);
+    expect(findShortcuts("cloud").map((shortcut) => shortcut.id)).toEqual([
+      "cloudflare-access",
+      "cloudflare",
+    ]);
     expect(findShortcuts("example.com/dashboard")).toEqual([]);
+  });
+
+  it("does not match a URL by its top-level domain", () => {
+    expect(findShortcuts("com")).toEqual([]);
   });
 });
