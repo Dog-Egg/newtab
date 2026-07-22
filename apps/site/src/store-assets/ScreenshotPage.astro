@@ -1,0 +1,141 @@
+---
+import "../styles/global.css";
+import IframeWindow from "../components/BrowserWindow/IframeWindow.astro";
+import projectConfig from "../../../../project.config.json";
+import logo from "../../../../assets/logo.svg";
+
+interface Props {
+  locale: "zh-CN" | "en";
+}
+
+const { locale } = Astro.props;
+const PRODUCT_NAME = projectConfig.product.name;
+const copy = {
+  "zh-CN": {
+    description: `${PRODUCT_NAME} 商店截图渲染页`,
+    canvasLabel: `${PRODUCT_NAME} 商店截图`,
+    previewTitle: `${PRODUCT_NAME} 产品预览`,
+    tabTitle: "新标签页",
+    scenes: {
+      "quick-access": {
+        label: "快速访问",
+        headline: "快速访问常用网站",
+      },
+      "search-suggestions": {
+        label: "快速查找",
+        headline: "输入关键词，快速查找网站",
+      },
+    },
+  },
+  en: {
+    description: `${PRODUCT_NAME} store screenshot`,
+    canvasLabel: `${PRODUCT_NAME} store screenshot`,
+    previewTitle: `${PRODUCT_NAME} product preview`,
+    tabTitle: "New Tab",
+    scenes: {
+      "quick-access": {
+        label: "Quick access",
+        headline: "Quick access to your favorite sites",
+      },
+      "search-suggestions": {
+        label: "Quick find",
+        headline: "Find websites as you type",
+      },
+    },
+  },
+} as const;
+const content = copy[locale];
+const defaultScene = content.scenes["quick-access"];
+const appUrl = `/app/index.html?lang=${locale}`;
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="description" content={content.description} />
+    <link rel="icon" type="image/svg+xml" href={logo.src} />
+    <title>{PRODUCT_NAME} Store Screenshot</title>
+  </head>
+  <body
+    data-screenshot-scenes={JSON.stringify(content.scenes)}
+    class="m-0 min-w-[1280px] bg-[#e7e4de] font-sans text-ink antialiased"
+  >
+    <main class="grid min-h-screen place-items-center overflow-auto">
+      <section
+        data-store-asset-canvas
+        aria-label={content.canvasLabel}
+        class="relative isolate h-[800px] w-[1280px] shrink-0 overflow-hidden bg-paper bg-[linear-gradient(rgba(30,30,30,.075)_1px,transparent_1px),linear-gradient(90deg,rgba(30,30,30,.075)_1px,transparent_1px)] bg-[size:56px_56px]"
+      >
+        <div
+          class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_22%,rgba(251,250,247,.18),rgba(251,250,247,.78)_65%)]"
+          aria-hidden="true"
+        >
+        </div>
+
+        <header class="absolute inset-x-[80px] top-[44px] z-10">
+          <div class="flex items-center justify-between">
+            <div
+              class="inline-flex items-center gap-3 font-bold tracking-[-.03em]"
+            >
+              <img
+                class="size-8 rotate-[8deg]"
+                src={logo.src}
+                alt=""
+                aria-hidden="true"
+              />
+              <span class="text-[17px]">{PRODUCT_NAME}</span>
+            </div>
+
+            <div
+              class="inline-flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[.12em] text-[#716d67]"
+            >
+              <span
+                class="size-1.5 rounded-full bg-brand shadow-[0_0_0_4px_#ffebe4]"
+              ></span>
+              <span data-screenshot-label>{defaultScene.label}</span>
+            </div>
+          </div>
+
+          <h1
+            data-screenshot-headline
+            class:list={[
+              "mb-0 mt-[18px] max-w-[1080px] text-[40px] font-medium leading-[1.12]",
+              locale === "zh-CN" ? "tracking-[-.015em]" : "tracking-[-.035em]",
+            ]}
+          >
+            {defaultScene.headline}
+          </h1>
+        </header>
+
+        <div class="absolute left-1/2 top-[180px] w-[1120px] -translate-x-1/2">
+          <IframeWindow
+            url={appUrl}
+            title={content.previewTitle}
+            tabTitle={content.tabTitle}
+            scale={0.8}
+          />
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const scenes = JSON.parse(
+        document.body.dataset.screenshotScenes ?? "{}",
+      ) as Record<string, { label: string; headline: string }> | undefined;
+      const requestedScene = new URL(window.location.href).searchParams.get(
+        "scene",
+      );
+      const scene = scenes?.[requestedScene ?? ""] ?? scenes?.["quick-access"];
+      const label = document.querySelector("[data-screenshot-label]");
+      const headline = document.querySelector("[data-screenshot-headline]");
+
+      if (scene && label && headline) {
+        label.textContent = scene.label;
+        headline.textContent = scene.headline;
+      }
+    </script>
+  </body>
+</html>

@@ -6,7 +6,9 @@
   "scripts": {
     "prepare:app": "VITE_DEFAULT_WALLPAPER_URL='https://images.unsplash.com/photo-1515268064940-5150b7c29f35?q=85&w=1470' pnpm --filter @project/app build:web && node scripts/sync-app.mjs",
     "dev": "pnpm prepare:app && astro dev",
+    "dev:store-assets": "pnpm prepare:app && STORE_ASSETS_BUILD=true astro dev",
     "build": "pnpm prepare:app && astro check && astro build",
+    "build:store-assets": "pnpm prepare:app && STORE_ASSETS_BUILD=true astro check && STORE_ASSETS_BUILD=true astro build",
     "typecheck": "astro check",
     "preview": "astro preview"
   },

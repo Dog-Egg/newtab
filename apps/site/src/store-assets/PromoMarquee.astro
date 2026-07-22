@@ -1,0 +1,183 @@
+---
+import "../styles/global.css";
+import IframeWindow from "../components/BrowserWindow/IframeWindow.astro";
+import projectConfig from "../../../../project.config.json";
+import logo from "../../../../assets/logo.svg";
+
+const PRODUCT_NAME = projectConfig.product.name;
+const copy = {
+  "zh-CN": {
+    description: `${PRODUCT_NAME} 顶部宣传图块`,
+    label: "你的新标签页",
+    headline: "让每个新标签页更高效",
+    supporting: "搜索、快捷访问和常用网站，都在一个页面。",
+    features: ["快速搜索", "常用网站", "自由定制"],
+    previewTitle: `${PRODUCT_NAME} 产品预览`,
+    tabTitle: "新标签页",
+  },
+  en: {
+    description: `${PRODUCT_NAME} marquee promotional tile`,
+    label: "Your new tab",
+    headline: "A better way to start every tab",
+    supporting: "Search and open your favorite sites from one place.",
+    features: ["Fast search", "Quick access", "Make it yours"],
+    previewTitle: `${PRODUCT_NAME} product preview`,
+    tabTitle: "New Tab",
+  },
+} as const;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="description" content={copy.en.description} />
+    <link rel="icon" type="image/svg+xml" href={logo.src} />
+    <title>{PRODUCT_NAME} Marquee Promotional Tile</title>
+  </head>
+  <body
+    data-promotion-copy={JSON.stringify(copy)}
+    class="m-0 min-w-[1400px] bg-[#e7e4de] font-sans text-ink antialiased"
+  >
+    <main class="grid min-h-screen place-items-center overflow-auto">
+      <section
+        data-store-asset-canvas
+        aria-label={copy.en.description}
+        class="relative isolate h-[560px] w-[1400px] shrink-0 overflow-hidden bg-paper bg-[linear-gradient(rgba(30,30,30,.085)_1px,transparent_1px),linear-gradient(90deg,rgba(30,30,30,.085)_1px,transparent_1px)] bg-[size:56px_56px]"
+      >
+        <div
+          aria-hidden="true"
+          class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_18%_34%,rgba(255,255,255,.94),rgba(251,250,247,.62)_42%,rgba(251,250,247,.82)_100%)]"
+        >
+        </div>
+        <img
+          aria-hidden="true"
+          class="pointer-events-none absolute bottom-[-178px] left-[-86px] -z-10 size-[360px] rotate-[-12deg] opacity-[.035]"
+          src={logo.src}
+          alt=""
+        />
+
+        <header class="absolute left-[72px] top-[46px] z-20 w-[438px]">
+          <div class="inline-flex items-center gap-3">
+            <img
+              class="size-9 rotate-[8deg]"
+              src={logo.src}
+              alt=""
+              aria-hidden="true"
+            />
+            <span class="text-[18px] font-bold tracking-[-.035em]"
+              >{PRODUCT_NAME}</span
+            >
+          </div>
+
+          <div
+            class="mt-[58px] inline-flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-[.14em] text-[#716d67]"
+          >
+            <span
+              class="size-1.5 rounded-full bg-brand shadow-[0_0_0_4px_#ffebe4]"
+            ></span>
+            <span data-promotion-label>{copy.en.label}</span>
+          </div>
+
+          <h1
+            data-promotion-headline
+            class="mb-0 mt-4 text-[52px] font-semibold leading-[1.02] tracking-[-.055em]"
+          >
+            {copy.en.headline}
+          </h1>
+          <p
+            data-promotion-supporting
+            class="mb-0 mt-5 max-w-[390px] text-[16px] font-medium leading-relaxed tracking-[-.012em] text-[#68645e]"
+          >
+            {copy.en.supporting}
+          </p>
+
+          <div class="mt-7 flex flex-wrap gap-2.5" data-promotion-features>
+            {
+              copy.en.features.map((feature) => (
+                <span class="inline-flex items-center gap-2 rounded-full border border-black/[.09] bg-white/70 px-3.5 py-2 text-[11px] font-semibold tracking-[-.01em] text-[#59554f] shadow-[0_5px_18px_rgba(35,28,20,.04)]">
+                  <span class="size-1.5 rounded-full bg-brand" />
+                  <span>{feature}</span>
+                </span>
+              ))
+            }
+          </div>
+        </header>
+
+        <div
+          class="absolute left-[520px] top-[42px] z-10 w-[1000px] rotate-[-1deg]"
+        >
+          <IframeWindow
+            url="/app/index.html?lang=en"
+            title={copy.en.previewTitle}
+            tabTitle={copy.en.tabTitle}
+            scale={0.76}
+          />
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const translations = JSON.parse(
+        document.body.dataset.promotionCopy ?? "{}",
+      ) as Record<
+        string,
+        {
+          description: string;
+          label: string;
+          headline: string;
+          supporting: string;
+          features: string[];
+          previewTitle: string;
+          tabTitle: string;
+        }
+      >;
+      const requestedLocale = new URL(window.location.href).searchParams.get(
+        "lang",
+      );
+      const locale = requestedLocale === "zh-CN" ? "zh-CN" : "en";
+      const content = translations[locale];
+      const canvas = document.querySelector("[data-store-asset-canvas]");
+      const description = document.querySelector('meta[name="description"]');
+      const label = document.querySelector("[data-promotion-label]");
+      const headline = document.querySelector("[data-promotion-headline]");
+      const supporting = document.querySelector("[data-promotion-supporting]");
+      const features = document.querySelector("[data-promotion-features]");
+      const iframe = document.querySelector("[data-store-asset-canvas] iframe");
+      const tabTitle = document
+        .querySelector("[data-store-asset-canvas] iframe")
+        ?.closest("[data-store-asset-canvas]")
+        ?.querySelector(".truncate");
+
+      document.documentElement.lang = locale;
+      if (content) {
+        if (canvas) canvas.setAttribute("aria-label", content.description);
+        if (description)
+          description.setAttribute("content", content.description);
+        if (label) label.textContent = content.label;
+        if (headline) {
+          headline.textContent = content.headline;
+          if (locale === "zh-CN") {
+            headline.classList.remove("tracking-[-.055em]");
+            headline.classList.add("tracking-[-.018em]");
+          }
+        }
+        if (supporting) supporting.textContent = content.supporting;
+        if (features) {
+          features
+            .querySelectorAll(":scope > span > span:last-child")
+            .forEach((feature, index) => {
+              feature.textContent = content.features[index] ?? "";
+            });
+        }
+        if (tabTitle) tabTitle.textContent = content.tabTitle;
+        if (iframe instanceof HTMLIFrameElement) {
+          iframe.title = content.previewTitle;
+          iframe.src = `/app/index.html?lang=${locale}`;
+        }
+      }
+    </script>
+  </body>
+</html>

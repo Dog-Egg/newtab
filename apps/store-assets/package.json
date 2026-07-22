@@ -1,0 +1,14 @@
+{
+  "name": "@project/store-assets",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @project/site dev:store-assets",
+    "generate": "node scripts/generate-store-assets.mjs",
+    "setup:browser": "playwright install chromium"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.1"
+  }
+}

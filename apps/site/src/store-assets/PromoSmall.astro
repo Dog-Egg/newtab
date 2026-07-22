@@ -1,0 +1,174 @@
+---
+import "../styles/global.css";
+import projectConfig from "../../../../project.config.json";
+import logo from "../../../../assets/logo.svg";
+
+const PRODUCT_NAME = projectConfig.product.name;
+const copy = {
+  "zh-CN": {
+    description: `${PRODUCT_NAME} 小型宣传图块`,
+    headline: "快速访问常用网站",
+    searchPlaceholder: "搜索或输入网址",
+  },
+  en: {
+    description: `${PRODUCT_NAME} small promotional tile`,
+    headline: "Your favorite sites, one tab away",
+    searchPlaceholder: "Search or enter a website",
+  },
+} as const;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="description" content={copy.en.description} />
+    <link rel="icon" type="image/svg+xml" href={logo.src} />
+    <title>{PRODUCT_NAME} Small Promotional Tile</title>
+  </head>
+  <body
+    data-promotion-copy={JSON.stringify(copy)}
+    class="m-0 min-w-[440px] bg-[#e7e4de] font-sans text-ink antialiased"
+  >
+    <main class="grid min-h-screen place-items-center overflow-auto">
+      <section
+        data-store-asset-canvas
+        aria-label={copy.en.description}
+        class="relative isolate h-[280px] w-[440px] shrink-0 overflow-hidden bg-paper bg-[linear-gradient(rgba(30,30,30,.065)_1px,transparent_1px),linear-gradient(90deg,rgba(30,30,30,.065)_1px,transparent_1px)] bg-[size:32px_32px]"
+      >
+        <div
+          aria-hidden="true"
+          class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_18%_8%,rgba(255,255,255,.95),rgba(251,250,247,.48)_48%,rgba(251,250,247,.86)_100%)]"
+        >
+        </div>
+        <div
+          aria-hidden="true"
+          class="absolute -right-16 top-8 -z-10 size-44 rounded-full bg-brand/10 blur-3xl"
+        >
+        </div>
+
+        <header class="absolute inset-x-7 top-6 z-10">
+          <div class="flex items-center justify-between">
+            <div class="inline-flex items-center gap-2.5">
+              <img
+                class="size-7 rotate-[8deg]"
+                src={logo.src}
+                alt=""
+                aria-hidden="true"
+              />
+              <span class="text-[15px] font-bold tracking-[-.035em]"
+                >{PRODUCT_NAME}</span
+              >
+            </div>
+            <span
+              class="inline-flex items-center gap-1.5 font-mono text-[9px] font-medium uppercase tracking-[.14em] text-[#716d67]"
+            >
+              <span class="size-1.5 rounded-full bg-brand"></span>
+              New tab
+            </span>
+          </div>
+
+          <h1
+            data-promotion-headline
+            class="mb-0 mt-5 max-w-[360px] text-[30px] font-semibold leading-[1.08] tracking-[-.035em]"
+          >
+            {copy.en.headline}
+          </h1>
+        </header>
+
+        <div
+          class="absolute inset-x-6 top-[158px] h-[142px] overflow-hidden rounded-[20px] border border-black/10 bg-white/90 px-5 pt-4 shadow-[0_22px_55px_rgba(47,38,28,.15)] backdrop-blur-sm"
+        >
+          <div
+            class="flex h-10 items-center rounded-xl border border-black/[.08] bg-[#f3f2ef] px-3 text-[#8a8680] shadow-inner"
+          >
+            <svg
+              class="mr-2.5 size-4 shrink-0 text-brand"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <circle
+                cx="11"
+                cy="11"
+                r="6.5"
+                stroke="currentColor"
+                stroke-width="2"></circle>
+              <path
+                d="m16 16 4 4"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-width="2"></path>
+            </svg>
+            <span data-promotion-search class="truncate text-[11px] font-medium"
+              >{copy.en.searchPlaceholder}</span
+            >
+          </div>
+
+          <div class="mt-3 flex items-center justify-between px-1">
+            <div
+              class="grid size-10 place-items-center rounded-xl bg-[#ff4f2f] text-[13px] font-bold text-white shadow-sm"
+            >
+              Y
+            </div>
+            <div
+              class="grid size-10 place-items-center rounded-xl bg-[#18181b] text-[15px] font-semibold text-white shadow-sm"
+            >
+              X
+            </div>
+            <div
+              class="grid size-10 place-items-center rounded-xl bg-[#5865f2] text-[13px] font-bold text-white shadow-sm"
+            >
+              D
+            </div>
+            <div
+              class="grid size-10 place-items-center rounded-xl bg-[#1ed760] text-[15px] font-bold text-white shadow-sm"
+            >
+              S
+            </div>
+            <div
+              class="grid size-10 place-items-center rounded-xl border border-dashed border-black/20 bg-white text-xl font-light text-[#77736d]"
+            >
+              +
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const translations = JSON.parse(
+        document.body.dataset.promotionCopy ?? "{}",
+      ) as Record<
+        string,
+        { description: string; headline: string; searchPlaceholder: string }
+      >;
+      const requestedLocale = new URL(window.location.href).searchParams.get(
+        "lang",
+      );
+      const locale = requestedLocale === "zh-CN" ? "zh-CN" : "en";
+      const content = translations[locale];
+      const canvas = document.querySelector("[data-store-asset-canvas]");
+      const description = document.querySelector('meta[name="description"]');
+      const headline = document.querySelector("[data-promotion-headline]");
+      const search = document.querySelector("[data-promotion-search]");
+
+      document.documentElement.lang = locale;
+      if (content) {
+        if (canvas) canvas.setAttribute("aria-label", content.description);
+        if (description)
+          description.setAttribute("content", content.description);
+        if (headline) {
+          headline.textContent = content.headline;
+          if (locale === "zh-CN") {
+            headline.classList.remove("tracking-[-.035em]");
+            headline.classList.add("tracking-[-.015em]");
+          }
+        }
+        if (search) search.textContent = content.searchPlaceholder;
+      }
+    </script>
+  </body>
+</html>
