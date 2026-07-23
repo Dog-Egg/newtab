@@ -245,7 +245,6 @@ export function CategoryTabs({
               onKeyDown={(event) => {
                 if (event.key === "Escape") cancelAdding();
               }}
-              placeholder={t("launcher.categoryName")}
               maxLength={12}
               aria-label={t("launcher.categoryName")}
             />

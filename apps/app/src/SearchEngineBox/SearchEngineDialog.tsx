@@ -53,7 +53,6 @@ export function SearchEngineDialogs({
                   onChange={(event) =>
                     onDraftChange({ ...draft, name: event.target.value })
                   }
-                  placeholder="Google"
                 />
               </label>
 
@@ -65,7 +64,6 @@ export function SearchEngineDialogs({
                   onChange={(event) =>
                     onDraftChange({ ...draft, urlFormat: event.target.value })
                   }
-                  placeholder="https://www.google.com/search?q=%s"
                 />
               </label>
 
