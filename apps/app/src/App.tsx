@@ -90,7 +90,7 @@ export function App() {
           <Settings aria-hidden="true" className="size-5" />
         </button>
 
-        <div className="flex h-screen min-h-0 flex-col pt-16 sm:pt-48">
+        <div className="flex h-screen min-h-0 flex-col pt-16 sm:pt-[clamp(4rem,18vh,12rem)]">
           <div className="relative z-20 shrink-0 px-6 sm:px-10">
             <SearchEngineBox />
           </div>
