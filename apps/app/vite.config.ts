@@ -25,7 +25,7 @@ export default defineConfig(({ mode, command }) => {
   };
 
   if (isExtension) {
-    input.background = "src/background.ts";
+    input.background = "src/background/index.ts";
   }
 
   return {

@@ -4,48 +4,82 @@ import {
   type Shortcut,
   type ShortcutCategory,
   type ShortcutNode,
-} from "./Launcher/launcher";
-import { normalizeSettings, SETTINGS_STORAGE_KEY } from "./Settings/settings";
-import { getLocaleFromLanguage } from "./i18n/locale";
-import { normalizeStoredExtensionLauncher } from "./Launcher/defaultLauncher";
+} from "../Launcher/launcher";
+import { normalizeSettings, SETTINGS_STORAGE_KEY } from "../Settings/settings";
+import { getLocaleFromLanguage } from "../i18n/locale";
+import { normalizeStoredExtensionLauncher } from "../Launcher/defaultLauncher";
+import { createRefreshScheduler } from "./contextMenuRefresh";
 
 const MENU_ID = "save-to-tab";
 const CATEGORY_MENU_ID_PREFIX = `${MENU_ID}:category:`;
 const defaultLocale = getLocaleFromLanguage(chrome.i18n.getUILanguage());
 
-function createContextMenu() {
-  chrome.storage.local.get(
-    [SETTINGS_STORAGE_KEY, LAUNCHER_STORAGE_KEY],
-    (items) => {
-      const { locale } = normalizeSettings(
-        items[SETTINGS_STORAGE_KEY],
-        defaultLocale,
-      );
-      const categories = normalizeStoredExtensionLauncher(
-        items[LAUNCHER_STORAGE_KEY],
-        locale,
-      );
-
-      chrome.contextMenus.removeAll(() => {
-        chrome.contextMenus.create({
-          id: MENU_ID,
-          title:
-            locale === "zh-CN" ? "添加网站到分类" : "Add Website to Category",
-          contexts: ["page"],
-        });
-
-        for (const category of categories) {
-          chrome.contextMenus.create({
-            id: `${CATEGORY_MENU_ID_PREFIX}${encodeURIComponent(category.id)}`,
-            parentId: MENU_ID,
-            title: category.name,
-            contexts: ["page"],
-          });
-        }
-      });
-    },
-  );
+function getLocalStorage(keys: string[]) {
+  return new Promise<Record<string, unknown>>((resolve, reject) => {
+    chrome.storage.local.get(keys, (items) => {
+      const error = chrome.runtime.lastError;
+      if (error) reject(new Error(error.message));
+      else resolve(items);
+    });
+  });
 }
+
+function removeAllContextMenus() {
+  return new Promise<void>((resolve, reject) => {
+    chrome.contextMenus.removeAll(() => {
+      const error = chrome.runtime.lastError;
+      if (error) reject(new Error(error.message));
+      else resolve();
+    });
+  });
+}
+
+function createContextMenuItem(
+  properties: chrome.contextMenus.CreateProperties,
+) {
+  return new Promise<void>((resolve, reject) => {
+    chrome.contextMenus.create(properties, () => {
+      const error = chrome.runtime.lastError;
+      if (error) reject(new Error(error.message));
+      else resolve();
+    });
+  });
+}
+
+async function rebuildContextMenu() {
+  const items = await getLocalStorage([
+    SETTINGS_STORAGE_KEY,
+    LAUNCHER_STORAGE_KEY,
+  ]);
+  const { locale } = normalizeSettings(
+    items[SETTINGS_STORAGE_KEY],
+    defaultLocale,
+  );
+  const categories = normalizeStoredExtensionLauncher(
+    items[LAUNCHER_STORAGE_KEY],
+    locale,
+  );
+
+  await removeAllContextMenus();
+  await createContextMenuItem({
+    id: MENU_ID,
+    title: locale === "zh-CN" ? "添加网站到分类" : "Add Website to Category",
+    contexts: ["page"],
+  });
+
+  for (const category of categories) {
+    await createContextMenuItem({
+      id: `${CATEGORY_MENU_ID_PREFIX}${encodeURIComponent(category.id)}`,
+      parentId: MENU_ID,
+      title: category.name,
+      contexts: ["page"],
+    });
+  }
+}
+
+const createContextMenu = createRefreshScheduler(rebuildContextMenu, (error) => {
+  console.error("Failed to refresh context menu", error);
+});
 
 function getCategories() {
   return new Promise<ShortcutCategory[]>((resolve) => {
@@ -153,3 +187,4 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
   void saveShortcut(url, tab?.title, categoryId);
 });
+
