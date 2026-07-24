@@ -24,7 +24,7 @@ import {
   createCustomEngineId,
   DEFAULT_SEARCH_ENGINES,
   EMPTY_CUSTOM_ENGINE,
-  normalizeCustomEngines,
+  getAvailableSearchEngines,
   type SearchEngine,
 } from "./searchEngineUtils";
 import {
@@ -60,26 +60,10 @@ export function SearchEngineBox() {
   const [customEngineDraft, setCustomEngineDraft] =
     useState(EMPTY_CUSTOM_ENGINE);
 
-  const customEngines = useMemo(
-    () => normalizeCustomEngines(storedSettings.customEngines),
-    [storedSettings.customEngines],
+  const searchEngines = useMemo(
+    () => getAvailableSearchEngines(storedSettings),
+    [storedSettings],
   );
-  const searchEngines = useMemo(() => {
-    const customEngineById = new Map(
-      customEngines.map((engine) => [engine.id, engine]),
-    );
-    const defaultEngineIds = new Set(
-      DEFAULT_SEARCH_ENGINES.map((engine) => engine.id),
-    );
-    const visibleDefaultEngines = DEFAULT_SEARCH_ENGINES.filter(
-      (engine) => !storedSettings.hiddenDefaultEngineIds?.includes(engine.id),
-    ).map((engine) => customEngineById.get(engine.id) ?? engine);
-    const addedEngines = customEngines.filter(
-      (engine) => !defaultEngineIds.has(engine.id),
-    );
-
-    return [...visibleDefaultEngines, ...addedEngines];
-  }, [customEngines, storedSettings.hiddenDefaultEngineIds]);
   const selectedEngine =
     searchEngines.find(
       (engine) => engine.id === storedSettings.selectedEngineId,
