@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { createPageStructuredData } from "../utils/structured-data";
 import projectConfig from "../../../../project.config.json";
 import logo from "../../../../assets/logo.svg";
 
@@ -169,6 +170,16 @@ const copy = isEnglish
         ],
       ],
     };
+const imageAlt = isEnglish
+  ? `${PRODUCT_NAME} privacy policy`
+  : `${PRODUCT_NAME} 隐私政策`;
+const structuredData = createPageStructuredData({
+  path: pagePath,
+  title: copy.title,
+  description: copy.description,
+  lang: copy.lang,
+  imageAlt,
+});
 ---
 
 <BaseLayout
@@ -177,9 +188,8 @@ const copy = isEnglish
   lang={copy.lang}
   path={pagePath}
   alternates={alternates}
-  imageAlt={isEnglish
-    ? `${PRODUCT_NAME} privacy policy`
-    : `${PRODUCT_NAME} 隐私政策`}
+  {imageAlt}
+  {structuredData}
 >
   <header
     class="sticky top-0 z-50 flex h-[76px] items-center justify-between border-b border-black/10 bg-paper/90 px-[clamp(24px,6vw,96px)] backdrop-blur-2xl max-md:h-[66px] max-md:px-5"

@@ -3,6 +3,7 @@ import IframeWindow from "./BrowserWindow/IframeWindow.astro";
 import SearchShowcase from "./SearchShowcase.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { translations, type Locale } from "../i18n/translations";
+import { createPageStructuredData } from "../utils/structured-data";
 import projectConfig from "../../../../project.config.json";
 import logo from "../../../../assets/logo.svg";
 import chromeIcon from "../assets/browser-icons/chrome.png";
@@ -28,42 +29,14 @@ const alternates = [
 ];
 
 const { source: sourceUrl, stores } = projectConfig.links;
-const pageUrl = Astro.site
-  ? new URL(pagePath, Astro.site).toString()
-  : pagePath;
-const structuredData = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "WebSite",
-      "@id": `${pageUrl}#website`,
-      name: PRODUCT_NAME,
-      url: pageUrl,
-      description: t.description,
-      inLanguage: t.lang,
-    },
-    {
-      "@type": "SoftwareApplication",
-      "@id": `${pageUrl}#software`,
-      name: PRODUCT_NAME,
-      url: pageUrl,
-      description: t.description,
-      applicationCategory: "BrowserApplication",
-      applicationSubCategory: "New tab browser extension",
-      operatingSystem: ["Google Chrome", "Microsoft Edge"],
-      browserRequirements: "Requires a Chromium-based browser",
-      isAccessibleForFree: true,
-      codeRepository: sourceUrl,
-      downloadUrl: stores.chrome,
-      inLanguage: t.lang,
-      offers: {
-        "@type": "Offer",
-        price: "0",
-        priceCurrency: "USD",
-      },
-    },
-  ],
-};
+const structuredData = createPageStructuredData({
+  path: pagePath,
+  title: t.title,
+  description: t.description,
+  lang: t.lang,
+  imageAlt: t.shareImageAlt,
+  includeSoftwareApplication: true,
+});
 const gridPaper =
   "bg-paper bg-[linear-gradient(rgba(30,30,30,.075)_1px,transparent_1px),linear-gradient(90deg,rgba(30,30,30,.075)_1px,transparent_1px)] bg-[size:56px_56px]";
 const sectionKicker =
