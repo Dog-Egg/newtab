@@ -1,0 +1,55 @@
+---
+import "../styles/global.css";
+import SeoHead from "../components/SeoHead.astro";
+import logo from "../../../../assets/logo.svg";
+
+interface Alternate {
+  lang: string;
+  path: string;
+}
+
+interface Props {
+  title: string;
+  description: string;
+  lang: string;
+  path: string;
+  alternates: Alternate[];
+  imageAlt: string;
+  structuredData?: Record<string, unknown> | Record<string, unknown>[];
+  noindex?: boolean;
+}
+
+const {
+  title,
+  description,
+  lang,
+  path,
+  alternates,
+  imageAlt,
+  structuredData,
+  noindex = false,
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang={lang} class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <SeoHead
+      {title}
+      {description}
+      {lang}
+      {path}
+      {alternates}
+      {imageAlt}
+      {structuredData}
+      {noindex}
+    />
+    <link rel="icon" type="image/svg+xml" href={logo.src} />
+    <slot name="head" />
+  </head>
+  <body class="m-0 bg-paper font-sans text-ink antialiased">
+    <slot />
+  </body>
+</html>

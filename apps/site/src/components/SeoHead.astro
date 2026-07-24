@@ -1,0 +1,84 @@
+---
+interface Alternate {
+  lang: string;
+  path: string;
+}
+
+interface Props {
+  title: string;
+  description: string;
+  lang: string;
+  path: string;
+  alternates: Alternate[];
+  imageAlt: string;
+  structuredData?: Record<string, unknown> | Record<string, unknown>[];
+  noindex?: boolean;
+}
+
+const {
+  title,
+  description,
+  lang,
+  path,
+  alternates,
+  imageAlt,
+  structuredData,
+  noindex = false,
+} = Astro.props;
+
+const toUrl = (pathname: string) =>
+  Astro.site ? new URL(pathname, Astro.site).toString() : pathname;
+const canonicalUrl = toUrl(path);
+const imageUrl = toUrl("/og.png");
+const ogLocale = lang === "zh-CN" ? "zh_CN" : "en_US";
+const alternateLocales = alternates
+  .filter(({ lang: alternateLang }) => alternateLang !== "x-default")
+  .map(({ lang: alternateLang }) =>
+    alternateLang === "zh-CN" ? "zh_CN" : "en_US",
+  )
+  .filter((alternateLocale) => alternateLocale !== ogLocale);
+---
+
+<meta name="description" content={description} />
+<meta name="theme-color" content="#ff4f24" />
+{noindex && <meta name="robots" content="noindex,nofollow" />}
+<link rel="canonical" href={canonicalUrl} />
+{
+  alternates.map(({ lang: alternateLang, path: alternatePath }) => (
+    <link
+      rel="alternate"
+      hreflang={alternateLang}
+      href={toUrl(alternatePath)}
+    />
+  ))
+}
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="NewTab" />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonicalUrl} />
+<meta property="og:locale" content={ogLocale} />
+{
+  alternateLocales.map((alternateLocale) => (
+    <meta property="og:locale:alternate" content={alternateLocale} />
+  ))
+}
+<meta property="og:image" content={imageUrl} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={imageAlt} />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={imageUrl} />
+<meta name="twitter:image:alt" content={imageAlt} />
+<title>{title}</title>
+{
+  structuredData && (
+    <script
+      type="application/ld+json"
+      is:inline
+      set:html={JSON.stringify(structuredData)}
+    />
+  )
+}

@@ -1,5 +1,5 @@
 ---
-import "../styles/global.css";
+import BaseLayout from "../layouts/BaseLayout.astro";
 import projectConfig from "../../../../project.config.json";
 import logo from "../../../../assets/logo.svg";
 
@@ -13,6 +13,12 @@ const PRODUCT_NAME = projectConfig.product.name;
 const homeUrl = isEnglish ? "/" : "/zh/";
 const languageUrl = isEnglish ? "/zh/privacy/" : "/privacy/";
 const languageLabel = isEnglish ? "中文" : "English";
+const pagePath = isEnglish ? "/privacy/" : "/zh/privacy/";
+const alternates = [
+  { lang: "en", path: "/privacy/" },
+  { lang: "zh-CN", path: "/zh/privacy/" },
+  { lang: "x-default", path: "/privacy/" },
+];
 const sourceUrl = projectConfig.links.source;
 const issuesUrl = `${sourceUrl}/issues`;
 
@@ -165,131 +171,123 @@ const copy = isEnglish
     };
 ---
 
-<!doctype html>
-<html lang={copy.lang} class="scroll-smooth">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content={copy.description} />
-    <meta name="theme-color" content="#ff4f24" />
-    <link rel="icon" type="image/svg+xml" href={logo.src} />
-    <link rel="canonical" href={isEnglish ? "/privacy/" : "/zh/privacy/"} />
-    <link rel="alternate" hreflang="en" href="/privacy/" />
-    <link rel="alternate" hreflang="zh-CN" href="/zh/privacy/" />
-    <link rel="alternate" hreflang="x-default" href="/privacy/" />
-    <title>{copy.title}</title>
-  </head>
-  <body class="m-0 bg-paper font-sans text-ink antialiased">
-    <header
-      class="sticky top-0 z-50 flex h-[76px] items-center justify-between border-b border-black/10 bg-paper/90 px-[clamp(24px,6vw,96px)] backdrop-blur-2xl max-md:h-[66px] max-md:px-5"
+<BaseLayout
+  title={copy.title}
+  description={copy.description}
+  lang={copy.lang}
+  path={pagePath}
+  alternates={alternates}
+  imageAlt={isEnglish
+    ? `${PRODUCT_NAME} privacy policy`
+    : `${PRODUCT_NAME} 隐私政策`}
+>
+  <header
+    class="sticky top-0 z-50 flex h-[76px] items-center justify-between border-b border-black/10 bg-paper/90 px-[clamp(24px,6vw,96px)] backdrop-blur-2xl max-md:h-[66px] max-md:px-5"
+  >
+    <a
+      class="inline-flex items-center gap-3 font-bold tracking-[-.03em]"
+      href={homeUrl}
+      aria-label={copy.home}
     >
+      <img
+        class="size-7 rotate-[8deg]"
+        src={logo.src}
+        alt=""
+        aria-hidden="true"
+      />
+      <span>{PRODUCT_NAME}</span>
+    </a>
+    <div class="flex items-center gap-5 text-[13px] font-medium text-[#66625d]">
       <a
-        class="inline-flex items-center gap-3 font-bold tracking-[-.03em]"
-        href={homeUrl}
-        aria-label={copy.home}
+        class="transition-colors hover:text-brand"
+        href={languageUrl}
+        hreflang={isEnglish ? "zh-CN" : "en"}>{languageLabel}</a
       >
-        <img
-          class="size-7 rotate-[8deg]"
-          src={logo.src}
-          alt=""
-          aria-hidden="true"
-        />
-        <span>{PRODUCT_NAME}</span>
-      </a>
-      <div
-        class="flex items-center gap-5 text-[13px] font-medium text-[#66625d]"
+      <a
+        class="rounded-full bg-ink px-4 py-2.5 text-white transition hover:-translate-y-0.5"
+        href={homeUrl}>← {copy.home}</a
       >
-        <a
-          class="transition-colors hover:text-brand"
-          href={languageUrl}
-          hreflang={isEnglish ? "zh-CN" : "en"}>{languageLabel}</a
-        >
-        <a
-          class="rounded-full bg-ink px-4 py-2.5 text-white transition hover:-translate-y-0.5"
-          href={homeUrl}>← {copy.home}</a
-        >
-      </div>
-    </header>
+    </div>
+  </header>
 
-    <main>
-      <section
-        class="border-b border-line bg-paper bg-[linear-gradient(rgba(30,30,30,.075)_1px,transparent_1px),linear-gradient(90deg,rgba(30,30,30,.075)_1px,transparent_1px)] bg-[size:56px_56px] px-6 py-[clamp(72px,10vw,132px)]"
-      >
-        <div class="mx-auto max-w-[1040px]">
-          <div
-            class="font-mono text-[11px] uppercase tracking-[.14em] text-brand"
-          >
-            {copy.label}
-          </div>
-          <h1
-            class="mb-7 mt-6 max-w-[820px] text-[clamp(48px,7vw,86px)] font-normal leading-[1.02] tracking-[-.06em]"
-          >
-            {copy.heading}
-          </h1>
-          <p
-            class="max-w-[760px] text-[clamp(16px,1.5vw,19px)] leading-[1.8] text-muted"
-          >
-            {copy.summary}
-          </p>
-          <p
-            class="mt-8 font-mono text-[11px] uppercase tracking-[.1em] text-caption"
-          >
-            {copy.effective}
-          </p>
+  <main>
+    <section
+      class="border-b border-line bg-paper bg-[linear-gradient(rgba(30,30,30,.075)_1px,transparent_1px),linear-gradient(90deg,rgba(30,30,30,.075)_1px,transparent_1px)] bg-[size:56px_56px] px-6 py-[clamp(72px,10vw,132px)]"
+    >
+      <div class="mx-auto max-w-[1040px]">
+        <div
+          class="font-mono text-[11px] uppercase tracking-[.14em] text-brand"
+        >
+          {copy.label}
         </div>
-      </section>
+        <h1
+          class="mb-7 mt-6 max-w-[820px] text-[clamp(48px,7vw,86px)] font-normal leading-[1.02] tracking-[-.06em]"
+        >
+          {copy.heading}
+        </h1>
+        <p
+          class="max-w-[760px] text-[clamp(16px,1.5vw,19px)] leading-[1.8] text-muted"
+        >
+          {copy.summary}
+        </p>
+        <p
+          class="mt-8 font-mono text-[11px] uppercase tracking-[.1em] text-caption"
+        >
+          {copy.effective}
+        </p>
+      </div>
+    </section>
 
-      <div
-        class="mx-auto grid max-w-[1180px] grid-cols-[240px_minmax(0,760px)] gap-[clamp(48px,8vw,110px)] px-6 py-[clamp(72px,9vw,120px)] max-md:grid-cols-1"
-      >
-        <aside class="self-start md:sticky md:top-[110px]">
-          <div
-            class="border-b border-line pb-3 font-mono text-[10px] uppercase tracking-[.12em] text-caption"
-          >
-            {copy.contents}
-          </div>
-          <nav
-            class="mt-4 flex flex-col gap-2 text-[13px] leading-6 text-muted"
-            aria-label={copy.contents}
-          >
-            {
-              copy.sections.map(([id, title]) => (
-                <a class="transition-colors hover:text-brand" href={`#${id}`}>
-                  {title}
-                </a>
-              ))
-            }
-          </nav>
-        </aside>
-
-        <article class="privacy-copy min-w-0">
+    <div
+      class="mx-auto grid max-w-[1180px] grid-cols-[240px_minmax(0,760px)] gap-[clamp(48px,8vw,110px)] px-6 py-[clamp(72px,9vw,120px)] max-md:grid-cols-1"
+    >
+      <aside class="self-start md:sticky md:top-[110px]">
+        <div
+          class="border-b border-line pb-3 font-mono text-[10px] uppercase tracking-[.12em] text-caption"
+        >
+          {copy.contents}
+        </div>
+        <nav
+          class="mt-4 flex flex-col gap-2 text-[13px] leading-6 text-muted"
+          aria-label={copy.contents}
+        >
           {
-            copy.sections.map(([id, title, html]) => (
-              <section
-                id={id}
-                class="scroll-mt-28 border-b border-line pb-11 pt-1 first:pt-0 last:border-0"
-              >
-                <h2>{title}</h2>
-                <Fragment set:html={html} />
-              </section>
+            copy.sections.map(([id, title]) => (
+              <a class="transition-colors hover:text-brand" href={`#${id}`}>
+                {title}
+              </a>
             ))
           }
-        </article>
-      </div>
-    </main>
+        </nav>
+      </aside>
 
-    <footer
-      class="flex flex-wrap items-center justify-between gap-5 border-t border-line bg-[#f1efe9] px-[clamp(24px,6vw,96px)] py-9 text-xs"
-    >
-      <span>© 2026 {PRODUCT_NAME}</span>
-      <div class="flex gap-6 text-muted">
-        <a class="hover:text-brand" href={homeUrl}>{copy.home}</a>
-        <a class="hover:text-brand" href={sourceUrl}>GitHub</a>
-        <a class="hover:text-brand" href={languageUrl}>{languageLabel}</a>
-      </div>
-    </footer>
-  </body>
-</html>
+      <article class="privacy-copy min-w-0">
+        {
+          copy.sections.map(([id, title, html]) => (
+            <section
+              id={id}
+              class="scroll-mt-28 border-b border-line pb-11 pt-1 first:pt-0 last:border-0"
+            >
+              <h2>{title}</h2>
+              <Fragment set:html={html} />
+            </section>
+          ))
+        }
+      </article>
+    </div>
+  </main>
+
+  <footer
+    class="flex flex-wrap items-center justify-between gap-5 border-t border-line bg-[#f1efe9] px-[clamp(24px,6vw,96px)] py-9 text-xs"
+  >
+    <span>© 2026 {PRODUCT_NAME}</span>
+    <div class="flex gap-6 text-muted">
+      <a class="hover:text-brand" href={homeUrl}>{copy.home}</a>
+      <a class="hover:text-brand" href={sourceUrl}>GitHub</a>
+      <a class="hover:text-brand" href={languageUrl}>{languageLabel}</a>
+    </div>
+  </footer>
+</BaseLayout>
 
 <style is:global>
   .privacy-copy section + section {

@@ -9,6 +9,7 @@ interface Props {
   title?: string;
   tabTitle?: string;
   scale?: number;
+  loading?: "eager" | "lazy";
 }
 
 const {
@@ -16,6 +17,7 @@ const {
   title = `Interactive ${PRODUCT_NAME} product demo`,
   tabTitle = "New Tab",
   scale = 1,
+  loading = "eager",
 } = Astro.props;
 
 const iframeScale = Math.min(Math.max(scale, 0.1), 1);
@@ -33,6 +35,7 @@ const iframeSize = `${100 / iframeScale}%`;
       <iframe
         src={url}
         title={title}
+        loading={loading}
         class="absolute left-0 top-0 block border-0"
         style={`width: ${iframeSize}; height: ${iframeSize}; transform: scale(${iframeScale}); transform-origin: top left;`}
       ></iframe>

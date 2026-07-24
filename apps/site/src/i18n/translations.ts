@@ -7,8 +7,9 @@ export type Locale = "en" | "zh";
 export const translations = {
   en: {
     lang: "en",
-    title: `${PRODUCT_NAME} — A better start for every new tab`,
-    description: `${PRODUCT_NAME} is a free, ad-free, and open-source new tab extension with customizable shortcuts and smarter search. No sign-in is required, and your preferences stay in your browser.`,
+    title: `${PRODUCT_NAME} — Customizable New Tab Extension for Chrome`,
+    description: `${PRODUCT_NAME} is a free, ad-free, open-source new tab extension with customizable shortcuts and smarter search. No sign-in—your preferences stay in your browser.`,
+    shareImageAlt: `${PRODUCT_NAME}, a clear and customizable new tab extension`,
     homeLabel: `${PRODUCT_NAME} home`,
     navLabel: "Main navigation",
     nav: {
@@ -101,8 +102,9 @@ export const translations = {
   },
   zh: {
     lang: "zh-CN",
-    title: `${PRODUCT_NAME} — 打开新标签，简单又顺手`,
+    title: `${PRODUCT_NAME} — 免费开源的自定义新标签页扩展`,
     description: `${PRODUCT_NAME} 是一款免费、无广告、开源的新标签页扩展，支持自定义快捷方式和更灵活的搜索。无需登录，偏好设置保存在浏览器本地。`,
+    shareImageAlt: `${PRODUCT_NAME}，清晰、可自定义的新标签页扩展`,
     homeLabel: `${PRODUCT_NAME} 主页`,
     navLabel: "主导航",
     nav: {

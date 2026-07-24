@@ -1,4 +1,7 @@
 {
+  "site": {
+    "url": "https://newtab.oneproject.dev"
+  },
   "product": {
     "name": "NewTab"
   },

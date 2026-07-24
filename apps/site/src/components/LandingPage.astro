@@ -1,7 +1,7 @@
 ---
-import "../styles/global.css";
 import IframeWindow from "./BrowserWindow/IframeWindow.astro";
 import SearchShowcase from "./SearchShowcase.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
 import { translations, type Locale } from "../i18n/translations";
 import projectConfig from "../../../../project.config.json";
 import logo from "../../../../assets/logo.svg";
@@ -20,8 +20,50 @@ const languageUrl = isEnglish ? "/zh/" : "/";
 const languageLabel = isEnglish ? "中文" : "English";
 const privacyUrl = isEnglish ? "/privacy/" : "/zh/privacy/";
 const appUrl = `/app/index.html?lang=${isEnglish ? "en" : "zh-CN"}`;
+const pagePath = isEnglish ? "/" : "/zh/";
+const alternates = [
+  { lang: "en", path: "/" },
+  { lang: "zh-CN", path: "/zh/" },
+  { lang: "x-default", path: "/" },
+];
 
 const { source: sourceUrl, stores } = projectConfig.links;
+const pageUrl = Astro.site
+  ? new URL(pagePath, Astro.site).toString()
+  : pagePath;
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${pageUrl}#website`,
+      name: PRODUCT_NAME,
+      url: pageUrl,
+      description: t.description,
+      inLanguage: t.lang,
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": `${pageUrl}#software`,
+      name: PRODUCT_NAME,
+      url: pageUrl,
+      description: t.description,
+      applicationCategory: "BrowserApplication",
+      applicationSubCategory: "New tab browser extension",
+      operatingSystem: ["Google Chrome", "Microsoft Edge"],
+      browserRequirements: "Requires a Chromium-based browser",
+      isAccessibleForFree: true,
+      codeRepository: sourceUrl,
+      downloadUrl: stores.chrome,
+      inLanguage: t.lang,
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+      },
+    },
+  ],
+};
 const gridPaper =
   "bg-paper bg-[linear-gradient(rgba(30,30,30,.075)_1px,transparent_1px),linear-gradient(90deg,rgba(30,30,30,.075)_1px,transparent_1px)] bg-[size:56px_56px]";
 const sectionKicker =
@@ -30,447 +72,431 @@ const buttonBase =
   "inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full px-[22px] text-sm font-semibold transition hover:-translate-y-0.5";
 ---
 
-<!doctype html>
-<html lang={t.lang} class="scroll-smooth">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content={t.description} />
-    <meta name="theme-color" content="#ff4f24" />
-    <link rel="icon" type="image/svg+xml" href={logo.src} />
-    <link rel="canonical" href={isEnglish ? "/" : "/zh/"} />
-    <link rel="alternate" hreflang="en" href="/" />
-    <link rel="alternate" hreflang="zh-CN" href="/zh/" />
-    <link rel="alternate" hreflang="x-default" href="/" />
-    <title>{t.title}</title>
-  </head>
-  <body class="m-0 bg-paper font-sans text-ink antialiased">
-    <header
-      class="sticky top-0 z-50 grid h-[76px] grid-cols-[1fr_auto_1fr] items-center border-b border-black/10 bg-paper/90 px-[clamp(24px,6vw,96px)] backdrop-blur-2xl max-md:h-[66px] max-md:grid-cols-[1fr_auto] max-md:px-5"
+<BaseLayout
+  title={t.title}
+  description={t.description}
+  lang={t.lang}
+  path={pagePath}
+  alternates={alternates}
+  imageAlt={t.shareImageAlt}
+  structuredData={structuredData}
+>
+  <header
+    class="sticky top-0 z-50 grid h-[76px] grid-cols-[1fr_auto_1fr] items-center border-b border-black/10 bg-paper/90 px-[clamp(24px,6vw,96px)] backdrop-blur-2xl max-md:h-[66px] max-md:grid-cols-[1fr_auto] max-md:px-5"
+  >
+    <a
+      class="inline-flex w-max items-center gap-3 font-bold tracking-[-.03em]"
+      href="#top"
+      aria-label={t.homeLabel}
     >
+      <img
+        class="size-7 rotate-[8deg]"
+        src={logo.src}
+        alt=""
+        aria-hidden="true"
+      />
+      <span>{PRODUCT_NAME}</span>
+    </a>
+    <nav
+      class="flex gap-10 text-[13px] text-[#66625d] max-md:hidden"
+      aria-label={t.navLabel}
+    >
+      <a class="transition-colors hover:text-brand" href="#demo">{t.nav.demo}</a
+      ><a class="transition-colors hover:text-brand" href="#features"
+        >{t.nav.features}</a
+      ><a class="transition-colors hover:text-brand" href="#opensource"
+        >{t.nav.openSource}</a
+      >
+    </nav>
+    <div class="flex items-center gap-4 justify-self-end max-sm:gap-2.5">
       <a
-        class="inline-flex w-max items-center gap-3 font-bold tracking-[-.03em]"
-        href="#top"
-        aria-label={t.homeLabel}
+        class="text-[13px] font-medium text-[#66625d] transition-colors hover:text-brand"
+        href={languageUrl}
+        hreflang={isEnglish ? "zh-CN" : "en"}>{languageLabel}</a
       >
-        <img
-          class="size-7 rotate-[8deg]"
-          src={logo.src}
-          alt=""
-          aria-hidden="true"
-        />
-        <span>{PRODUCT_NAME}</span>
-      </a>
-      <nav
-        class="flex gap-10 text-[13px] text-[#66625d] max-md:hidden"
-        aria-label={t.navLabel}
+      <a
+        class="inline-flex gap-2 rounded-full bg-brand px-5 py-3 text-[13px] font-semibold text-white transition hover:-translate-y-0.5 max-sm:px-3.5"
+        href="#download"
+        >{t.nav.download} <span class="max-sm:hidden">↓</span></a
       >
-        <a class="transition-colors hover:text-brand" href="#demo"
-          >{t.nav.demo}</a
-        ><a class="transition-colors hover:text-brand" href="#features"
-          >{t.nav.features}</a
-        ><a class="transition-colors hover:text-brand" href="#opensource"
-          >{t.nav.openSource}</a
-        >
-      </nav>
-      <div class="flex items-center gap-4 justify-self-end max-sm:gap-2.5">
-        <a
-          class="text-[13px] font-medium text-[#66625d] transition-colors hover:text-brand"
-          href={languageUrl}
-          hreflang={isEnglish ? "zh-CN" : "en"}>{languageLabel}</a
-        >
-        <a
-          class="inline-flex gap-2 rounded-full bg-brand px-5 py-3 text-[13px] font-semibold text-white transition hover:-translate-y-0.5 max-sm:px-3.5"
-          href="#download"
-          >{t.nav.download} <span class="max-sm:hidden">↓</span></a
-        >
+    </div>
+  </header>
+
+  <main id="top">
+    <section
+      class:list={[
+        gridPaper,
+        "relative min-h-[930px] overflow-hidden px-6 pt-[74px] text-center max-md:min-h-[780px] max-md:pt-14 max-sm:min-h-[680px] max-sm:px-[15px]",
+      ]}
+    >
+      <div
+        class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(251,250,247,.2),rgba(251,250,247,.75)_63%)]"
+      >
       </div>
-    </header>
-
-    <main id="top">
-      <section
-        class:list={[
-          gridPaper,
-          "relative min-h-[930px] overflow-hidden px-6 pt-[74px] text-center max-md:min-h-[780px] max-md:pt-14 max-sm:min-h-[680px] max-sm:px-[15px]",
-        ]}
-      >
+      <div class="relative z-[2] mx-auto max-w-[930px]">
         <div
-          class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(251,250,247,.2),rgba(251,250,247,.75)_63%)]"
-        >
-        </div>
-        <div class="relative z-[2] mx-auto max-w-[930px]">
-          <div
-            class="inline-flex items-center gap-2 rounded-full border border-[#ddd9d2] bg-white/70 px-3.5 py-2 font-mono text-[11px] uppercase tracking-[.12em] text-caption shadow-[0_6px_22px_rgba(20,20,20,.04)]"
-          >
-            <span
-              class="size-1.5 rounded-full bg-brand shadow-[0_0_0_4px_#ffebe4]"
-            ></span>
-            {t.hero.badge}
-          </div>
-          <h1
-            class="my-7 text-[clamp(50px,6.2vw,94px)] font-normal leading-[.98] tracking-[-.065em]"
-          >
-            {t.hero.line1}<br /><em class="not-italic text-brand"
-              >{t.hero.line2}</em
-            >
-          </h1>
-          <p
-            class="mx-auto max-w-[650px] text-[clamp(15px,1.25vw,18px)] leading-[1.75] text-muted"
-          >
-            {t.hero.description}
-          </p>
-          <div
-            class="mt-8 flex justify-center gap-3 max-sm:mx-auto max-sm:max-w-[330px] max-sm:flex-col"
-          >
-            <a class:list={[buttonBase, "bg-ink text-white"]} href="#demo"
-              >{t.hero.try} <span>↘</span></a
-            >
-            <a
-              id="browser-store-cta"
-              class:list={[
-                buttonBase,
-                "bg-brand text-white shadow-[0_10px_24px_rgba(255,79,36,.2)]",
-              ]}
-              href="#download"
-              data-chrome-url={stores.chrome}
-              data-edge-url={stores.edge}
-              data-chrome-label={t.hero.browserCta.chrome}
-              data-edge-label={t.hero.browserCta.edge}
-              data-choose-label={t.hero.browserCta.choose}
-              data-store-pending-message={t.hero.browserCta.pending}
-              ><span data-browser-store-label>{t.hero.browserCta.choose}</span>
-              <span>→</span></a
-            >
-          </div>
-          <div
-            class="mt-[22px] flex items-center justify-center gap-3 text-[11px] text-[#98938d] max-sm:text-[9px]"
-          >
-            <span>{t.hero.benefits[0]}</span><i
-              class="size-[3px] rounded-full bg-[#aaa59f]"></i><span
-              >{t.hero.benefits[1]}</span
-            ><i class="size-[3px] rounded-full bg-[#aaa59f]"></i><span
-              >{t.hero.benefits[2]}</span
-            >
-          </div>
-        </div>
-
-        <div
-          class="relative z-[3] mx-auto mt-[62px] w-[min(1120px,96vw)] scroll-mt-24 max-md:mt-12 max-sm:w-full"
-          id="demo"
-        >
-          <IframeWindow
-            url={appUrl}
-            title={t.demo.iframeTitle}
-            tabTitle={t.demo.tabTitle}
-            scale={0.8}
-          />
-        </div>
-      </section>
-
-      <section
-        class="mx-auto max-w-[1300px] px-12 py-[130px] max-md:px-6 max-md:py-[90px]"
-        id="features"
-      >
-        <div class={sectionKicker}>{t.features.label} / 01</div>
-        <div
-          class="grid grid-cols-[1.4fr_.6fr] items-end gap-[100px] py-12 pb-[70px] max-md:grid-cols-1 max-md:gap-[30px] max-sm:pb-[50px]"
-        >
-          <h2
-            class="m-0 text-[clamp(48px,6vw,82px)] font-normal leading-[1.02] tracking-[-.06em] max-sm:text-[46px]"
-          >
-            {t.features.title1}<br /><span class="text-brand"
-              >{t.features.title2}</span
-            >
-          </h2>
-          <div>
-            <p class="text-[15px] leading-[1.8] text-muted">
-              {t.features.description}
-            </p><a
-              class="mt-[18px] inline-flex gap-10 border-b border-ink pb-1.5 text-[13px] font-semibold"
-              href="#download">{t.features.link} <span>→</span></a
-            >
-          </div>
-        </div>
-
-        <div
-          class:list={[
-            gridPaper,
-            "mb-[70px] grid grid-cols-[.72fr_1.28fr] overflow-hidden border-y border-line max-lg:grid-cols-1 max-sm:mb-[50px]",
-          ]}
-        >
-          <div
-            class="flex flex-col justify-center border-r border-line bg-paper/75 px-[clamp(32px,5vw,72px)] py-[72px] max-lg:border-b max-lg:border-r-0 max-sm:px-6 max-sm:py-12"
-          >
-            <div
-              class="mb-6 font-mono text-[10px] uppercase tracking-[.14em] text-brand"
-            >
-              {t.features.spotlight.label}
-            </div>
-            <h3
-              class="m-0 max-w-[440px] text-[clamp(34px,3.8vw,54px)] font-normal leading-[1.04] tracking-[-.055em]"
-            >
-              {t.features.spotlight.title}
-            </h3>
-            <p class="mb-7 mt-6 max-w-[460px] text-sm leading-[1.8] text-muted">
-              {t.features.spotlight.description}
-            </p>
-            <ul class="m-0 grid list-none gap-3 p-0">
-              {
-                t.features.spotlight.points.map((point) => (
-                  <li class="flex items-center gap-3 text-[13px] text-[#5f5b55]">
-                    <span
-                      class="size-1.5 shrink-0 rounded-full bg-brand"
-                      aria-hidden="true"
-                    />
-                    {point}
-                  </li>
-                ))
-              }
-            </ul>
-          </div>
-          <div
-            class="relative flex min-h-[520px] items-center justify-center overflow-hidden px-[clamp(24px,4vw,62px)] py-[70px] max-lg:min-h-0 max-sm:px-3 max-sm:py-10"
-          >
-            <SearchShowcase
-              query={t.features.spotlight.preview.query}
-              engineHost={t.features.spotlight.preview.engineHost}
-              searchAction={t.features.spotlight.preview.searchAction}
-              groupLabel={t.features.spotlight.preview.groupLabel}
-              shortcuts={t.features.spotlight.preview.shortcuts}
-              ariaLabel={t.features.spotlight.imageAlt}
-            />
-          </div>
-        </div>
-
-        <div class="grid grid-cols-3 border-y border-line max-md:grid-cols-1">
-          <article
-            class="relative border-r border-line px-9 pb-[42px] pt-[38px] max-md:border-b max-md:border-r-0"
-          >
-            <span
-              class="absolute right-6 top-[22px] font-mono text-[10px] text-[#aaa59f]"
-              >01</span
-            ><div
-              class="mb-9 grid size-[58px] place-items-center rounded-full border border-[#c9c5bf]"
-              aria-hidden="true"
-            >
-              <span
-                class="col-start-1 row-start-1 size-[22px] rotate-45 rounded-[5px] border-2 border-brand"
-              ></span><i
-                class="col-start-1 row-start-1 size-2 rounded-full bg-ink"></i>
-            </div><h3 class="mb-3 text-[19px] font-semibold tracking-[-.03em]">
-              {t.features.items[0][0]}
-            </h3><p class="max-w-[280px] text-[13px] leading-[1.75] text-muted">
-              {t.features.items[0][1]}
-            </p>
-          </article>
-          <article
-            class="relative border-r border-line px-9 pb-[42px] pt-[38px] max-md:border-b max-md:border-r-0"
-          >
-            <span
-              class="absolute right-6 top-[22px] font-mono text-[10px] text-[#aaa59f]"
-              >02</span
-            ><div
-              class="mb-9 grid size-[58px] place-items-center rounded-full border border-[#c9c5bf]"
-              aria-hidden="true"
-            >
-              <span
-                class="col-start-1 row-start-1 size-[22px] rounded-full border-2 border-ink"
-              ></span><i
-                class="col-start-1 row-start-1 size-3 rounded-full bg-brand"
-              ></i>
-            </div><h3 class="mb-3 text-[19px] font-semibold tracking-[-.03em]">
-              {t.features.items[1][0]}
-            </h3><p class="max-w-[280px] text-[13px] leading-[1.75] text-muted">
-              {t.features.items[1][1]}
-            </p>
-          </article>
-          <article class="relative px-9 pb-[42px] pt-[38px]">
-            <span
-              class="absolute right-6 top-[22px] font-mono text-[10px] text-[#aaa59f]"
-              >03</span
-            ><div
-              class="mb-9 grid size-[58px] place-items-center rounded-full border border-[#c9c5bf]"
-              aria-hidden="true"
-            >
-              <span class="flex h-5 w-6 flex-col justify-between">
-                <i class="h-0.5 w-full bg-brand"></i>
-                <i class="h-0.5 w-full bg-ink"></i>
-                <i class="h-0.5 w-full bg-[#aaa59f]"></i>
-              </span>
-            </div><h3 class="mb-3 text-[19px] font-semibold tracking-[-.03em]">
-              {t.features.items[2][0]}
-            </h3><p class="max-w-[280px] text-[13px] leading-[1.75] text-muted">
-              {t.features.items[2][1]}
-            </p>
-          </article>
-        </div>
-      </section>
-
-      <section
-        class="grid min-h-[670px] scroll-mt-[76px] grid-cols-2 bg-ink text-white max-md:scroll-mt-[66px] max-md:grid-cols-1"
-        id="opensource"
-      >
-        <div
-          class="relative min-h-[550px] overflow-hidden border-r border-white/10 bg-[radial-gradient(circle_at_center,#30302d_0_2px,transparent_3px)] bg-[size:24px_24px] max-md:min-h-[420px] max-md:border-b max-md:border-r-0 max-sm:min-h-[330px]"
-          aria-hidden="true"
+          class="inline-flex items-center gap-2 rounded-full border border-[#ddd9d2] bg-white/70 px-3.5 py-2 font-mono text-[11px] uppercase tracking-[.12em] text-caption shadow-[0_6px_22px_rgba(20,20,20,.04)]"
         >
           <span
-            class="absolute left-[19%] top-[8%] font-serif text-[380px] font-light leading-none text-brand max-sm:left-[10%] max-sm:text-[260px]"
-            >{`{`}</span
-          ><span
-            class="absolute left-1/2 top-1/2 size-[115px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand shadow-[0_0_0_18px_rgba(255,79,36,.12)]"
-          ></span><span
-            class="absolute right-[19%] top-[31%] font-serif text-[380px] font-light leading-none text-brand max-sm:right-[10%] max-sm:text-[260px]"
-            >{`}`}</span
-          >
+            class="size-1.5 rounded-full bg-brand shadow-[0_0_0_4px_#ffebe4]"
+          ></span>
+          {t.hero.badge}
         </div>
-        <div
-          class="flex flex-col justify-center px-[clamp(42px,7vw,110px)] py-20 max-sm:px-6 max-sm:py-[65px]"
+        <h1
+          class="my-7 text-[clamp(50px,6.2vw,94px)] font-normal leading-[.98] tracking-[-.065em]"
         >
-          <div class:list={[sectionKicker, "border-white/15 text-[#888]"]}>
-            {t.source.label} / 02
-          </div>
-          <h2
-            class="mb-0 mt-[42px] text-[clamp(46px,5vw,72px)] font-normal leading-[1.02] tracking-[-.06em]"
+          {t.hero.line1}<br /><em class="not-italic text-brand"
+            >{t.hero.line2}</em
           >
-            {t.source.title1}<br />{t.source.title2}
-          </h2>
-          <p
-            class="my-7 max-w-[500px] text-[15px] leading-[1.8] text-[#aaa7a2]"
+        </h1>
+        <p
+          class="mx-auto max-w-[650px] text-[clamp(15px,1.25vw,18px)] leading-[1.75] text-muted"
+        >
+          {t.hero.description}
+        </p>
+        <div
+          class="mt-8 flex justify-center gap-3 max-sm:mx-auto max-sm:max-w-[330px] max-sm:flex-col"
+        >
+          <a class:list={[buttonBase, "bg-ink text-white"]} href="#demo"
+            >{t.hero.try} <span>↘</span></a
           >
-            {t.source.description}
-          </p>
           <a
-            class:list={[buttonBase, "self-start bg-white text-ink"]}
-            href={sourceUrl}>{t.source.link} <span>↗</span></a
+            id="browser-store-cta"
+            class:list={[
+              buttonBase,
+              "bg-brand text-white shadow-[0_10px_24px_rgba(255,79,36,.2)]",
+            ]}
+            href="#download"
+            data-chrome-url={stores.chrome}
+            data-edge-url={stores.edge}
+            data-chrome-label={t.hero.browserCta.chrome}
+            data-edge-label={t.hero.browserCta.edge}
+            data-choose-label={t.hero.browserCta.choose}
+            data-store-pending-message={t.hero.browserCta.pending}
+            ><span data-browser-store-label>{t.hero.browserCta.choose}</span>
+            <span>→</span></a
           >
         </div>
-      </section>
-
-      <section
-        class:list={[
-          gridPaper,
-          "relative overflow-hidden px-6 py-[130px] text-center max-sm:px-5 max-sm:py-[90px]",
-        ]}
-        id="download"
-      >
         <div
-          class="inline-flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[.12em] text-caption"
+          class="mt-[22px] flex items-center justify-center gap-3 text-[11px] text-[#98938d] max-sm:text-[9px]"
         >
-          {t.download.label} / 03
+          <span>{t.hero.benefits[0]}</span><i
+            class="size-[3px] rounded-full bg-[#aaa59f]"></i><span
+            >{t.hero.benefits[1]}</span
+          ><i class="size-[3px] rounded-full bg-[#aaa59f]"></i><span
+            >{t.hero.benefits[2]}</span
+          >
         </div>
+      </div>
+
+      <div
+        class="relative z-[3] mx-auto mt-[62px] w-[min(1120px,96vw)] scroll-mt-24 max-md:mt-12 max-sm:w-full"
+        id="demo"
+      >
+        <IframeWindow
+          url={appUrl}
+          title={t.demo.iframeTitle}
+          tabTitle={t.demo.tabTitle}
+          scale={0.8}
+          loading="lazy"
+        />
+      </div>
+    </section>
+
+    <section
+      class="mx-auto max-w-[1300px] px-12 py-[130px] max-md:px-6 max-md:py-[90px]"
+      id="features"
+    >
+      <div class={sectionKicker}>{t.features.label} / 01</div>
+      <div
+        class="grid grid-cols-[1.4fr_.6fr] items-end gap-[100px] py-12 pb-[70px] max-md:grid-cols-1 max-md:gap-[30px] max-sm:pb-[50px]"
+      >
         <h2
-          class="mb-0 mt-[30px] text-[clamp(48px,6vw,82px)] font-normal leading-[1.02] tracking-[-.06em] max-sm:text-[46px]"
+          class="m-0 text-[clamp(48px,6vw,82px)] font-normal leading-[1.02] tracking-[-.06em] max-sm:text-[46px]"
         >
-          {t.download.title1}<br /><em class="not-italic text-brand"
-            >{t.download.title2}</em
+          {t.features.title1}<br /><span class="text-brand"
+            >{t.features.title2}</span
           >
         </h2>
-        <p class="mb-[34px] mt-6 text-[15px] text-muted">
-          {t.download.description}
-        </p>
-        <div class="flex justify-center gap-3.5 max-sm:flex-col">
-          <a
-            class="grid min-w-[250px] grid-cols-[38px_1fr_auto] items-center gap-3.5 rounded-[14px] border border-[#ccc8c1] bg-white/80 p-4 text-left transition hover:-translate-y-0.5 hover:border-brand hover:shadow-[0_14px_30px_rgba(30,20,15,.08)] max-sm:mx-auto max-sm:w-full max-sm:min-w-0 max-sm:max-w-[360px]"
-            href={stores.chrome}
-            data-store-url={stores.chrome}
-            data-store-pending-message={t.hero.browserCta.pending}
-            ><img
-              class="size-9 object-contain"
-              src={chromeIcon.src}
-              alt=""
-              aria-hidden="true"
-            /><span
-              ><small class="mb-1 block text-[9px] text-[#88837d]"
-                >{t.download.storeLabel}</small
-              ><strong class="text-sm">Google Chrome</strong></span
-            ><b class="font-normal text-[#999]">↗</b></a
-          >
-          <a
-            class="grid min-w-[250px] grid-cols-[38px_1fr_auto] items-center gap-3.5 rounded-[14px] border border-[#ccc8c1] bg-white/80 p-4 text-left transition hover:-translate-y-0.5 hover:border-brand hover:shadow-[0_14px_30px_rgba(30,20,15,.08)] max-sm:mx-auto max-sm:w-full max-sm:min-w-0 max-sm:max-w-[360px]"
-            href={stores.edge}
-            data-store-url={stores.edge}
-            data-store-pending-message={t.hero.browserCta.pending}
-            ><img
-              class="size-9 object-contain"
-              src={edgeIcon.src}
-              alt=""
-              aria-hidden="true"
-            /><span
-              ><small class="mb-1 block text-[9px] text-[#88837d]"
-                >{t.download.storeLabel}</small
-              ><strong class="text-sm">Microsoft Edge</strong></span
-            ><b class="font-normal text-[#999]">↗</b></a
+        <div>
+          <p class="text-[15px] leading-[1.8] text-muted">
+            {t.features.description}
+          </p><a
+            class="mt-[18px] inline-flex gap-10 border-b border-ink pb-1.5 text-[13px] font-semibold"
+            href="#download">{t.features.link} <span>→</span></a
           >
         </div>
-      </section>
-    </main>
-
-    <footer
-      class="grid min-h-40 grid-cols-[1fr_auto_1fr] items-center gap-[30px] border-t border-line bg-[#f1efe9] px-[clamp(24px,6vw,96px)] py-[42px] text-xs max-md:grid-cols-[1fr_auto] max-sm:flex max-sm:flex-wrap max-sm:justify-between"
-    >
-      <a
-        class="inline-flex w-max items-center gap-3 font-bold tracking-[-.03em]"
-        href="#top"
-        ><img class="size-7" src={logo.src} alt="" aria-hidden="true" /><span
-          >{PRODUCT_NAME}</span
-        ></a
-      >
-      <p class="text-muted max-md:hidden">{t.footerTagline}</p>
-      <div
-        class="flex gap-6 justify-self-end max-sm:w-full max-sm:justify-start"
-      >
-        <a class="hover:text-brand" href={sourceUrl}>GitHub</a><a
-          class="hover:text-brand"
-          href="#features">{t.nav.features}</a
-        ><a class="hover:text-brand" href="#demo">{t.nav.demo}</a><a
-          class="hover:text-brand"
-          href={privacyUrl}>{t.nav.privacy}</a
-        ><a class="hover:text-brand" href={languageUrl}>{languageLabel}</a>
       </div>
-      <small
-        class="col-span-full w-full border-t border-line pt-5 text-[#aaa59e]"
-        >© 2026 {PRODUCT_NAME} · {t.footerNote}</small
+
+      <div
+        class:list={[
+          gridPaper,
+          "mb-[70px] grid grid-cols-[.72fr_1.28fr] overflow-hidden border-y border-line max-lg:grid-cols-1 max-sm:mb-[50px]",
+        ]}
       >
-    </footer>
-    <script>
-      import { detectSupportedBrowser } from "../utils/browser";
+        <div
+          class="flex flex-col justify-center border-r border-line bg-paper/75 px-[clamp(32px,5vw,72px)] py-[72px] max-lg:border-b max-lg:border-r-0 max-sm:px-6 max-sm:py-12"
+        >
+          <div
+            class="mb-6 font-mono text-[10px] uppercase tracking-[.14em] text-brand"
+          >
+            {t.features.spotlight.label}
+          </div>
+          <h3
+            class="m-0 max-w-[440px] text-[clamp(34px,3.8vw,54px)] font-normal leading-[1.04] tracking-[-.055em]"
+          >
+            {t.features.spotlight.title}
+          </h3>
+          <p class="mb-7 mt-6 max-w-[460px] text-sm leading-[1.8] text-muted">
+            {t.features.spotlight.description}
+          </p>
+          <ul class="m-0 grid list-none gap-3 p-0">
+            {
+              t.features.spotlight.points.map((point) => (
+                <li class="flex items-center gap-3 text-[13px] text-[#5f5b55]">
+                  <span
+                    class="size-1.5 shrink-0 rounded-full bg-brand"
+                    aria-hidden="true"
+                  />
+                  {point}
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+        <div
+          class="relative flex min-h-[520px] items-center justify-center overflow-hidden px-[clamp(24px,4vw,62px)] py-[70px] max-lg:min-h-0 max-sm:px-3 max-sm:py-10"
+        >
+          <SearchShowcase
+            query={t.features.spotlight.preview.query}
+            engineHost={t.features.spotlight.preview.engineHost}
+            searchAction={t.features.spotlight.preview.searchAction}
+            groupLabel={t.features.spotlight.preview.groupLabel}
+            shortcuts={t.features.spotlight.preview.shortcuts}
+            ariaLabel={t.features.spotlight.imageAlt}
+          />
+        </div>
+      </div>
 
-      const browserStoreCta = document.querySelector("#browser-store-cta");
+      <div class="grid grid-cols-3 border-y border-line max-md:grid-cols-1">
+        <article
+          class="relative border-r border-line px-9 pb-[42px] pt-[38px] max-md:border-b max-md:border-r-0"
+        >
+          <span
+            class="absolute right-6 top-[22px] font-mono text-[10px] text-[#aaa59f]"
+            >01</span
+          ><div
+            class="mb-9 grid size-[58px] place-items-center rounded-full border border-[#c9c5bf]"
+            aria-hidden="true"
+          >
+            <span
+              class="col-start-1 row-start-1 size-[22px] rotate-45 rounded-[5px] border-2 border-brand"
+            ></span><i
+              class="col-start-1 row-start-1 size-2 rounded-full bg-ink"></i>
+          </div><h3 class="mb-3 text-[19px] font-semibold tracking-[-.03em]">
+            {t.features.items[0][0]}
+          </h3><p class="max-w-[280px] text-[13px] leading-[1.75] text-muted">
+            {t.features.items[0][1]}
+          </p>
+        </article>
+        <article
+          class="relative border-r border-line px-9 pb-[42px] pt-[38px] max-md:border-b max-md:border-r-0"
+        >
+          <span
+            class="absolute right-6 top-[22px] font-mono text-[10px] text-[#aaa59f]"
+            >02</span
+          ><div
+            class="mb-9 grid size-[58px] place-items-center rounded-full border border-[#c9c5bf]"
+            aria-hidden="true"
+          >
+            <span
+              class="col-start-1 row-start-1 size-[22px] rounded-full border-2 border-ink"
+            ></span><i
+              class="col-start-1 row-start-1 size-3 rounded-full bg-brand"></i>
+          </div><h3 class="mb-3 text-[19px] font-semibold tracking-[-.03em]">
+            {t.features.items[1][0]}
+          </h3><p class="max-w-[280px] text-[13px] leading-[1.75] text-muted">
+            {t.features.items[1][1]}
+          </p>
+        </article>
+        <article class="relative px-9 pb-[42px] pt-[38px]">
+          <span
+            class="absolute right-6 top-[22px] font-mono text-[10px] text-[#aaa59f]"
+            >03</span
+          ><div
+            class="mb-9 grid size-[58px] place-items-center rounded-full border border-[#c9c5bf]"
+            aria-hidden="true"
+          >
+            <span class="flex h-5 w-6 flex-col justify-between">
+              <i class="h-0.5 w-full bg-brand"></i>
+              <i class="h-0.5 w-full bg-ink"></i>
+              <i class="h-0.5 w-full bg-[#aaa59f]"></i>
+            </span>
+          </div><h3 class="mb-3 text-[19px] font-semibold tracking-[-.03em]">
+            {t.features.items[2][0]}
+          </h3><p class="max-w-[280px] text-[13px] leading-[1.75] text-muted">
+            {t.features.items[2][1]}
+          </p>
+        </article>
+      </div>
+    </section>
 
-      if (browserStoreCta instanceof HTMLAnchorElement) {
-        const label = browserStoreCta.querySelector(
-          "[data-browser-store-label]",
-        );
-        const browser = detectSupportedBrowser();
+    <section
+      class="grid min-h-[670px] scroll-mt-[76px] grid-cols-2 bg-ink text-white max-md:scroll-mt-[66px] max-md:grid-cols-1"
+      id="opensource"
+    >
+      <div
+        class="relative min-h-[550px] overflow-hidden border-r border-white/10 bg-[radial-gradient(circle_at_center,#30302d_0_2px,transparent_3px)] bg-[size:24px_24px] max-md:min-h-[420px] max-md:border-b max-md:border-r-0 max-sm:min-h-[330px]"
+        aria-hidden="true"
+      >
+        <span
+          class="absolute left-[19%] top-[8%] font-serif text-[380px] font-light leading-none text-brand max-sm:left-[10%] max-sm:text-[260px]"
+          >{`{`}</span
+        ><span
+          class="absolute left-1/2 top-1/2 size-[115px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand shadow-[0_0_0_18px_rgba(255,79,36,.12)]"
+        ></span><span
+          class="absolute right-[19%] top-[31%] font-serif text-[380px] font-light leading-none text-brand max-sm:right-[10%] max-sm:text-[260px]"
+          >{`}`}</span
+        >
+      </div>
+      <div
+        class="flex flex-col justify-center px-[clamp(42px,7vw,110px)] py-20 max-sm:px-6 max-sm:py-[65px]"
+      >
+        <div class:list={[sectionKicker, "border-white/15 text-[#888]"]}>
+          {t.source.label} / 02
+        </div>
+        <h2
+          class="mb-0 mt-[42px] text-[clamp(46px,5vw,72px)] font-normal leading-[1.02] tracking-[-.06em]"
+        >
+          {t.source.title1}<br />{t.source.title2}
+        </h2>
+        <p class="my-7 max-w-[500px] text-[15px] leading-[1.8] text-[#aaa7a2]">
+          {t.source.description}
+        </p>
+        <a
+          class:list={[buttonBase, "self-start bg-white text-ink"]}
+          href={sourceUrl}>{t.source.link} <span>↗</span></a
+        >
+      </div>
+    </section>
 
-        if (browser === "edge") {
-          const storeUrl = browserStoreCta.dataset.edgeUrl ?? "";
-          browserStoreCta.dataset.storeUrl = storeUrl;
-          browserStoreCta.href = storeUrl || "#download";
-          if (label)
-            label.textContent = browserStoreCta.dataset.edgeLabel ?? "";
-        } else if (browser === "chrome") {
-          const storeUrl = browserStoreCta.dataset.chromeUrl ?? "";
-          browserStoreCta.dataset.storeUrl = storeUrl;
-          browserStoreCta.href = storeUrl || "#download";
-          if (label)
-            label.textContent = browserStoreCta.dataset.chromeLabel ?? "";
-        } else if (label) {
-          label.textContent = browserStoreCta.dataset.chooseLabel ?? "";
-        }
+    <section
+      class:list={[
+        gridPaper,
+        "relative overflow-hidden px-6 py-[130px] text-center max-sm:px-5 max-sm:py-[90px]",
+      ]}
+      id="download"
+    >
+      <div
+        class="inline-flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[.12em] text-caption"
+      >
+        {t.download.label} / 03
+      </div>
+      <h2
+        class="mb-0 mt-[30px] text-[clamp(48px,6vw,82px)] font-normal leading-[1.02] tracking-[-.06em] max-sm:text-[46px]"
+      >
+        {t.download.title1}<br /><em class="not-italic text-brand"
+          >{t.download.title2}</em
+        >
+      </h2>
+      <p class="mb-[34px] mt-6 text-[15px] text-muted">
+        {t.download.description}
+      </p>
+      <div class="flex justify-center gap-3.5 max-sm:flex-col">
+        <a
+          class="grid min-w-[250px] grid-cols-[38px_1fr_auto] items-center gap-3.5 rounded-[14px] border border-[#ccc8c1] bg-white/80 p-4 text-left transition hover:-translate-y-0.5 hover:border-brand hover:shadow-[0_14px_30px_rgba(30,20,15,.08)] max-sm:mx-auto max-sm:w-full max-sm:min-w-0 max-sm:max-w-[360px]"
+          href={stores.chrome}
+          data-store-url={stores.chrome}
+          data-store-pending-message={t.hero.browserCta.pending}
+          ><img
+            class="size-9 object-contain"
+            src={chromeIcon.src}
+            alt=""
+            aria-hidden="true"
+          /><span
+            ><small class="mb-1 block text-[9px] text-[#88837d]"
+              >{t.download.storeLabel}</small
+            ><strong class="text-sm">Google Chrome</strong></span
+          ><b class="font-normal text-[#999]">↗</b></a
+        >
+        <a
+          class="grid min-w-[250px] grid-cols-[38px_1fr_auto] items-center gap-3.5 rounded-[14px] border border-[#ccc8c1] bg-white/80 p-4 text-left transition hover:-translate-y-0.5 hover:border-brand hover:shadow-[0_14px_30px_rgba(30,20,15,.08)] max-sm:mx-auto max-sm:w-full max-sm:min-w-0 max-sm:max-w-[360px]"
+          href={stores.edge}
+          data-store-url={stores.edge}
+          data-store-pending-message={t.hero.browserCta.pending}
+          ><img
+            class="size-9 object-contain"
+            src={edgeIcon.src}
+            alt=""
+            aria-hidden="true"
+          /><span
+            ><small class="mb-1 block text-[9px] text-[#88837d]"
+              >{t.download.storeLabel}</small
+            ><strong class="text-sm">Microsoft Edge</strong></span
+          ><b class="font-normal text-[#999]">↗</b></a
+        >
+      </div>
+    </section>
+  </main>
+
+  <footer
+    class="grid min-h-40 grid-cols-[1fr_auto_1fr] items-center gap-[30px] border-t border-line bg-[#f1efe9] px-[clamp(24px,6vw,96px)] py-[42px] text-xs max-md:grid-cols-[1fr_auto] max-sm:flex max-sm:flex-wrap max-sm:justify-between"
+  >
+    <a
+      class="inline-flex w-max items-center gap-3 font-bold tracking-[-.03em]"
+      href="#top"
+      ><img class="size-7" src={logo.src} alt="" aria-hidden="true" /><span
+        >{PRODUCT_NAME}</span
+      ></a
+    >
+    <p class="text-muted max-md:hidden">{t.footerTagline}</p>
+    <div class="flex gap-6 justify-self-end max-sm:w-full max-sm:justify-start">
+      <a class="hover:text-brand" href={sourceUrl}>GitHub</a><a
+        class="hover:text-brand"
+        href="#features">{t.nav.features}</a
+      ><a class="hover:text-brand" href="#demo">{t.nav.demo}</a><a
+        class="hover:text-brand"
+        href={privacyUrl}>{t.nav.privacy}</a
+      ><a class="hover:text-brand" href={languageUrl}>{languageLabel}</a>
+    </div>
+    <small class="col-span-full w-full border-t border-line pt-5 text-[#aaa59e]"
+      >© 2026 {PRODUCT_NAME} · {t.footerNote}</small
+    >
+  </footer>
+  <script>
+    import { detectSupportedBrowser } from "../utils/browser";
+
+    const browserStoreCta = document.querySelector("#browser-store-cta");
+
+    if (browserStoreCta instanceof HTMLAnchorElement) {
+      const label = browserStoreCta.querySelector("[data-browser-store-label]");
+      const browser = detectSupportedBrowser();
+
+      if (browser === "edge") {
+        const storeUrl = browserStoreCta.dataset.edgeUrl ?? "";
+        browserStoreCta.dataset.storeUrl = storeUrl;
+        browserStoreCta.href = storeUrl || "#download";
+        if (label) label.textContent = browserStoreCta.dataset.edgeLabel ?? "";
+      } else if (browser === "chrome") {
+        const storeUrl = browserStoreCta.dataset.chromeUrl ?? "";
+        browserStoreCta.dataset.storeUrl = storeUrl;
+        browserStoreCta.href = storeUrl || "#download";
+        if (label)
+          label.textContent = browserStoreCta.dataset.chromeLabel ?? "";
+      } else if (label) {
+        label.textContent = browserStoreCta.dataset.chooseLabel ?? "";
       }
+    }
 
-      document.querySelectorAll("[data-store-url]").forEach((storeLink) => {
-        if (!(storeLink instanceof HTMLAnchorElement)) return;
+    document.querySelectorAll("[data-store-url]").forEach((storeLink) => {
+      if (!(storeLink instanceof HTMLAnchorElement)) return;
 
-        storeLink.addEventListener("click", (event) => {
-          if (storeLink.dataset.storeUrl?.trim()) return;
+      storeLink.addEventListener("click", (event) => {
+        if (storeLink.dataset.storeUrl?.trim()) return;
 
-          event.preventDefault();
-          window.alert(storeLink.dataset.storePendingMessage ?? "");
-        });
+        event.preventDefault();
+        window.alert(storeLink.dataset.storePendingMessage ?? "");
       });
-    </script>
-  </body>
-</html>
+    });
+  </script>
+</BaseLayout>

@@ -1,4 +1,5 @@
 import { defineConfig } from "astro/config";
+import projectConfig from "../../project.config.json" with { type: "json" };
 
 const isStoreAssetsBuild = process.env.STORE_ASSETS_BUILD === "true";
 
@@ -47,6 +48,7 @@ function storeAssetsRoutes() {
 }
 
 export default defineConfig({
+  site: projectConfig.site.url,
   outDir: isStoreAssetsBuild ? "./.store-assets-dist" : "./dist",
   integrations: [storeAssetsRoutes()],
 });
