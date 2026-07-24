@@ -341,11 +341,22 @@ export function SearchEngineBox() {
           <Popover.Anchor asChild>
             <div
               className={clsx(
-                "flex h-12 items-center border border-white/50 px-3 text-slate-800 shadow-[0_16px_42px_rgba(15,23,42,0.2)] backdrop-blur-2xl transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-white/95 focus-within:shadow-[0_22px_58px_rgba(15,23,42,0.32)] motion-reduce:transition-none sm:h-[52px]",
+                "flex h-12 cursor-text items-center border border-white/50 px-3 text-slate-800 shadow-[0_16px_42px_rgba(15,23,42,0.2)] backdrop-blur-2xl transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-white/95 focus-within:shadow-[0_22px_58px_rgba(15,23,42,0.32)] motion-reduce:transition-none sm:h-[52px] [&_button]:cursor-pointer",
                 isSuggestionOpen
                   ? "rounded-b-none rounded-t-glass border-b-slate-400/20 bg-slate-100"
                   : "rounded-glass bg-white/55 focus-within:bg-white/80",
               )}
+              onClick={(event) => {
+                const target = event.target;
+                if (
+                  target instanceof Element &&
+                  target.closest("button, a, input")
+                ) {
+                  return;
+                }
+
+                inputRef.current?.focus();
+              }}
             >
               <SearchEngineSelector
                 engines={searchEngines}
