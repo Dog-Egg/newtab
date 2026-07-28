@@ -1,6 +1,5 @@
 import type { Settings } from "../Settings/settings";
 import type { AppLocale } from "../i18n/locale";
-import type { ShortcutCategory } from "../Launcher/launcher";
 import type {
   BookmarkLayoutCategory,
   BrowserBookmark,
@@ -20,23 +19,8 @@ export type StoredSearchEngineSettings = {
   }>;
 };
 
-export type BrowserBookmarksImportResult = {
-  importedCount: number;
-  skippedDuplicateCount: number;
-  folderCount: number;
-  unsupported?: boolean;
-};
-
 export type Platform = {
   defaultLocale: AppLocale;
-  launcher: {
-    read: (locale: AppLocale) => Promise<ShortcutCategory[]>;
-    save: (categories: ShortcutCategory[]) => Promise<void>;
-    subscribe: (
-      locale: AppLocale,
-      onChange: (categories: ShortcutCategory[]) => void,
-    ) => StorageUnsubscribe;
-  };
   bookmarkLayout: {
     read: (locale: AppLocale) => Promise<BookmarkLayoutCategory[]>;
     save: (categories: BookmarkLayoutCategory[]) => Promise<void>;
@@ -71,8 +55,5 @@ export type Platform = {
   searchEngineSettings: {
     read: () => Promise<StoredSearchEngineSettings>;
     save: (settings: StoredSearchEngineSettings) => Promise<void>;
-  };
-  browserBookmarks: {
-    import: () => Promise<BrowserBookmarksImportResult>;
   };
 };

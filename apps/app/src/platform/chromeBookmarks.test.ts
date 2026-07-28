@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { flattenBookmarkItems, getAllBookmarkItems } from "./bookmarks";
+import { flattenBookmarkItems, getAllBookmarkItems } from "./chromeBookmarks";
 
 const bookmarkTree: chrome.bookmarks.BookmarkTreeNode[] = [
   {

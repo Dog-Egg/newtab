@@ -1,11 +1,11 @@
-export type BookmarkItem = chrome.bookmarks.BookmarkTreeNode & {
+export type ChromeBookmarkItem = chrome.bookmarks.BookmarkTreeNode & {
   url: string;
 };
 
 // Chrome 用 url 区分书签与目录：目录节点没有 url。
 function isBookmarkItem(
   node: chrome.bookmarks.BookmarkTreeNode,
-): node is BookmarkItem {
+): node is ChromeBookmarkItem {
   return typeof node.url === "string";
 }
 
@@ -15,8 +15,8 @@ function isBookmarkItem(
  */
 export function flattenBookmarkItems(
   nodes: chrome.bookmarks.BookmarkTreeNode[],
-): BookmarkItem[] {
-  const items: BookmarkItem[] = [];
+): ChromeBookmarkItem[] {
+  const items: ChromeBookmarkItem[] = [];
   // 逆序入栈、正序出栈，确保同级书签的展示顺序不变。
   const pending = [...nodes].reverse();
 
@@ -24,9 +24,7 @@ export function flattenBookmarkItems(
     const node = pending.pop();
     if (!node) continue;
 
-    if (isBookmarkItem(node)) {
-      items.push(node);
-    }
+    if (isBookmarkItem(node)) items.push(node);
 
     for (let index = (node.children?.length ?? 0) - 1; index >= 0; index--) {
       pending.push(node.children![index]);
@@ -36,7 +34,7 @@ export function flattenBookmarkItems(
   return items;
 }
 
-export function getAllBookmarkItems(): Promise<BookmarkItem[]> {
+export function getAllBookmarkItems(): Promise<ChromeBookmarkItem[]> {
   return new Promise((resolve, reject) => {
     chrome.bookmarks.getTree((tree) => {
       // lastError 只能在 Chrome API 回调执行期间读取。

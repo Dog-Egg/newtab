@@ -27,18 +27,20 @@ async function main() {
     console.error("Failed to apply the initial locale", error);
   }
 
-  const [initialBookmarkLayout, initialBookmarks] = await Promise.all([
-    platform.bookmarkLayout
-      .read(initialSettings.locale)
-      .catch((error: unknown) => {
-        console.error("Failed to read bookmark layout", error);
-        return [];
-      }),
-    platform.bookmarks.read().catch((error: unknown) => {
+  // Extension 首次读取布局时可能先把旧 Launcher 快捷方式导出为 Chrome
+  // Bookmarks，因此实体必须在布局迁移完成后再读，避免首屏拿到迁移前的旧快照。
+  const initialBookmarkLayout = await platform.bookmarkLayout
+    .read(initialSettings.locale)
+    .catch((error: unknown) => {
+      console.error("Failed to read bookmark layout", error);
+      return [];
+    });
+  const initialBookmarks = await platform.bookmarks
+    .read()
+    .catch((error: unknown) => {
       console.error("Failed to read browser bookmarks", error);
       return [];
-    }),
-  ]);
+    });
 
   createRoot(document.getElementById("root")!).render(
     <StrictMode>

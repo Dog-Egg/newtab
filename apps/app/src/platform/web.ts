@@ -1,8 +1,6 @@
 import {
   ACTIVE_CATEGORY_ID_STORAGE_KEY,
-  LAUNCHER_STORAGE_KEY,
   DEFAULT_CATEGORY_ID,
-  type ShortcutCategory,
 } from "../Launcher/launcher";
 import {
   SEARCH_ENGINE_SETTINGS_KEY,
@@ -15,7 +13,6 @@ import {
   type Settings,
 } from "../Settings/settings";
 import { getLocaleFromLanguage } from "../i18n/locale";
-import { normalizeStoredWebLauncher } from "../Launcher/defaultLauncher";
 import { getDefaultCategoryNames } from "../Launcher/defaultLauncher";
 import {
   BOOKMARK_LAYOUT_STORAGE_KEY,
@@ -80,15 +77,6 @@ function readStoredSearchEngineSettings(): StoredSearchEngineSettings {
 
 function saveStoredSearchEngineSettings(settings: StoredSearchEngineSettings) {
   writeJsonStorageValue(SEARCH_ENGINE_SETTINGS_KEY, settings);
-}
-
-function readStoredLauncher(locale: AppLocale) {
-  const storedValue = readJsonStorageValue(LAUNCHER_STORAGE_KEY);
-  return normalizeStoredWebLauncher(storedValue, locale);
-}
-
-function saveStoredLauncher(categories: ShortcutCategory[]) {
-  writeJsonStorageValue(LAUNCHER_STORAGE_KEY, categories);
 }
 
 function readStoredBookmarkLayout(locale: AppLocale) {
@@ -159,22 +147,6 @@ function saveStoredSettings(settings: Settings) {
 
 export const platform: Platform = {
   defaultLocale,
-  launcher: {
-    read: async (locale) => readStoredLauncher(locale),
-    save: async (categories) => saveStoredLauncher(categories),
-    subscribe: (locale, onChange) => {
-      const handleStorageChange = (event: StorageEvent) => {
-        if (event.key !== LAUNCHER_STORAGE_KEY) {
-          return;
-        }
-
-        onChange(readStoredLauncher(locale));
-      };
-
-      window.addEventListener("storage", handleStorageChange);
-      return () => window.removeEventListener("storage", handleStorageChange);
-    },
-  },
   bookmarkLayout: {
     read: async (locale) => readStoredBookmarkLayout(locale),
     save: async (categories) => saveStoredBookmarkLayout(categories),
@@ -257,15 +229,5 @@ export const platform: Platform = {
   searchEngineSettings: {
     read: async () => readStoredSearchEngineSettings(),
     save: async (settings) => saveStoredSearchEngineSettings(settings),
-  },
-  browserBookmarks: {
-    import: async () => {
-      return {
-        importedCount: 0,
-        skippedDuplicateCount: 0,
-        folderCount: 0,
-        unsupported: true,
-      };
-    },
   },
 };

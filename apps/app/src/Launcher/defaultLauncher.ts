@@ -223,12 +223,6 @@ function createEmptyDefaultCategory(locale: AppLocale): ShortcutCategory {
   };
 }
 
-export function normalizeStoredWebLauncher(value: unknown, locale: AppLocale) {
-  return typeof value === "undefined"
-    ? createWebDefaultLauncher(locale)
-    : normalizeLauncher(value, createEmptyDefaultCategory(locale));
-}
-
 export function normalizeStoredExtensionLauncher(
   value: unknown,
   locale: AppLocale,
@@ -239,4 +233,8 @@ export function normalizeStoredExtensionLauncher(
 
 export function getDefaultCategoryNames(locale: AppLocale) {
   return (locale === "zh-CN" ? zhCN : en).launcher.defaultCategories;
+}
+
+export function getOtherBookmarksFolderTitle(locale: AppLocale) {
+  return (locale === "zh-CN" ? zhCN : en).launcher.otherBookmarks;
 }
