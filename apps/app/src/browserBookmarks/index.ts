@@ -7,16 +7,22 @@ import {
   DEFAULT_CATEGORY_ID,
   normalizeActiveCategoryId,
   type ShortcutCategory,
-} from "./Launcher/launcher";
+} from "../Launcher/launcher";
 import { toast } from "sonner";
-import i18n from "./i18n";
-import { normalizeLocale } from "./i18n/locale";
-import { normalizeStoredExtensionLauncher } from "./Launcher/defaultLauncher";
+import i18n from "../i18n";
+import { normalizeLocale } from "../i18n/locale";
+import { normalizeStoredExtensionLauncher } from "../Launcher/defaultLauncher";
 
 export type BrowserBookmarksImportResult = {
   importedCount: number;
   skippedDuplicateCount: number;
   folderCount: number;
+  unsupported?: boolean;
+};
+
+export type ShortcutsExportResult = {
+  exportedCount: number;
+  skippedDuplicateCount: number;
   unsupported?: boolean;
 };
 
@@ -39,7 +45,12 @@ export function canUseChromeBookmarks() {
 }
 
 function isWebUrl(url: string) {
-  return url.startsWith("http://") || url.startsWith("https://");
+  try {
+    const protocol = new URL(url).protocol.toLowerCase();
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function getStoredCategories() {
@@ -102,6 +113,22 @@ function getBrowserBookmarkTree() {
   });
 }
 
+function createBrowserBookmark(
+  bookmark: chrome.bookmarks.CreateDetails,
+): Promise<chrome.bookmarks.BookmarkTreeNode> {
+  return new Promise((resolve, reject) => {
+    chrome.bookmarks.create(bookmark, (result) => {
+      const error = chrome.runtime.lastError;
+      if (error) {
+        reject(new Error(error.message));
+        return;
+      }
+
+      resolve(result);
+    });
+  });
+}
+
 function addExistingUrls(shortcuts: ShortcutNode[], seenUrls: Set<string>) {
   for (const node of shortcuts) {
     if (node.type === "folder") {
@@ -110,6 +137,66 @@ function addExistingUrls(shortcuts: ShortcutNode[], seenUrls: Set<string>) {
       seenUrls.add(node.url);
     }
   }
+}
+
+function addBookmarkUrls(
+  nodes: chrome.bookmarks.BookmarkTreeNode[],
+  seenUrls: Set<string>,
+) {
+  for (const node of nodes) {
+    if (node.url) seenUrls.add(node.url);
+    if (node.children) addBookmarkUrls(node.children, seenUrls);
+  }
+}
+
+function addNewShortcutItems(
+  nodes: ShortcutNode[],
+  seenUrls: Set<string>,
+  newItems: ShortcutItem[],
+) {
+  let skippedDuplicateCount = 0;
+
+  for (const node of nodes) {
+    if (node.type === "folder") {
+      skippedDuplicateCount += addNewShortcutItems(
+        node.children,
+        seenUrls,
+        newItems,
+      );
+      continue;
+    }
+
+    if (!isWebUrl(node.url)) continue;
+    if (seenUrls.has(node.url)) {
+      skippedDuplicateCount += 1;
+      continue;
+    }
+
+    seenUrls.add(node.url);
+    newItems.push(node);
+  }
+
+  return skippedDuplicateCount;
+}
+
+export function collectNewBookmarkShortcuts(
+  categories: ShortcutCategory[],
+  bookmarkTree: chrome.bookmarks.BookmarkTreeNode[],
+) {
+  const seenUrls = new Set<string>();
+  const newItems: ShortcutItem[] = [];
+  addBookmarkUrls(bookmarkTree, seenUrls);
+
+  let skippedDuplicateCount = 0;
+  for (const category of categories) {
+    skippedDuplicateCount += addNewShortcutItems(
+      category.shortcuts,
+      seenUrls,
+      newItems,
+    );
+  }
+
+  return { newItems, skippedDuplicateCount };
 }
 
 function addExistingIds(shortcuts: ShortcutNode[], usedIds: Set<string>) {
@@ -342,5 +429,79 @@ export async function importBrowserBookmarksWithToast() {
     );
   } catch {
     toast.error(i18n.t("bookmarks.failed"));
+  }
+}
+
+export async function exportShortcutsToBrowserBookmarks(): Promise<ShortcutsExportResult> {
+  if (
+    !canUseChromeBookmarks() ||
+    typeof chrome.bookmarks.create !== "function"
+  ) {
+    return {
+      exportedCount: 0,
+      skippedDuplicateCount: 0,
+      unsupported: true,
+    };
+  }
+
+  const [categories, browserBookmarkTree] = await Promise.all([
+    getStoredCategories(),
+    getBrowserBookmarkTree(),
+  ]);
+  const { newItems, skippedDuplicateCount } = collectNewBookmarkShortcuts(
+    categories,
+    browserBookmarkTree,
+  );
+
+  if (newItems.length === 0) {
+    return { exportedCount: 0, skippedDuplicateCount };
+  }
+
+  const folder = await createBrowserBookmark({
+    title: "NewTab",
+  });
+  for (const shortcut of newItems) {
+    await createBrowserBookmark({
+      parentId: folder.id,
+      title: shortcut.title,
+      url: shortcut.url,
+    });
+  }
+
+  return {
+    exportedCount: newItems.length,
+    skippedDuplicateCount,
+  };
+}
+
+export async function exportShortcutsToBrowserBookmarksWithToast() {
+  try {
+    const result = await exportShortcutsToBrowserBookmarks();
+    if (result.unsupported) {
+      toast.error(i18n.t("bookmarks.exportUnavailable"));
+      return;
+    }
+
+    if (result.exportedCount === 0) {
+      toast.info(
+        result.skippedDuplicateCount > 0
+          ? i18n.t("bookmarks.exportNoNew")
+          : i18n.t("bookmarks.noShortcuts"),
+      );
+      return;
+    }
+
+    toast.success(
+      i18n.t("bookmarks.exported", {
+        count: result.exportedCount,
+        skipped: result.skippedDuplicateCount
+          ? i18n.t("bookmarks.skipped", {
+              count: result.skippedDuplicateCount,
+            })
+          : "",
+      }),
+    );
+  } catch {
+    toast.error(i18n.t("bookmarks.exportFailed"));
   }
 }

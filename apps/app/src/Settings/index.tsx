@@ -1,7 +1,10 @@
 import { useCallback, useState, type FormEvent } from "react";
 import { ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { importBrowserBookmarksWithToast } from "../browserBookmarks";
+import {
+  exportShortcutsToBrowserBookmarksWithToast,
+  importBrowserBookmarksWithToast,
+} from "../browserBookmarks";
 import { normalizeImageUrl } from "./wallpaper";
 import {
   DEFAULT_LAUNCHER_NODE_SCALE,
@@ -30,6 +33,7 @@ function preloadImage(url: string) {
 function BrowserBookmarksImportSettings() {
   const { t } = useTranslation();
   const [isImportingBookmarks, setIsImportingBookmarks] = useState(false);
+  const [isExportingShortcuts, setIsExportingShortcuts] = useState(false);
 
   const handleImportBrowserBookmarks = useCallback(async () => {
     setIsImportingBookmarks(true);
@@ -40,20 +44,46 @@ function BrowserBookmarksImportSettings() {
     }
   }, []);
 
+  const handleExportShortcuts = useCallback(async () => {
+    setIsExportingShortcuts(true);
+    try {
+      await exportShortcutsToBrowserBookmarksWithToast();
+    } finally {
+      setIsExportingShortcuts(false);
+    }
+  }, []);
+
   return (
     <section className="border-b border-glass-border px-2 py-3.5">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="min-w-0 text-sm font-medium text-glass-strong">
-          {t("settings.importBookmarks")}
-        </h3>
-        <button
-          className="h-8 shrink-0 rounded-lg bg-glass-selected px-3 text-sm font-medium text-glass-selected-content outline-none transition hover:bg-glass-strong/90 focus-visible:ring-2 focus-visible:ring-glass-focus disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
-          type="button"
-          onClick={handleImportBrowserBookmarks}
-          disabled={isImportingBookmarks}
-        >
-          {t(isImportingBookmarks ? "settings.importing" : "settings.import")}
-        </button>
+        <div className="min-w-0">
+          <h3 className="text-sm font-medium text-glass-strong">
+            {t("settings.browserBookmarks")}
+          </h3>
+          <p className="mt-0.5 text-xs text-glass-muted">
+            {t("settings.browserBookmarksDescription")}
+          </p>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <button
+            className="h-8 rounded-lg bg-glass-selected px-3 text-sm font-medium text-glass-selected-content outline-none transition hover:bg-glass-strong/90 focus-visible:ring-2 focus-visible:ring-glass-focus disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
+            type="button"
+            title={t("settings.importBrowserBookmarks")}
+            onClick={handleImportBrowserBookmarks}
+            disabled={isImportingBookmarks || isExportingShortcuts}
+          >
+            {t(isImportingBookmarks ? "settings.importing" : "settings.import")}
+          </button>
+          <button
+            className="h-8 rounded-lg bg-glass-selected px-3 text-sm font-medium text-glass-selected-content outline-none transition hover:bg-glass-strong/90 focus-visible:ring-2 focus-visible:ring-glass-focus disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
+            type="button"
+            title={t("settings.exportBrowserBookmarks")}
+            onClick={handleExportShortcuts}
+            disabled={isImportingBookmarks || isExportingShortcuts}
+          >
+            {t(isExportingShortcuts ? "settings.exporting" : "settings.export")}
+          </button>
+        </div>
       </div>
     </section>
   );
