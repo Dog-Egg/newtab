@@ -1,7 +1,7 @@
 import {
   ACTIVE_CATEGORY_ID_STORAGE_KEY,
   DEFAULT_CATEGORY_ID,
-} from "../Launcher/launcher";
+} from "../Launcher/bookmarkLayout";
 import {
   SEARCH_ENGINE_SETTINGS_KEY,
   type Platform,

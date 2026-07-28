@@ -20,7 +20,7 @@ export function getSearchSuggestionId(suggestion: SearchSuggestionItem) {
   return `search-suggestion-${getSearchSuggestionKey(suggestion)}`;
 }
 
-function getShortcutDomain(url: string) {
+function getBookmarkDomain(url: string) {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
   } catch {
@@ -114,13 +114,13 @@ export function SearchSuggestion({
           const isEngine = suggestion.type === "engine";
           const title = isEngine
             ? suggestion.engine.name
-            : suggestion.shortcut.title;
+            : suggestion.bookmark.title;
           const url = isEngine
             ? getSearchEngineIconSource(suggestion.engine.urlFormat)
-            : suggestion.shortcut.url;
+            : suggestion.bookmark.url;
           const domain = isEngine
             ? getSearchEngineDomain(suggestion.engine)
-            : getShortcutDomain(suggestion.shortcut.url);
+            : getBookmarkDomain(suggestion.bookmark.url);
           const engineActionText = isEngine
             ? t("search.useEngine", { name: suggestion.engine.name })
             : "";
@@ -166,7 +166,7 @@ export function SearchSuggestion({
                 <>
                   <span className="min-w-0 flex-1 truncate text-sm">
                     <HighlightedText
-                      text={suggestion.shortcut.title}
+                      text={suggestion.bookmark.title}
                       matches={suggestion.matches.title}
                     />
                   </span>
@@ -194,7 +194,7 @@ export function SearchSuggestion({
                 key={suggestionKey}
                 id={getSearchSuggestionId(suggestion)}
                 className={className}
-                href={suggestion.shortcut.url}
+                href={suggestion.bookmark.url}
                 target="_parent"
                 rel="noreferrer"
                 role="option"

@@ -1,13 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { BOOKMARK_LAYOUT_STORAGE_KEY } from "../Launcher/bookmarkLayout";
+import {
+  BOOKMARK_LAYOUT_STORAGE_KEY,
+  DEFAULT_CATEGORY_ID,
+} from "../Launcher/bookmarkLayout";
 import { MIGRATED_OTHER_BOOKMARKS_FOLDER_ID } from "../Launcher/migration/legacyLauncher";
 import {
-  DEFAULT_CATEGORY_ID,
   LAUNCHER_STORAGE_KEY,
-  type ShortcutCategory,
-} from "../Launcher/launcher";
+  type LegacyLauncherCategory,
+} from "../Launcher/legacyLauncher";
 
-const legacyCategories: ShortcutCategory[] = [
+const legacyCategories: LegacyLauncherCategory[] = [
   {
     id: DEFAULT_CATEGORY_ID,
     name: "Home",
@@ -115,7 +117,7 @@ describe("extension bookmark layout migration", () => {
     expect(chromeMock.create).not.toHaveBeenCalled();
   });
 
-  it("exports missing legacy shortcuts and returns the migrated layout in memory", async () => {
+  it("exports missing legacy entries and returns the migrated layout in memory", async () => {
     const beforeExport: chrome.bookmarks.BookmarkTreeNode[] = [
       {
         id: "root",

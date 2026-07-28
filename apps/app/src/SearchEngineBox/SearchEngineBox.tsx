@@ -35,7 +35,7 @@ import {
 
 export function SearchEngineBox() {
   const { t } = useTranslation();
-  const { categories: shortcutCategories } = useLauncher();
+  const { categories: bookmarkCategories } = useLauncher();
   const inputRef = useRef<HTMLInputElement>(null);
   const [storedSettings, setStoredSettings] =
     useState<StoredSearchEngineSettings>({});
@@ -75,7 +75,7 @@ export function SearchEngineBox() {
   const suggestionQuery = retainedSuggestionQuery ?? query;
   const suggestions = findSearchSuggestions({
     engines: searchEngines,
-    categories: shortcutCategories,
+    categories: bookmarkCategories,
     input: suggestionQuery,
     selectedEngineId: selectedEngine.id,
     temporaryEngineId,
@@ -222,9 +222,9 @@ export function SearchEngineBox() {
     inputRef.current?.focus();
   }
 
-  function openShortcutSuggestion(suggestion: SearchSuggestionItem) {
-    if (suggestion.type !== "shortcut") return;
-    window.open(suggestion.shortcut.url, "_parent", "noreferrer");
+  function openBookmarkSuggestion(suggestion: SearchSuggestionItem) {
+    if (suggestion.type !== "bookmark") return;
+    window.open(suggestion.bookmark.url, "_parent", "noreferrer");
   }
 
   function acceptSuggestion(
@@ -236,7 +236,7 @@ export function SearchEngineBox() {
       return;
     }
 
-    openShortcutSuggestion(suggestion);
+    openBookmarkSuggestion(suggestion);
   }
 
   function selectAdjacentSuggestion(direction: 1 | -1) {
@@ -295,8 +295,8 @@ export function SearchEngineBox() {
 
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (activeSuggestion?.type === "shortcut") {
-      openShortcutSuggestion(activeSuggestion);
+    if (activeSuggestion?.type === "bookmark") {
+      openBookmarkSuggestion(activeSuggestion);
       return;
     }
 

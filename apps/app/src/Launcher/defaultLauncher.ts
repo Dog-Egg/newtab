@@ -1,59 +1,60 @@
 import {
+  normalizeLegacyLauncher,
+  type LegacyLauncherCategory,
+} from "./legacyLauncher";
+import {
   DEFAULT_CATEGORY_ID,
-  normalizeLauncher,
-  type ShortcutCategory,
-} from "./launcher";
+  type LauncherBookmarkCategory,
+} from "./bookmarkLayout";
 import type { AppLocale } from "../i18n";
 import { en } from "../i18n/locales/en";
 import { zhCN } from "../i18n/locales/zh-CN";
 
-function createDefaultNodeFactory(locale: AppLocale) {
-  let order = 0;
+function createDefaultBookmarkFactory(locale: AppLocale) {
   const localize = (original: string, zhCN?: string) =>
     locale === "zh-CN" && zhCN ? zhCN : original;
-  const shortcut = (original: string, url: string, zhCN?: string) => ({
+  const bookmark = (original: string, url: string, zhCN?: string) => ({
     type: "item" as const,
     id: url,
     title: localize(original, zhCN),
     url,
-    createdAt: ++order,
   });
   const folder = (
     id: string,
     original: string,
-    children: ReturnType<typeof shortcut>[],
+    children: ReturnType<typeof bookmark>[],
     zhCN?: string,
   ) => ({
     type: "folder" as const,
     id: `folder-${id}`,
     title: localize(original, zhCN),
     children,
-    createdAt: ++order,
   });
 
   return {
-    shortcut,
+    bookmark,
     folder,
   };
 }
 
-export function createWebDefaultLauncher(
+export function createWebDefaultBookmarks(
   locale: AppLocale,
-): ShortcutCategory[] {
+): LauncherBookmarkCategory[] {
   const names = getDefaultCategoryNames(locale);
-  const { shortcut, folder } = createDefaultNodeFactory(locale);
+  const { bookmark, folder } = createDefaultBookmarkFactory(locale);
 
   return [
     {
-      ...createEmptyDefaultCategory(locale),
-      shortcuts: [
-        shortcut("YouTube", "https://www.youtube.com"),
+      id: DEFAULT_CATEGORY_ID,
+      name: names.home,
+      bookmarks: [
+        bookmark("YouTube", "https://www.youtube.com"),
         folder(
           "daily",
           "Daily",
           [
-            shortcut("Gmail", "https://mail.google.com"),
-            shortcut(
+            bookmark("Gmail", "https://mail.google.com"),
+            bookmark(
               "Google Calendar",
               "https://calendar.google.com",
               "谷歌日历",
@@ -61,161 +62,163 @@ export function createWebDefaultLauncher(
           ],
           "日常",
         ),
-        shortcut("X", "https://x.com"),
-        shortcut("Reddit", "https://www.reddit.com"),
-        shortcut("Discord", "https://discord.com"),
-        shortcut("Spotify", "https://open.spotify.com"),
+        bookmark("X", "https://x.com"),
+        bookmark("Reddit", "https://www.reddit.com"),
+        bookmark("Discord", "https://discord.com"),
+        bookmark("Spotify", "https://open.spotify.com"),
         folder(
           "social",
           "Social",
           [
-            shortcut("Instagram", "https://www.instagram.com"),
-            shortcut("WhatsApp", "https://www.whatsapp.com"),
-            shortcut("Telegram", "https://telegram.org"),
+            bookmark("Instagram", "https://www.instagram.com"),
+            bookmark("WhatsApp", "https://www.whatsapp.com"),
+            bookmark("Telegram", "https://telegram.org"),
           ],
           "社交",
         ),
-        shortcut("Facebook", "https://www.facebook.com"),
-        shortcut("Wikipedia", "https://www.wikipedia.org", "维基百科"),
-        shortcut("LinkedIn", "https://www.linkedin.com", "领英"),
-        shortcut("PayPal", "https://www.paypal.com"),
+        bookmark("Facebook", "https://www.facebook.com"),
+        bookmark("Wikipedia", "https://www.wikipedia.org", "维基百科"),
+        bookmark("LinkedIn", "https://www.linkedin.com", "领英"),
+        bookmark("PayPal", "https://www.paypal.com"),
         folder(
           "shopping",
           "Shopping",
           [
-            shortcut("Amazon", "https://www.amazon.com", "亚马逊"),
-            shortcut("Etsy", "https://www.etsy.com"),
+            bookmark("Amazon", "https://www.amazon.com", "亚马逊"),
+            bookmark("Etsy", "https://www.etsy.com"),
           ],
           "购物",
         ),
-        shortcut("eBay", "https://www.ebay.com"),
-        shortcut("Netflix", "https://www.netflix.com"),
-        shortcut("Disney+", "https://www.disneyplus.com"),
-        shortcut("Twitch", "https://www.twitch.tv"),
-        shortcut("Prime Video", "https://www.primevideo.com"),
+        bookmark("eBay", "https://www.ebay.com"),
+        bookmark("Netflix", "https://www.netflix.com"),
+        bookmark("Disney+", "https://www.disneyplus.com"),
+        bookmark("Twitch", "https://www.twitch.tv"),
+        bookmark("Prime Video", "https://www.primevideo.com"),
         folder(
           "tools",
           "Tools",
           [
-            shortcut(
+            bookmark(
               "Google Translate",
               "https://translate.google.com",
               "谷歌翻译",
             ),
-            shortcut("Speedtest", "https://www.speedtest.net"),
-            shortcut("Internet Archive", "https://archive.org", "互联网档案馆"),
+            bookmark("Speedtest", "https://www.speedtest.net"),
+            bookmark("Internet Archive", "https://archive.org", "互联网档案馆"),
           ],
           "工具",
         ),
-        shortcut("Apple", "https://www.apple.com", "苹果"),
-        shortcut("IKEA", "https://www.ikea.com", "宜家"),
-        shortcut("SoundCloud", "https://soundcloud.com"),
-        shortcut("IMDb", "https://www.imdb.com"),
+        bookmark("Apple", "https://www.apple.com", "苹果"),
+        bookmark("IKEA", "https://www.ikea.com", "宜家"),
+        bookmark("SoundCloud", "https://soundcloud.com"),
+        bookmark("IMDb", "https://www.imdb.com"),
         folder(
           "news",
           "News",
           [
-            shortcut("BBC", "https://www.bbc.com"),
-            shortcut("Reuters", "https://www.reuters.com", "路透社"),
+            bookmark("BBC", "https://www.bbc.com"),
+            bookmark("Reuters", "https://www.reuters.com", "路透社"),
           ],
           "新闻",
         ),
-        shortcut("The New York Times", "https://www.nytimes.com", "纽约时报"),
-        shortcut("AP News", "https://apnews.com", "美联社"),
+        bookmark("The New York Times", "https://www.nytimes.com", "纽约时报"),
+        bookmark("AP News", "https://apnews.com", "美联社"),
         folder(
           "travel",
           "Travel",
           [
-            shortcut("Tripadvisor", "https://www.tripadvisor.com", "猫途鹰"),
-            shortcut("Skyscanner", "https://www.skyscanner.com", "天巡"),
-            shortcut("Uber", "https://www.uber.com"),
+            bookmark("Tripadvisor", "https://www.tripadvisor.com", "猫途鹰"),
+            bookmark("Skyscanner", "https://www.skyscanner.com", "天巡"),
+            bookmark("Uber", "https://www.uber.com"),
           ],
           "旅行",
         ),
-        shortcut("Booking.com", "https://www.booking.com"),
-        shortcut("Proton Mail", "https://mail.proton.me"),
+        bookmark("Booking.com", "https://www.booking.com"),
+        bookmark("Proton Mail", "https://mail.proton.me"),
       ],
     },
     {
       id: "category-work",
       name: names.work,
-      shortcuts: [
-        shortcut("Notion", "https://www.notion.so"),
+      bookmarks: [
+        bookmark("Notion", "https://www.notion.so"),
         folder(
           "development",
           "Development",
           [
-            shortcut("GitHub", "https://github.com"),
-            shortcut("Stack Overflow", "https://stackoverflow.com"),
-            shortcut("MDN", "https://developer.mozilla.org"),
+            bookmark("GitHub", "https://github.com"),
+            bookmark("Stack Overflow", "https://stackoverflow.com"),
+            bookmark("MDN", "https://developer.mozilla.org"),
           ],
           "开发",
         ),
-        shortcut("Figma", "https://www.figma.com"),
-        shortcut("Slack", "https://slack.com"),
+        bookmark("Figma", "https://www.figma.com"),
+        bookmark("Slack", "https://slack.com"),
         folder(
           "google-workspace",
           "Google",
           [
-            shortcut(
+            bookmark(
               "Google Drive",
               "https://drive.google.com",
               "谷歌云端硬盘",
             ),
-            shortcut("Google Docs", "https://docs.google.com", "谷歌文档"),
+            bookmark("Google Docs", "https://docs.google.com", "谷歌文档"),
           ],
           "谷歌",
         ),
-        shortcut("ChatGPT", "https://chatgpt.com"),
-        shortcut("Zoom", "https://zoom.us"),
-        shortcut("Trello", "https://trello.com"),
-        shortcut("Vercel", "https://vercel.com"),
+        bookmark("ChatGPT", "https://chatgpt.com"),
+        bookmark("Zoom", "https://zoom.us"),
+        bookmark("Trello", "https://trello.com"),
+        bookmark("Vercel", "https://vercel.com"),
       ],
     },
     {
       id: "category-inspiration",
       name: names.inspiration,
-      shortcuts: [
-        shortcut("Pinterest", "https://www.pinterest.com"),
+      bookmarks: [
+        bookmark("Pinterest", "https://www.pinterest.com"),
         folder(
           "reading",
           "Reading",
           [
-            shortcut("Medium", "https://medium.com"),
-            shortcut("Coursera", "https://www.coursera.org"),
+            bookmark("Medium", "https://medium.com"),
+            bookmark("Coursera", "https://www.coursera.org"),
           ],
           "阅读",
         ),
-        shortcut("Unsplash", "https://unsplash.com"),
-        shortcut("Dribbble", "https://dribbble.com"),
+        bookmark("Unsplash", "https://unsplash.com"),
+        bookmark("Dribbble", "https://dribbble.com"),
         folder(
           "somewhere",
           "Somewhere",
           [
-            shortcut("Google Maps", "https://www.google.com/maps", "谷歌地图"),
-            shortcut("Airbnb", "https://www.airbnb.com"),
+            bookmark("Google Maps", "https://www.google.com/maps", "谷歌地图"),
+            bookmark("Airbnb", "https://www.airbnb.com"),
           ],
           "去处",
         ),
-        shortcut("Behance", "https://www.behance.net"),
+        bookmark("Behance", "https://www.behance.net"),
         folder(
           "resources",
           "Resources",
           [
-            shortcut("Pexels", "https://www.pexels.com"),
-            shortcut("Framer", "https://www.framer.com"),
-            shortcut("Coolors", "https://coolors.co"),
+            bookmark("Pexels", "https://www.pexels.com"),
+            bookmark("Framer", "https://www.framer.com"),
+            bookmark("Coolors", "https://coolors.co"),
           ],
           "资源",
         ),
-        shortcut("Duolingo", "https://www.duolingo.com", "多邻国"),
-        shortcut("Are.na", "https://www.are.na"),
+        bookmark("Duolingo", "https://www.duolingo.com", "多邻国"),
+        bookmark("Are.na", "https://www.are.na"),
       ],
     },
   ];
 }
 
-function createEmptyDefaultCategory(locale: AppLocale): ShortcutCategory {
+function createEmptyLegacyLauncherCategory(
+  locale: AppLocale,
+): LegacyLauncherCategory {
   return {
     id: DEFAULT_CATEGORY_ID,
     name: getDefaultCategoryNames(locale).home,
@@ -227,8 +230,11 @@ export function normalizeStoredExtensionLauncher(
   value: unknown,
   locale: AppLocale,
 ) {
-  // Extension 不再注入演示 shortcuts；已保存的旧 launcher 数据仍按原样读取。
-  return normalizeLauncher(value, createEmptyDefaultCategory(locale));
+  // Extension 不注入演示书签；已保存的旧 launcher 数据仍按原结构读取。
+  return normalizeLegacyLauncher(
+    value,
+    createEmptyLegacyLauncherCategory(locale),
+  );
 }
 
 export function getDefaultCategoryNames(locale: AppLocale) {

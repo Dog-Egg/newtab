@@ -8,8 +8,10 @@ import { PointerActivationConstraints } from "@dnd-kit/dom";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 import clsx from "clsx";
 import { Check, House, Pencil, Plus, Settings2, X } from "lucide-react";
-import { DEFAULT_CATEGORY_ID } from "./launcher";
-import type { LauncherBookmarkCategory } from "./bookmarkLayout";
+import {
+  DEFAULT_CATEGORY_ID,
+  type LauncherBookmarkCategory,
+} from "./bookmarkLayout";
 import { useTranslation } from "react-i18next";
 
 const CATEGORY_SORTABLE_GROUP = "categories";

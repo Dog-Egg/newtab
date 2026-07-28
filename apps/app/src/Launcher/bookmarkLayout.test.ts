@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_CATEGORY_ID } from "./launcher";
 import {
+  DEFAULT_CATEGORY_ID,
   normalizeBookmarkLayout,
   placeBookmarkLayoutItemAtRoot,
   placeLauncherBookmarkAtRoot,

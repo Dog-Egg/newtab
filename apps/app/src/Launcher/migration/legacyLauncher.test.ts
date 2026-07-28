@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_CATEGORY_ID, type ShortcutCategory } from "../launcher";
+import { DEFAULT_CATEGORY_ID } from "../bookmarkLayout";
+import type { LegacyLauncherCategory } from "../legacyLauncher";
 import {
-  collectLegacyShortcutsToExport,
+  collectLegacyBookmarksToExport,
   MIGRATED_OTHER_BOOKMARKS_FOLDER_ID,
   migrateLegacyLauncherToBookmarkLayout,
 } from "./legacyLauncher";
 
-const categories: ShortcutCategory[] = [
+const categories: LegacyLauncherCategory[] = [
   {
     id: "work",
     name: "Work",
@@ -64,10 +65,10 @@ const categories: ShortcutCategory[] = [
   },
 ];
 
-describe("collectLegacyShortcutsToExport", () => {
-  it("returns unique web shortcuts that do not exist in Chrome", () => {
+describe("collectLegacyBookmarksToExport", () => {
+  it("returns unique legacy entries that do not exist in Chrome", () => {
     expect(
-      collectLegacyShortcutsToExport(categories, [
+      collectLegacyBookmarksToExport(categories, [
         {
           id: "bookmark-docs",
           title: "Docs in Chrome",
@@ -79,7 +80,7 @@ describe("collectLegacyShortcutsToExport", () => {
 });
 
 describe("migrateLegacyLauncherToBookmarkLayout", () => {
-  it("preserves category and folder order while replacing shortcuts with IDs", () => {
+  it("preserves category and folder order while replacing entries with IDs", () => {
     expect(
       migrateLegacyLauncherToBookmarkLayout(
         categories,

@@ -1,4 +1,15 @@
-import { DEFAULT_CATEGORY_ID } from "./launcher";
+export const ACTIVE_CATEGORY_ID_STORAGE_KEY = "activeCategoryId";
+export const DEFAULT_CATEGORY_ID = "default";
+
+export function normalizeActiveCategoryId(
+  value: unknown,
+  categories: Array<{ id: string }>,
+) {
+  return typeof value === "string" &&
+    categories.some((category) => category.id === value)
+    ? value
+    : DEFAULT_CATEGORY_ID;
+}
 
 export const BOOKMARK_LAYOUT_STORAGE_KEY = "bookmark-layout";
 

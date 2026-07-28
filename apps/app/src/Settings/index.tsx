@@ -43,7 +43,7 @@ function LauncherSizeSettings({
           className="text-sm font-medium text-glass-strong"
           htmlFor="launcher-node-size"
         >
-          {t("settings.shortcutSize")}
+          {t("settings.bookmarkSize")}
         </label>
       </div>
       <SettingsRange
@@ -52,7 +52,7 @@ function LauncherSizeSettings({
         max={MAX_LAUNCHER_NODE_SCALE}
         step={LAUNCHER_NODE_SCALE_STEP}
         value={settings.nodeScale}
-        ariaLabel={t("settings.shortcutSize")}
+        ariaLabel={t("settings.bookmarkSize")}
         minLabel={t("settings.small")}
         maxLabel={t("settings.large")}
         defaultValue={DEFAULT_LAUNCHER_NODE_SCALE}

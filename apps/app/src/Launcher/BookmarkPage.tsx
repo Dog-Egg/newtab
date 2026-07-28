@@ -1,13 +1,13 @@
 /**
  * 启动器交互说明：
  *
- * - 点击快捷方式会打开对应页面；点击文件夹会打开文件夹对话框。
- * - 主页中的快捷方式和文件夹均可拖拽排序。
- * - 主页快捷方式可拖到另一个快捷方式或文件夹上进行合并：
- *   两个快捷方式会组成新文件夹，快捷方式拖到已有文件夹上则加入该文件夹。
- * - 文件夹内的快捷方式可独立拖拽排序。
- * - 将文件夹内的快捷方式拖出文件夹边界，会立即关闭文件夹对话框；本次拖拽
- *   继续进行，可直接把该快捷方式放到主页中的目标位置。
+ * - 点击书签会打开对应页面；点击文件夹会打开文件夹对话框。
+ * - 主页中的书签和文件夹均可拖拽排序。
+ * - 主页书签可拖到另一个书签或文件夹上进行合并：
+ *   两个书签会组成新文件夹，书签拖到已有文件夹上则加入该文件夹。
+ * - 文件夹内的书签可独立拖拽排序。
+ * - 将文件夹内的书签拖出文件夹边界，会立即关闭文件夹对话框；本次拖拽
+ *   继续进行，可直接把该书签放到主页中的目标位置。
  */
 
 import {
@@ -38,13 +38,13 @@ import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 import clsx from "clsx";
 import { ChevronRight, EllipsisVertical, Plus } from "lucide-react";
 import {
-  createBookmarkSortableGroups as createShortcutSortableGroups,
-  mergeBookmarkIntoNode as mergeShortcutIntoNode,
-  resolveBookmarkSortableGroups as resolveShortcutSortableGroups,
-  type LauncherBookmarkFolder as ShortcutFolder,
-  type LauncherBookmarkItem as ShortcutItem,
-  type LauncherBookmarkNode as ShortcutNode,
-  type LauncherBookmarkCategory as ShortcutCategory,
+  createBookmarkSortableGroups,
+  mergeBookmarkIntoNode,
+  resolveBookmarkSortableGroups,
+  type LauncherBookmarkFolder,
+  type LauncherBookmarkItem,
+  type LauncherBookmarkNode,
+  type LauncherBookmarkCategory,
 } from "./bookmarkLayout";
 import { platform } from "@platform";
 import { Dialog, DialogTitle } from "../components/Dialog";
@@ -58,7 +58,7 @@ import {
 import { SiteIcon } from "../components/SiteIcon";
 import { useSettings } from "../Settings/SettingsProvider";
 import { useTranslation } from "react-i18next";
-import { DeleteShortcutCollectionDialog } from "./DeleteShortcutCollectionDialog";
+import { DeleteBookmarkCollectionDialog } from "./DeleteBookmarkCollectionDialog";
 
 type SortableCollisionDetector = NonNullable<
   Parameters<typeof useSortable>[0]["collisionDetector"]
@@ -66,8 +66,8 @@ type SortableCollisionDetector = NonNullable<
 const MERGE_TARGET_PREFIX = "merge:";
 // dnd-kit 用 group 区分多个 sortable 容器：主页是 root，每个 Folder 使用自身 ID。
 const ROOT_SORTABLE_GROUP = "root";
-const ShortcutCategoriesContext = createContext<{
-  categories: ShortcutCategory[];
+const BookmarkCategoriesContext = createContext<{
+  categories: LauncherBookmarkCategory[];
   categoryId: string;
 }>({ categories: [], categoryId: "" });
 
@@ -77,7 +77,7 @@ function reportBookmarkMutation(promise: Promise<unknown>, action: string) {
   });
 }
 
-type ShortcutContainer =
+type BookmarkContainer =
   | { type: "root"; id: typeof ROOT_SORTABLE_GROUP }
   | { type: "folder"; id: string };
 
@@ -85,17 +85,17 @@ type ShortcutContainer =
  * 与 draggable/droppable 绑定的稳定业务上下文。
  * node/container 用于识别业务对象；会变化的位置只读取 sortable.group/index。
  */
-type ShortcutDndData = Record<string, unknown> & {
-  node: ShortcutNode;
-  container: ShortcutContainer;
+type BookmarkDndData = Record<string, unknown> & {
+  node: LauncherBookmarkNode;
+  container: BookmarkContainer;
   folderPanelRef?: RefObject<HTMLDivElement | null>;
 };
 
-function getShortcutDndData(
+function getBookmarkDndData(
   entity: { data: Record<string, unknown> } | null | undefined,
-): ShortcutDndData | null {
-  const data = entity?.data as Partial<ShortcutDndData> | undefined;
-  return data?.node && data.container ? (data as ShortcutDndData) : null;
+): BookmarkDndData | null {
+  const data = entity?.data as Partial<BookmarkDndData> | undefined;
+  return data?.node && data.container ? (data as BookmarkDndData) : null;
 }
 
 function getMergeTargetId(itemId: string) {
@@ -131,7 +131,7 @@ const reorderCollisionDetector: SortableCollisionDetector = ({
     (droppable as unknown as { sortable: { group?: unknown } }).sortable
       .group === ROOT_SORTABLE_GROUP
   ) {
-    const panel = getShortcutDndData(source)?.folderPanelRef?.current;
+    const panel = getBookmarkDndData(source)?.folderPanelRef?.current;
     const pointer = dragOperation.position.current;
     const rect = panel?.getBoundingClientRect();
     if (!rect) return null;
@@ -225,7 +225,7 @@ const mergeCollisionDetector: SortableCollisionDetector = ({
   droppable,
 }) => {
   const source = dragOperation.source;
-  const sourceData = getShortcutDndData(source);
+  const sourceData = getBookmarkDndData(source);
   const target = droppable.shape;
   const pointer = dragOperation.position.current;
   const sourceMergeTargetId = source
@@ -297,12 +297,12 @@ function MergeTargetFrame({
   );
 }
 
-function ShortcutPreview({
-  shortcut,
+function BookmarkPreview({
+  bookmark,
   hideTitle = false,
   isMergeTarget = false,
 }: {
-  shortcut: ShortcutItem;
+  bookmark: LauncherBookmarkItem;
   hideTitle?: boolean;
   isMergeTarget?: boolean;
 }) {
@@ -327,9 +327,9 @@ function ShortcutPreview({
     >
       <MergeTargetFrame active={isMergeTarget}>
         <SiteIcon
-          title={shortcut.title}
-          url={shortcut.url}
-          seed={shortcut.id}
+          title={bookmark.title}
+          url={bookmark.url}
+          seed={bookmark.id}
           className="font-bold shadow-[0_18px_35px_rgba(15,23,42,0.22)]"
           style={iconStyle}
         />
@@ -340,19 +340,19 @@ function ShortcutPreview({
           hideTitle && "invisible",
         )}
       >
-        {shortcut.title}
+        {bookmark.title}
       </span>
     </div>
   );
 }
 
-function ShortcutLink({
-  shortcut,
+function BookmarkLink({
+  bookmark,
   dragHandleRef,
   isDragging,
   isMergeTarget,
 }: {
-  shortcut: ShortcutItem;
+  bookmark: LauncherBookmarkItem;
   dragHandleRef: Ref<HTMLAnchorElement>;
   isDragging: boolean;
   isMergeTarget?: boolean;
@@ -361,12 +361,12 @@ function ShortcutLink({
     <a
       ref={dragHandleRef}
       className="flex touch-none select-none justify-center rounded-[30px] outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
-      href={shortcut.url}
+      href={bookmark.url}
       target="_parent"
       rel="noreferrer"
     >
-      <ShortcutPreview
-        shortcut={shortcut}
+      <BookmarkPreview
+        bookmark={bookmark}
         hideTitle={isDragging}
         isMergeTarget={isMergeTarget}
       />
@@ -379,7 +379,7 @@ function FolderPreview({
   hideTitle = false,
   isMergeTarget = false,
 }: {
-  folder: ShortcutFolder;
+  folder: LauncherBookmarkFolder;
   hideTitle?: boolean;
   isMergeTarget?: boolean;
 }) {
@@ -436,11 +436,11 @@ function NodePreview({
   node,
   hideTitle = false,
 }: {
-  node: ShortcutNode;
+  node: LauncherBookmarkNode;
   hideTitle?: boolean;
 }) {
   return node.type === "item" ? (
-    <ShortcutPreview shortcut={node} hideTitle={hideTitle} />
+    <BookmarkPreview bookmark={node} hideTitle={hideTitle} />
   ) : (
     <FolderPreview folder={node} hideTitle={hideTitle} />
   );
@@ -454,18 +454,18 @@ function SortableNode({
   onDelete,
   onMove,
 }: {
-  node: ShortcutNode;
+  node: LauncherBookmarkNode;
   index: number;
-  onOpenFolder: (folder: ShortcutFolder) => void;
-  onEdit: (node: ShortcutNode) => void;
-  onDelete: (node: ShortcutNode) => void;
-  onMove: (node: ShortcutNode, categoryId: string) => void;
+  onOpenFolder: (folder: LauncherBookmarkFolder) => void;
+  onEdit: (node: LauncherBookmarkNode) => void;
+  onDelete: (node: LauncherBookmarkNode) => void;
+  onMove: (node: LauncherBookmarkNode, categoryId: string) => void;
 }) {
-  const dndData: ShortcutDndData = {
+  const dndData: BookmarkDndData = {
     node,
     container: { type: "root", id: ROOT_SORTABLE_GROUP },
   };
-  const { ref, handleRef, isDragging } = useSortable<ShortcutDndData>({
+  const { ref, handleRef, isDragging } = useSortable<BookmarkDndData>({
     id: node.id,
     index,
     group: ROOT_SORTABLE_GROUP,
@@ -474,7 +474,7 @@ function SortableNode({
     collisionDetector: reorderCollisionDetector,
   });
   const { ref: mergeRef, isDropTarget: isMergeTarget } =
-    useDroppable<ShortcutDndData>({
+    useDroppable<BookmarkDndData>({
       id: getMergeTargetId(node.id),
       type: "merge",
       data: dndData,
@@ -501,8 +501,8 @@ function SortableNode({
         onMove={(categoryId) => onMove(node, categoryId)}
       />
       {node.type === "item" ? (
-        <ShortcutLink
-          shortcut={node}
+        <BookmarkLink
+          bookmark={node}
           dragHandleRef={handleRef}
           isDragging={isDragging}
           isMergeTarget={isMergeTarget}
@@ -536,14 +536,14 @@ function FolderDialog({
   onMoveItem,
   panelRef,
 }: {
-  folder: ShortcutFolder;
+  folder: LauncherBookmarkFolder;
   isClosing: boolean;
   onClose: () => void;
   onRename: (title: string) => void;
   editTitleInitially: boolean;
-  onEditItem: (item: ShortcutItem) => void;
-  onDeleteItem: (item: ShortcutItem) => void;
-  onMoveItem: (item: ShortcutItem, categoryId: string) => void;
+  onEditItem: (item: LauncherBookmarkItem) => void;
+  onDeleteItem: (item: LauncherBookmarkItem) => void;
+  onMoveItem: (item: LauncherBookmarkItem, categoryId: string) => void;
   panelRef: RefObject<HTMLDivElement | null>;
 }) {
   const { t } = useTranslation();
@@ -656,7 +656,7 @@ function FolderSortableItem({
   onMove,
 }: {
   folderId: string;
-  item: ShortcutItem;
+  item: LauncherBookmarkItem;
   index: number;
   folderPanelRef: RefObject<HTMLDivElement | null>;
   onEdit: () => void;
@@ -665,7 +665,7 @@ function FolderSortableItem({
 }) {
   // group/index 是 dnd-kit 管理跨容器排序的核心数据。子项沿用自身 ID；移到
   // root 后，顶层 SortableNode 会用相同 ID 重新注册并接续当前 operation。
-  const { ref, handleRef, isDragging } = useSortable<ShortcutDndData>({
+  const { ref, handleRef, isDragging } = useSortable<BookmarkDndData>({
     id: item.id,
     index,
     group: folderId,
@@ -692,8 +692,8 @@ function FolderSortableItem({
         onDelete={onDelete}
         onMove={onMove}
       />
-      <ShortcutLink
-        shortcut={item}
+      <BookmarkLink
+        bookmark={item}
         dragHandleRef={handleRef}
         isDragging={isDragging}
       />
@@ -707,7 +707,7 @@ function NodeMenu({
   onDelete,
   onMove,
 }: {
-  node: ShortcutNode;
+  node: LauncherBookmarkNode;
   onEdit: () => void;
   onDelete?: () => void;
   onMove?: (categoryId: string) => void;
@@ -716,7 +716,7 @@ function NodeMenu({
   const {
     settings: { nodeScale },
   } = useSettings();
-  const { categories, categoryId } = useContext(ShortcutCategoriesContext);
+  const { categories, categoryId } = useContext(BookmarkCategoriesContext);
 
   return (
     <div
@@ -788,7 +788,7 @@ function EditItemDialog({
   onClose,
   onSave,
 }: {
-  item: ShortcutItem;
+  item: LauncherBookmarkItem;
   onClose: () => void;
   onSave: (title: string, url: string) => void;
 }) {
@@ -802,7 +802,7 @@ function EditItemDialog({
       {(close) => (
         <>
           <DialogTitle className="mb-6 text-xl font-bold">
-            {t("launcher.editShortcut")}
+            {t("launcher.editBookmark")}
           </DialogTitle>
           <form
             className="space-y-5"
@@ -875,7 +875,7 @@ function AddItemDialog({
       {(close) => (
         <>
           <DialogTitle className="mb-6 text-xl font-bold">
-            {t("launcher.addShortcut")}
+            {t("launcher.addBookmark")}
           </DialogTitle>
           <form
             className="space-y-5"
@@ -930,7 +930,7 @@ function AddItemDialog({
   );
 }
 
-function AddShortcutButton({ onClick }: { onClick: () => void }) {
+function AddBookmarkButton({ onClick }: { onClick: () => void }) {
   const { t } = useTranslation();
   const {
     settings: { nodeScale },
@@ -939,7 +939,7 @@ function AddShortcutButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       type="button"
-      aria-label={t("launcher.addShortcut")}
+      aria-label={t("launcher.addBookmark")}
       onClick={onClick}
       className="group flex w-full flex-col items-center rounded-[30px] text-center text-white outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
       style={{ width: 88 * nodeScale, gap: 8 * nodeScale }}
@@ -961,22 +961,22 @@ function AddShortcutButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-export function ShortcutPage({
+export function BookmarkPage({
   categoryId,
-  bookmarks: storedShortcuts,
+  bookmarks: storedBookmarks,
   categories,
   onChange,
   onAdd,
   onMove,
 }: {
   categoryId: string;
-  bookmarks: ShortcutNode[];
-  categories: ShortcutCategory[];
-  onChange: (shortcuts: ShortcutNode[]) => void;
-  onAdd: (bookmark: ShortcutItem) => void;
+  bookmarks: LauncherBookmarkNode[];
+  categories: LauncherBookmarkCategory[];
+  onChange: (bookmarks: LauncherBookmarkNode[]) => void;
+  onAdd: (bookmark: LauncherBookmarkItem) => void;
   onMove: (
-    sourceShortcuts: ShortcutNode[],
-    shortcut: ShortcutNode,
+    sourceBookmarks: LauncherBookmarkNode[],
+    bookmark: LauncherBookmarkNode,
     targetCategoryId: string,
   ) => void;
 }) {
@@ -984,58 +984,61 @@ export function ShortcutPage({
   const {
     settings: { nodeScale },
   } = useSettings();
-  const [shortcuts, setShortcuts] = useState(storedShortcuts);
-  const shortcutsRef = useRef(storedShortcuts);
+  const [bookmarks, setBookmarks] = useState(storedBookmarks);
+  const bookmarksRef = useRef(storedBookmarks);
   // 预览直接使用 draggable.data.node，不再用 ID 回到业务数组做二次查找。
-  const [activeNode, setActiveNode] = useState<ShortcutNode | null>(null);
+  const [activeNode, setActiveNode] = useState<LauncherBookmarkNode | null>(
+    null,
+  );
   const [renameFolderId, setRenameFolderId] = useState<string | null>(null);
-  const [editingItem, setEditingItem] = useState<ShortcutItem | null>(null);
+  const [editingItem, setEditingItem] = useState<LauncherBookmarkItem | null>(
+    null,
+  );
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [pendingDeleteFolder, setPendingDeleteFolder] =
-    useState<ShortcutFolder | null>(null);
+    useState<LauncherBookmarkFolder | null>(null);
   const [openFolderId, setOpenFolderId] = useState<string | null>(null);
   // 越界后业务数据会立即迁移到 root；这份不含拖拽项的快照仅用于
   // 让 Dialog 播完关闭动画，也覆盖空 Folder 已被业务数据删除的情况。
-  const [closingFolder, setClosingFolder] = useState<ShortcutFolder | null>(
-    null,
-  );
+  const [closingFolder, setClosingFolder] =
+    useState<LauncherBookmarkFolder | null>(null);
   // 碰撞检测用真实面板隔离遮罩后的 root sortables；Dialog 卸载时会自动清空 ref。
   const folderPanelRef = useRef<HTMLDivElement | null>(null);
   // DragStart 快照只用于 canceled 时回滚尚未保存的跨 group 投影。
-  const dragStartShortcutsRef = useRef<ShortcutNode[] | null>(null);
+  const dragStartBookmarksRef = useRef<LauncherBookmarkNode[] | null>(null);
   // 同一轮 dragover 可能重复报告 root target，只投影一次容器切换。
   const projectedToRootItemIdRef = useRef<string | null>(null);
 
-  const saveShortcuts = useCallback(
-    (nextShortcuts: ShortcutNode[]) => {
-      shortcutsRef.current = nextShortcuts;
-      setShortcuts(nextShortcuts);
-      onChange(nextShortcuts);
+  const saveBookmarks = useCallback(
+    (nextBookmarks: LauncherBookmarkNode[]) => {
+      bookmarksRef.current = nextBookmarks;
+      setBookmarks(nextBookmarks);
+      onChange(nextBookmarks);
     },
     [onChange],
   );
 
   useEffect(() => {
-    shortcutsRef.current = storedShortcuts;
-    setShortcuts(storedShortcuts);
-  }, [storedShortcuts]);
+    bookmarksRef.current = storedBookmarks;
+    setBookmarks(storedBookmarks);
+  }, [storedBookmarks]);
 
   function handleDragStart(event: DragStartEvent) {
     const source = event.operation.source;
-    const sourceData = getShortcutDndData(source);
+    const sourceData = getBookmarkDndData(source);
     if (!source || !sourceData) return;
 
     setActiveNode(sourceData.node);
     // 保存业务数据快照。dnd-kit 会在 DOM 层回滚 canceled operation，React 数据
     // 也必须恢复到同一版本，二者才能保持一致。
-    dragStartShortcutsRef.current = shortcuts;
+    dragStartBookmarksRef.current = bookmarks;
     projectedToRootItemIdRef.current = null;
   }
 
   function handleDragOver(event: DragOverEvent) {
     const { source, target } = event.operation;
-    const sourceData = getShortcutDndData(source);
-    const targetData = getShortcutDndData(target);
+    const sourceData = getBookmarkDndData(source);
+    const targetData = getBookmarkDndData(target);
     if (
       !isSortable(source) ||
       !isSortable(target) ||
@@ -1054,22 +1057,20 @@ export function ShortcutPage({
     event.preventDefault();
     projectedToRootItemIdRef.current = sourceData.node.id;
     const projectedGroups = move(
-      createShortcutSortableGroups(shortcuts, ROOT_SORTABLE_GROUP),
+      createBookmarkSortableGroups(bookmarks, ROOT_SORTABLE_GROUP),
       event,
     );
-    const projectedShortcuts: ShortcutNode[] = resolveShortcutSortableGroups(
-      projectedGroups,
-      ROOT_SORTABLE_GROUP,
-    );
-    shortcutsRef.current = projectedShortcuts;
-    setShortcuts(projectedShortcuts);
+    const projectedBookmarks: LauncherBookmarkNode[] =
+      resolveBookmarkSortableGroups(projectedGroups, ROOT_SORTABLE_GROUP);
+    bookmarksRef.current = projectedBookmarks;
+    setBookmarks(projectedBookmarks);
 
-    const projectedFolder = projectedShortcuts.find(
-      (node): node is ShortcutFolder =>
+    const projectedFolder = projectedBookmarks.find(
+      (node): node is LauncherBookmarkFolder =>
         node.type === "folder" && node.id === sourceData.container.id,
     );
-    const currentFolder = shortcuts.find(
-      (node): node is ShortcutFolder =>
+    const currentFolder = bookmarks.find(
+      (node): node is LauncherBookmarkFolder =>
         node.type === "folder" && node.id === sourceData.container.id,
     );
     setClosingFolder(
@@ -1089,16 +1090,16 @@ export function ShortcutPage({
     // 无论是否完成排序，拖拽结束后都要关闭浮层预览。
     setActiveNode(null);
 
-    const sourceData = getShortcutDndData(event.operation.source);
+    const sourceData = getBookmarkDndData(event.operation.source);
     const finalTarget = event.operation.target;
-    const targetData = getShortcutDndData(finalTarget);
+    const targetData = getBookmarkDndData(finalTarget);
 
     if (event.canceled) {
       // 跨 group 的投影尚未写入存储，取消时恢复 DragStart 的 React 快照即可。
       if (projectedToRootItemIdRef.current) {
-        const restoredShortcuts = dragStartShortcutsRef.current ?? shortcuts;
-        shortcutsRef.current = restoredShortcuts;
-        setShortcuts(restoredShortcuts);
+        const restoredBookmarks = dragStartBookmarksRef.current ?? bookmarks;
+        bookmarksRef.current = restoredBookmarks;
+        setBookmarks(restoredBookmarks);
       }
       return;
     }
@@ -1109,15 +1110,15 @@ export function ShortcutPage({
       targetData
     ) {
       // 合并双方都直接来自 dnd operation.data；ID 仅作为持久化层的节点键。
-      const nextCategoryShortcuts = mergeShortcutIntoNode(
-        shortcuts,
+      const nextCategoryBookmarks = mergeBookmarkIntoNode(
+        bookmarks,
         sourceData.node.id,
         targetData.node.id,
         `folder:${crypto.randomUUID()}`,
         t("launcher.folder"),
       );
-      if (nextCategoryShortcuts !== shortcuts) {
-        saveShortcuts(nextCategoryShortcuts);
+      if (nextCategoryBookmarks !== bookmarks) {
+        saveBookmarks(nextCategoryBookmarks);
       }
       return;
     }
@@ -1132,7 +1133,7 @@ export function ShortcutPage({
       source.initialGroup === source.group
     ) {
       const folderId = sourceData.container.id;
-      const nextShortcuts = shortcutsRef.current.map((node) => {
+      const nextBookmarks = bookmarksRef.current.map((node) => {
         if (node.type !== "folder" || node.id !== folderId) return node;
 
         const children = [...node.children];
@@ -1146,43 +1147,43 @@ export function ShortcutPage({
         children.splice(source.index, 0, item);
         return { ...node, children };
       });
-      saveShortcuts(nextShortcuts);
+      saveBookmarks(nextBookmarks);
       return;
     }
 
     // Folder Item 跨到 root 时，onDragOver 已经把最终结构投影进 React state；
     // 此处只持久化该结构，不能再对同一个 event 执行一次 move()。
     if (projectedToRootItemIdRef.current) {
-      saveShortcuts(shortcutsRef.current);
+      saveBookmarks(bookmarksRef.current);
       return;
     }
 
     // Root 内的 optimistic sorting 已经把 source.index 推进到最终占位，不能再对
     // 同一个 event 调用 move()，否则会把已完成的移动重复应用并保存成旧顺序。
     // 业务 state 尚未参与 optimistic sorting，因此按节点 ID 和最终 index 明确重排。
-    const currentShortcuts = shortcutsRef.current;
-    const sourceIndex = currentShortcuts.findIndex(
+    const currentBookmarks = bookmarksRef.current;
+    const sourceIndex = currentBookmarks.findIndex(
       (node) => node.id === sourceData?.node.id,
     );
     if (sourceIndex < 0) return;
 
-    const nextShortcuts = [...currentShortcuts];
-    const [node] = nextShortcuts.splice(sourceIndex, 1);
+    const nextBookmarks = [...currentBookmarks];
+    const [node] = nextBookmarks.splice(sourceIndex, 1);
     if (!node) return;
-    nextShortcuts.splice(source.index, 0, node);
-    saveShortcuts(nextShortcuts);
+    nextBookmarks.splice(source.index, 0, node);
+    saveBookmarks(nextBookmarks);
   }
 
   const openFolder = openFolderId
-    ? shortcuts.find(
-        (node): node is ShortcutFolder =>
+    ? bookmarks.find(
+        (node): node is LauncherBookmarkFolder =>
           node.type === "folder" && node.id === openFolderId,
       )
     : undefined;
   const displayedFolder = closingFolder ?? openFolder;
 
   return (
-    <ShortcutCategoriesContext.Provider value={{ categories, categoryId }}>
+    <BookmarkCategoriesContext.Provider value={{ categories, categoryId }}>
       <DragDropProvider
         sensors={(defaults) => [
           ...defaults.filter((sensor) => sensor !== PointerSensor),
@@ -1204,7 +1205,7 @@ export function ShortcutPage({
               gridTemplateColumns: `repeat(auto-fit, ${Math.round(88 * nodeScale)}px)`,
             }}
           >
-            {shortcuts.map((node, index) => (
+            {bookmarks.map((node, index) => (
               <SortableNode
                 key={node.id}
                 node={node}
@@ -1230,8 +1231,8 @@ export function ShortcutPage({
                   }
                   void platform.bookmarks.remove(selectedNode.id).then(
                     () => {
-                      saveShortcuts(
-                        shortcutsRef.current.filter(
+                      saveBookmarks(
+                        bookmarksRef.current.filter(
                           (candidate) => candidate.id !== selectedNode.id,
                         ),
                       );
@@ -1242,16 +1243,16 @@ export function ShortcutPage({
                   );
                 }}
                 onMove={(selectedNode, categoryId) => {
-                  const sourceShortcuts = shortcuts.filter(
+                  const sourceBookmarks = bookmarks.filter(
                     (candidate) => candidate.id !== selectedNode.id,
                   );
-                  shortcutsRef.current = sourceShortcuts;
-                  setShortcuts(sourceShortcuts);
-                  onMove(sourceShortcuts, selectedNode, categoryId);
+                  bookmarksRef.current = sourceBookmarks;
+                  setBookmarks(sourceBookmarks);
+                  onMove(sourceBookmarks, selectedNode, categoryId);
                 }}
               />
             ))}
-            <AddShortcutButton onClick={() => setIsAddingItem(true)} />
+            <AddBookmarkButton onClick={() => setIsAddingItem(true)} />
           </ul>
         </section>
         {/* 使用独立浮层展示拖拽项，避免受到列表布局和透明度样式影响。 */}
@@ -1263,16 +1264,16 @@ export function ShortcutPage({
           ) : null}
         </DragOverlay>
         {pendingDeleteFolder ? (
-          <DeleteShortcutCollectionDialog
+          <DeleteBookmarkCollectionDialog
             title={t("launcher.deleteFolder")}
             collectionName={pendingDeleteFolder.title}
-            shortcutCount={pendingDeleteFolder.children.length}
-            keepShortcutsLabel={t("launcher.keepFolderShortcuts")}
+            bookmarkCount={pendingDeleteFolder.children.length}
+            keepBookmarksLabel={t("launcher.keepFolderBookmarks")}
             deleteAllLabel={t("launcher.deleteFolderAll")}
             onClose={() => setPendingDeleteFolder(null)}
-            onKeepShortcuts={() => {
-              saveShortcuts(
-                shortcutsRef.current.flatMap((node) =>
+            onKeepBookmarks={() => {
+              saveBookmarks(
+                bookmarksRef.current.flatMap((node) =>
                   node.id === pendingDeleteFolder.id
                     ? pendingDeleteFolder.children
                     : [node],
@@ -1302,8 +1303,8 @@ export function ShortcutPage({
                 }
 
                 // 只从布局移除 Chrome 已确认删除的项，失败项继续留在原 Folder。
-                saveShortcuts(
-                  shortcutsRef.current.flatMap((node) => {
+                saveBookmarks(
+                  bookmarksRef.current.flatMap((node) => {
                     if (node.type !== "folder" || node.id !== folderId) {
                       return [node];
                     }
@@ -1330,7 +1331,7 @@ export function ShortcutPage({
               const folderId = displayedFolder.id;
               void platform.bookmarks.remove(item.id).then(
                 () => {
-                  const nextShortcuts = shortcutsRef.current
+                  const nextBookmarks = bookmarksRef.current
                     .filter(
                       (node) =>
                         node.type !== "folder" ||
@@ -1347,7 +1348,7 @@ export function ShortcutPage({
                           }
                         : node,
                     );
-                  saveShortcuts(nextShortcuts);
+                  saveBookmarks(nextBookmarks);
                 },
                 (error: unknown) => {
                   console.error("Failed to remove browser bookmark", error);
@@ -1355,8 +1356,8 @@ export function ShortcutPage({
               );
             }}
             onMoveItem={(item, categoryId) => {
-              const nextShortcuts = shortcutsRef.current.flatMap<ShortcutNode>(
-                (node) => {
+              const nextBookmarks =
+                bookmarksRef.current.flatMap<LauncherBookmarkNode>((node) => {
                   if (
                     node.type !== "folder" ||
                     node.id !== displayedFolder.id
@@ -1367,20 +1368,19 @@ export function ShortcutPage({
                     (child) => child.id !== item.id,
                   );
                   return children.length ? [{ ...node, children }] : [];
-                },
-              );
-              shortcutsRef.current = nextShortcuts;
-              setShortcuts(nextShortcuts);
-              onMove(nextShortcuts, item, categoryId);
+                });
+              bookmarksRef.current = nextBookmarks;
+              setBookmarks(nextBookmarks);
+              onMove(nextBookmarks, item, categoryId);
             }}
             onRename={(title) => {
               if (closingFolder) return;
-              const nextShortcuts = shortcutsRef.current.map((node) =>
+              const nextBookmarks = bookmarksRef.current.map((node) =>
                 node.type === "folder" && node.id === displayedFolder.id
                   ? { ...node, title }
                   : node,
               );
-              saveShortcuts(nextShortcuts);
+              saveBookmarks(nextBookmarks);
             }}
             onClose={() => {
               setClosingFolder(null);
@@ -1399,7 +1399,7 @@ export function ShortcutPage({
                 platform.bookmarks.update(editingItem.id, { title, url }),
                 "update",
               );
-              const nextShortcuts = shortcutsRef.current.map((node) => {
+              const nextBookmarks = bookmarksRef.current.map((node) => {
                 if (node.type === "item") {
                   return node.id === editingItem.id
                     ? { ...node, title, url }
@@ -1412,7 +1412,7 @@ export function ShortcutPage({
                   ),
                 };
               });
-              saveShortcuts(nextShortcuts);
+              saveBookmarks(nextBookmarks);
             }}
           />
         ) : null}
@@ -1433,6 +1433,6 @@ export function ShortcutPage({
           />
         ) : null}
       </DragDropProvider>
-    </ShortcutCategoriesContext.Provider>
+    </BookmarkCategoriesContext.Provider>
   );
 }

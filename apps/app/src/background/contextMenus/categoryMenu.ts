@@ -1,7 +1,7 @@
-import { DEFAULT_CATEGORY_ID } from "../../Launcher/launcher";
 import { getDefaultCategoryNames } from "../../Launcher/defaultLauncher";
 import {
   BOOKMARK_LAYOUT_STORAGE_KEY,
+  DEFAULT_CATEGORY_ID,
   normalizeBookmarkLayout,
   placeBookmarkLayoutItemAtRoot,
   type BookmarkLayoutCategory,

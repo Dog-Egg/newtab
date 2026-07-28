@@ -3,16 +3,16 @@ import type {
   BookmarkLayoutCategory,
   BookmarkLayoutNode,
   BrowserBookmark,
+  LauncherBookmarkNode,
 } from "../Launcher/bookmarkLayout";
-import { createWebDefaultLauncher } from "../Launcher/defaultLauncher";
-import type { ShortcutNode } from "../Launcher/launcher";
+import { createWebDefaultBookmarks } from "../Launcher/defaultLauncher";
 
 export type WebBookmarkMocks = {
   layout: BookmarkLayoutCategory[];
   bookmarks: BrowserBookmark[];
 };
 
-function toLayoutNode(node: ShortcutNode): BookmarkLayoutNode {
+function toLayoutNode(node: LauncherBookmarkNode): BookmarkLayoutNode {
   return node.type === "item"
     ? { type: "item", id: node.id }
     : {
@@ -27,15 +27,15 @@ function toLayoutNode(node: ShortcutNode): BookmarkLayoutNode {
 }
 
 /**
- * Web 没有 chrome.bookmarks，复用原 Web 演示内容生成两份独立数据：
- * layout 只保存 ID 和嵌套顺序，bookmark 实体保存标题与 URL。
+ * Web 没有 chrome.bookmarks，演示数据拆成两份独立结构：
+ * layout 只保存 ID 和嵌套顺序，bookmark entities 保存标题与 URL。
  */
 export function createWebBookmarkMocks(locale: AppLocale): WebBookmarkMocks {
-  const categories = createWebDefaultLauncher(locale);
+  const categories = createWebDefaultBookmarks(locale);
   const bookmarkById = new Map<string, BrowserBookmark>();
 
   for (const category of categories) {
-    for (const node of category.shortcuts) {
+    for (const node of category.bookmarks) {
       const items = node.type === "item" ? [node] : node.children;
       for (const item of items) {
         bookmarkById.set(item.id, {
@@ -48,10 +48,10 @@ export function createWebBookmarkMocks(locale: AppLocale): WebBookmarkMocks {
   }
 
   return {
-    layout: categories.map(({ id, name, shortcuts }) => ({
+    layout: categories.map(({ id, name, bookmarks }) => ({
       id,
       name,
-      bookmarks: shortcuts.map(toLayoutNode),
+      bookmarks: bookmarks.map(toLayoutNode),
     })),
     bookmarks: [...bookmarkById.values()],
   };

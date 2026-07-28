@@ -1,16 +1,16 @@
-import type {
-  BookmarkLayoutCategory,
-  BookmarkLayoutFolder,
-  BookmarkLayoutItem,
-  BookmarkLayoutNode,
-  BrowserBookmark,
-} from "../bookmarkLayout";
 import {
   DEFAULT_CATEGORY_ID,
-  type ShortcutCategory,
-  type ShortcutItem,
-  type ShortcutNode,
-} from "../launcher";
+  type BookmarkLayoutCategory,
+  type BookmarkLayoutFolder,
+  type BookmarkLayoutItem,
+  type BookmarkLayoutNode,
+  type BrowserBookmark,
+} from "../bookmarkLayout";
+import type {
+  LegacyLauncherCategory,
+  LegacyShortcutItem,
+  LegacyShortcutNode,
+} from "../legacyLauncher";
 
 export const MIGRATED_OTHER_BOOKMARKS_FOLDER_ID = "migration-other-bookmarks";
 
@@ -24,22 +24,22 @@ function isWebUrl(url: string) {
 }
 
 /**
- * 找出旧 Launcher 独有的快捷方式，供 Extension 在生成新布局前导出为真实
- * Chrome Bookmark。按 URL 去重，与旧的手动导出功能保持一致。
+ * 找出旧 Launcher 中尚未进入浏览器的数据，供 Extension 在生成新布局前
+ * 创建为真实 Chrome Bookmark。按 URL 去重，与旧版本的导出行为保持一致。
  */
-export function collectLegacyShortcutsToExport(
-  categories: ShortcutCategory[],
+export function collectLegacyBookmarksToExport(
+  categories: LegacyLauncherCategory[],
   browserBookmarks: BrowserBookmark[],
-): ShortcutItem[] {
+): LegacyShortcutItem[] {
   const seenUrls = new Set(browserBookmarks.map((bookmark) => bookmark.url));
-  const shortcuts: ShortcutItem[] = [];
+  const bookmarksToCreate: LegacyShortcutItem[] = [];
 
-  const collectNode = (node: ShortcutNode) => {
+  const collectNode = (node: LegacyShortcutNode) => {
     const items = node.type === "item" ? [node] : node.children;
     for (const item of items) {
       if (!isWebUrl(item.url) || seenUrls.has(item.url)) continue;
       seenUrls.add(item.url);
-      shortcuts.push(item);
+      bookmarksToCreate.push(item);
     }
   };
 
@@ -47,15 +47,15 @@ export function collectLegacyShortcutsToExport(
     for (const node of category.shortcuts) collectNode(node);
   }
 
-  return shortcuts;
+  return bookmarksToCreate;
 }
 
 /**
- * 将旧 Launcher 的完整 Shortcut 数据转换成只引用 Chrome Bookmark ID 的布局。
+ * 将旧 Launcher 数据转换成只引用 Chrome Bookmark ID 的布局。
  * 重复 URL 只保留第一次出现的位置，避免同一个 Bookmark ID 被多个布局节点引用。
  */
 export function migrateLegacyLauncherToBookmarkLayout(
-  categories: ShortcutCategory[],
+  categories: LegacyLauncherCategory[],
   browserBookmarks: BrowserBookmark[],
   otherBookmarksFolderTitle: string,
 ): BookmarkLayoutCategory[] {
@@ -70,7 +70,7 @@ export function migrateLegacyLauncherToBookmarkLayout(
     }
   }
 
-  const migrateItem = (item: ShortcutItem): BookmarkLayoutItem | null => {
+  const migrateItem = (item: LegacyShortcutItem): BookmarkLayoutItem | null => {
     if (migratedUrls.has(item.url)) return null;
     migratedUrls.add(item.url);
 
@@ -81,7 +81,7 @@ export function migrateLegacyLauncherToBookmarkLayout(
     return { type: "item", id: bookmarkId };
   };
 
-  const migrateNode = (node: ShortcutNode): BookmarkLayoutNode | null => {
+  const migrateNode = (node: LegacyShortcutNode): BookmarkLayoutNode | null => {
     if (node.type === "item") return migrateItem(node);
 
     // 即使子项全部无效也保留 Folder，确保旧 Launcher 的分类骨架不被破坏。
@@ -96,14 +96,16 @@ export function migrateLegacyLauncherToBookmarkLayout(
     };
   };
 
-  const migratedCategories = categories.map(({ id, name, shortcuts }) => ({
-    id,
-    name,
-    bookmarks: shortcuts.flatMap((node) => {
-      const migrated = migrateNode(node);
-      return migrated ? [migrated] : [];
+  const migratedCategories = categories.map(
+    ({ id, name, shortcuts: legacyNodes }) => ({
+      id,
+      name,
+      bookmarks: legacyNodes.flatMap((node) => {
+        const migrated = migrateNode(node);
+        return migrated ? [migrated] : [];
+      }),
     }),
-  }));
+  );
 
   const otherBookmarks = browserBookmarks.flatMap<BookmarkLayoutItem>(
     (bookmark) =>

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { normalizeStoredExtensionLauncher } from "./defaultLauncher";
 
 describe("normalizeStoredExtensionLauncher", () => {
-  it("does not inject demo shortcuts into a fresh extension profile", () => {
+  it("does not inject demo bookmarks into a fresh extension profile", () => {
     expect(normalizeStoredExtensionLauncher(undefined, "en")).toEqual([
       { id: "default", name: "Home", shortcuts: [] },
     ]);

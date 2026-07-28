@@ -1,8 +1,4 @@
-import {
-  ACTIVE_CATEGORY_ID_STORAGE_KEY,
-  LAUNCHER_STORAGE_KEY,
-  DEFAULT_CATEGORY_ID,
-} from "../Launcher/launcher";
+import { LAUNCHER_STORAGE_KEY } from "../Launcher/legacyLauncher";
 import {
   SEARCH_ENGINE_SETTINGS_KEY,
   type Platform,
@@ -16,13 +12,15 @@ import {
   getOtherBookmarksFolderTitle,
 } from "../Launcher/defaultLauncher";
 import {
+  ACTIVE_CATEGORY_ID_STORAGE_KEY,
   BOOKMARK_LAYOUT_STORAGE_KEY,
+  DEFAULT_CATEGORY_ID,
   normalizeBookmarkLayout,
   type BookmarkLayoutCategory,
   type BrowserBookmark,
 } from "../Launcher/bookmarkLayout";
 import {
-  collectLegacyShortcutsToExport,
+  collectLegacyBookmarksToExport,
   migrateLegacyLauncherToBookmarkLayout,
 } from "../Launcher/migration/legacyLauncher";
 import { getAllBookmarkItems } from "./chromeBookmarks";
@@ -166,23 +164,23 @@ async function readStoredBookmarkLayout(locale: typeof defaultLocale) {
     locale,
   );
   let browserBookmarks = toBrowserBookmarks(await getAllBookmarkItems());
-  const shortcutsToExport = collectLegacyShortcutsToExport(
+  const bookmarksToExport = collectLegacyBookmarksToExport(
     legacyCategories,
     browserBookmarks,
   );
 
-  if (shortcutsToExport.length > 0) {
-    // 延续原“导出快捷方式”行为：集中放入 Chrome 的 NewTab 目录。
+  if (bookmarksToExport.length > 0) {
+    // 延续旧版本的迁移行为：新建的浏览器书签集中放入 Chrome 的 NewTab 目录。
     const folder = await createChromeBookmarkNode({ title: "NewTab" });
-    for (const shortcut of shortcutsToExport) {
+    for (const bookmark of bookmarksToExport) {
       await createChromeBookmarkNode({
         parentId: folder.id,
-        title: shortcut.title,
-        url: shortcut.url,
+        title: bookmark.title,
+        url: bookmark.url,
       });
     }
 
-    // Chrome 分配 ID 后必须重新读取；迁移结果不能引用旧 Shortcut ID。
+    // Chrome 分配 ID 后必须重新读取；迁移结果不能引用旧 Launcher ID。
     browserBookmarks = toBrowserBookmarks(await getAllBookmarkItems());
   }
 

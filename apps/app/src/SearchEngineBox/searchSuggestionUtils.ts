@@ -1,4 +1,3 @@
-import type { ShortcutCategory, ShortcutItem } from "../Launcher/launcher";
 import type {
   LauncherBookmarkCategory,
   LauncherBookmarkItem,
@@ -15,18 +14,18 @@ const MAX_SEARCH_SUGGESTIONS = 8;
 export type SearchSuggestion =
   | { type: "engine"; engine: SearchEngine; matches: SearchEngineMatches }
   | {
-      type: "shortcut";
-      shortcut: ShortcutItem | LauncherBookmarkItem;
+      type: "bookmark";
+      bookmark: LauncherBookmarkItem;
       matches: { title: TextMatch[]; domain: TextMatch[] };
     };
 
 export function getSearchSuggestionKey(suggestion: SearchSuggestion) {
   return suggestion.type === "engine"
     ? `engine:${suggestion.engine.id}`
-    : `shortcut:${suggestion.shortcut.id}`;
+    : `bookmark:${suggestion.bookmark.id}`;
 }
 
-function getShortcutUrlMatchCandidates(url: string) {
+function getBookmarkUrlMatchCandidates(url: string) {
   try {
     const parsedUrl = new URL(url);
     const hostname = parsedUrl.hostname
@@ -88,40 +87,37 @@ function getShortcutUrlMatchCandidates(url: string) {
   }
 }
 
-type SearchableCategory = ShortcutCategory | LauncherBookmarkCategory;
+type SearchableCategory = LauncherBookmarkCategory;
 
-function findShortcuts(categories: SearchableCategory[], input: string) {
+function findBookmarks(categories: SearchableCategory[], input: string) {
   const value = input.trim().toLowerCase();
   if (!value) return [];
 
   const urlPrefix = value
     .replace(/^[a-z][a-z\d+.-]*:\/\//, "")
     .replace(/^www\./, "");
-  const seenShortcutIds = new Set<string>();
+  const seenBookmarkIds = new Set<string>();
 
   return categories
     .flatMap((category) =>
-      ("bookmarks" in category
-        ? category.bookmarks
-        : category.shortcuts
-      ).flatMap((node) => {
-        const shortcuts = node.type === "folder" ? node.children : [node];
+      category.bookmarks.flatMap((node) => {
+        const bookmarks = node.type === "folder" ? node.children : [node];
 
-        return shortcuts.flatMap((shortcut) => {
-          if (seenShortcutIds.has(shortcut.id)) return [];
+        return bookmarks.flatMap((bookmark) => {
+          if (seenBookmarkIds.has(bookmark.id)) return [];
 
-          const trimmedTitle = shortcut.title.trim();
+          const trimmedTitle = bookmark.title.trim();
           const titleMatchIndex = trimmedTitle.toLowerCase().indexOf(value);
-          const titleStart = shortcut.title.indexOf(trimmedTitle);
-          const urlMatch = getShortcutUrlMatchCandidates(shortcut.url).find(
+          const titleStart = bookmark.title.indexOf(trimmedTitle);
+          const urlMatch = getBookmarkUrlMatchCandidates(bookmark.url).find(
             (candidate) => candidate.value.startsWith(urlPrefix),
           );
           if (titleMatchIndex < 0 && !urlMatch) return [];
 
-          seenShortcutIds.add(shortcut.id);
+          seenBookmarkIds.add(bookmark.id);
           return [
             {
-              shortcut,
+              bookmark,
               matchIndex: Math.max(titleMatchIndex, 0),
               matches: {
                 title:
@@ -151,7 +147,7 @@ function findShortcuts(categories: SearchableCategory[], input: string) {
       }),
     )
     .sort((left, right) => left.matchIndex - right.matchIndex)
-    .map(({ shortcut, matches }) => ({ shortcut, matches }));
+    .map(({ bookmark, matches }) => ({ bookmark, matches }));
 }
 
 export function findSearchSuggestions({
@@ -178,16 +174,16 @@ export function findSearchSuggestions({
 
     return [{ type: "engine" as const, engine, matches }];
   });
-  const shortcutSuggestions: SearchSuggestion[] = findShortcuts(
+  const bookmarkSuggestions: SearchSuggestion[] = findBookmarks(
     categories,
     input,
-  ).map(({ shortcut, matches }) => ({
-    type: "shortcut",
-    shortcut,
+  ).map(({ bookmark, matches }) => ({
+    type: "bookmark",
+    bookmark,
     matches,
   }));
 
-  return [...engineSuggestions, ...shortcutSuggestions].slice(
+  return [...engineSuggestions, ...bookmarkSuggestions].slice(
     0,
     MAX_SEARCH_SUGGESTIONS,
   );

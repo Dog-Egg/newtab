@@ -27,7 +27,7 @@ async function main() {
     console.error("Failed to apply the initial locale", error);
   }
 
-  // Extension 首次读取布局时可能先把旧 Launcher 快捷方式导出为 Chrome
+  // Extension 首次读取布局时可能先把旧 Launcher 数据导出为 Chrome
   // Bookmarks，因此实体必须在布局迁移完成后再读，避免首屏拿到迁移前的旧快照。
   const initialBookmarkLayout = await platform.bookmarkLayout
     .read(initialSettings.locale)

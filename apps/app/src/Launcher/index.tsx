@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { platform } from "@platform";
 import { CategoryTabs } from "./CategoryTabs";
-import { DEFAULT_CATEGORY_ID, normalizeActiveCategoryId } from "./launcher";
 import type {
   LauncherBookmarkCategory,
   LauncherBookmarkItem,
   LauncherBookmarkNode,
 } from "./bookmarkLayout";
-import { placeLauncherBookmarkAtRoot } from "./bookmarkLayout";
-import { DeleteShortcutCollectionDialog } from "./DeleteShortcutCollectionDialog";
-import { ShortcutPage } from "./ShortcutPage";
+import {
+  DEFAULT_CATEGORY_ID,
+  normalizeActiveCategoryId,
+  placeLauncherBookmarkAtRoot,
+} from "./bookmarkLayout";
+import { DeleteBookmarkCollectionDialog } from "./DeleteBookmarkCollectionDialog";
+import { BookmarkPage } from "./BookmarkPage";
 import { Slider } from "./Slider";
 import { useTranslation } from "react-i18next";
 import { useLauncher } from "./LauncherProvider";
@@ -158,7 +161,7 @@ export function Launcher() {
           activeId={activeCategoryId}
           onSelect={selectCategory}
           renderItem={(category) => (
-            <ShortcutPage
+            <BookmarkPage
               categoryId={category.id}
               bookmarks={category.bookmarks}
               categories={loadedCategories}
@@ -200,8 +203,8 @@ export function Launcher() {
               (candidate) => candidate.id === categoryId,
             );
             if (!category) return;
-            const hasShortcuts = category.bookmarks.length > 0;
-            if (hasShortcuts) {
+            const hasBookmarks = category.bookmarks.length > 0;
+            if (hasBookmarks) {
               setPendingDeleteCategory(category);
             } else {
               deleteCategory(categoryId, false);
@@ -212,15 +215,15 @@ export function Launcher() {
       </div>
 
       {pendingDeleteCategory ? (
-        <DeleteShortcutCollectionDialog
+        <DeleteBookmarkCollectionDialog
           title={t("launcher.deleteCategoryTitle")}
           collectionName={pendingDeleteCategory.name}
-          shortcutCount={pendingDeleteCategory.bookmarks.reduce(
+          bookmarkCount={pendingDeleteCategory.bookmarks.reduce(
             (count, node) =>
               count + (node.type === "folder" ? node.children.length : 1),
             0,
           )}
-          keepShortcutsLabel={t("launcher.keepCategoryShortcuts")}
+          keepBookmarksLabel={t("launcher.keepCategoryBookmarks")}
           deleteAllLabel={t("launcher.deleteCategoryAll")}
           onClose={() => setPendingDeleteCategory(null)}
           onDeleteAll={() => {
@@ -246,7 +249,7 @@ export function Launcher() {
               deleteCategory(categoryId, false);
             });
           }}
-          onKeepShortcuts={() => deleteCategory(pendingDeleteCategory.id, true)}
+          onKeepBookmarks={() => deleteCategory(pendingDeleteCategory.id, true)}
         />
       ) : null}
     </div>
