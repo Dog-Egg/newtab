@@ -218,7 +218,7 @@ export function normalizeLauncher(
 
 export function normalizeActiveCategoryId(
   value: unknown,
-  categories: ShortcutCategory[],
+  categories: Array<{ id: string }>,
 ) {
   return typeof value === "string" &&
     categories.some((category) => category.id === value)

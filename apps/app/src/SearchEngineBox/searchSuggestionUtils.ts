@@ -1,4 +1,8 @@
 import type { ShortcutCategory, ShortcutItem } from "../Launcher/launcher";
+import type {
+  LauncherBookmarkCategory,
+  LauncherBookmarkItem,
+} from "../Launcher/bookmarkLayout";
 import {
   getSearchEngineMatches,
   type SearchEngine,
@@ -12,7 +16,7 @@ export type SearchSuggestion =
   | { type: "engine"; engine: SearchEngine; matches: SearchEngineMatches }
   | {
       type: "shortcut";
-      shortcut: ShortcutItem;
+      shortcut: ShortcutItem | LauncherBookmarkItem;
       matches: { title: TextMatch[]; domain: TextMatch[] };
     };
 
@@ -84,7 +88,9 @@ function getShortcutUrlMatchCandidates(url: string) {
   }
 }
 
-function findShortcuts(categories: ShortcutCategory[], input: string) {
+type SearchableCategory = ShortcutCategory | LauncherBookmarkCategory;
+
+function findShortcuts(categories: SearchableCategory[], input: string) {
   const value = input.trim().toLowerCase();
   if (!value) return [];
 
@@ -95,7 +101,10 @@ function findShortcuts(categories: ShortcutCategory[], input: string) {
 
   return categories
     .flatMap((category) =>
-      category.shortcuts.flatMap((node) => {
+      ("bookmarks" in category
+        ? category.bookmarks
+        : category.shortcuts
+      ).flatMap((node) => {
         const shortcuts = node.type === "folder" ? node.children : [node];
 
         return shortcuts.flatMap((shortcut) => {
@@ -153,7 +162,7 @@ export function findSearchSuggestions({
   temporaryEngineId,
 }: {
   engines: SearchEngine[];
-  categories: ShortcutCategory[];
+  categories: SearchableCategory[];
   input: string;
   selectedEngineId: string;
   temporaryEngineId: string | null;

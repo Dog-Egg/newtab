@@ -37,7 +37,9 @@ function createDefaultNodeFactory(locale: AppLocale) {
   };
 }
 
-function createWebDefaultLauncher(locale: AppLocale): ShortcutCategory[] {
+export function createWebDefaultLauncher(
+  locale: AppLocale,
+): ShortcutCategory[] {
   const names = getDefaultCategoryNames(locale);
   const { shortcut, folder } = createDefaultNodeFactory(locale);
 
@@ -213,44 +215,6 @@ function createWebDefaultLauncher(locale: AppLocale): ShortcutCategory[] {
   ];
 }
 
-function createExtensionDefaultLauncher(locale: AppLocale): ShortcutCategory[] {
-  const names = getDefaultCategoryNames(locale);
-  const { shortcut, folder } = createDefaultNodeFactory(locale);
-
-  return [
-    {
-      ...createEmptyDefaultCategory(locale),
-      shortcuts: [
-        shortcut("YouTube", "https://www.youtube.com"),
-        shortcut("Gmail", "https://mail.google.com"),
-        folder(
-          "social",
-          "Social",
-          [
-            shortcut("X", "https://x.com"),
-            shortcut("Reddit", "https://www.reddit.com"),
-          ],
-          "社交",
-        ),
-        shortcut("Spotify", "https://open.spotify.com"),
-        shortcut("Wikipedia", "https://www.wikipedia.org", "维基百科"),
-      ],
-    },
-    {
-      id: "category-work",
-      name: names.work,
-      shortcuts: [
-        shortcut("GitHub", "https://github.com"),
-        shortcut("ChatGPT", "https://chatgpt.com"),
-        shortcut("Notion", "https://www.notion.so"),
-        shortcut("Google Drive", "https://drive.google.com", "谷歌云端硬盘"),
-        shortcut("Figma", "https://www.figma.com"),
-        shortcut("Slack", "https://slack.com"),
-      ],
-    },
-  ];
-}
-
 function createEmptyDefaultCategory(locale: AppLocale): ShortcutCategory {
   return {
     id: DEFAULT_CATEGORY_ID,
@@ -269,11 +233,10 @@ export function normalizeStoredExtensionLauncher(
   value: unknown,
   locale: AppLocale,
 ) {
-  return typeof value === "undefined"
-    ? createExtensionDefaultLauncher(locale)
-    : normalizeLauncher(value, createEmptyDefaultCategory(locale));
+  // Extension 不再注入演示 shortcuts；已保存的旧 launcher 数据仍按原样读取。
+  return normalizeLauncher(value, createEmptyDefaultCategory(locale));
 }
 
-function getDefaultCategoryNames(locale: AppLocale) {
+export function getDefaultCategoryNames(locale: AppLocale) {
   return (locale === "zh-CN" ? zhCN : en).launcher.defaultCategories;
 }

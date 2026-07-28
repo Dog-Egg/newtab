@@ -3,59 +3,89 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
 import { platform } from "@platform";
 import { useSettings } from "../Settings/SettingsProvider";
-import type { ShortcutCategory } from "./launcher";
+import {
+  resolveBookmarkLayout,
+  toBookmarkLayout,
+  type BookmarkLayoutCategory,
+  type BrowserBookmark,
+  type LauncherBookmarkCategory,
+} from "./bookmarkLayout";
 
 type LauncherContextValue = {
-  categories: ShortcutCategory[];
-  saveCategories: (categories: ShortcutCategory[]) => void;
+  categories: LauncherBookmarkCategory[];
+  saveCategories: (categories: LauncherBookmarkCategory[]) => void;
 };
 
 const LauncherContext = createContext<LauncherContextValue | null>(null);
 
 export function LauncherProvider({
   children,
-  initialCategories,
+  initialLayout,
+  initialBookmarks,
 }: {
   children: ReactNode;
-  initialCategories: ShortcutCategory[];
+  initialLayout: BookmarkLayoutCategory[];
+  initialBookmarks: BrowserBookmark[];
 }) {
   const { settings } = useSettings();
-  const [categories, setCategories] = useState(initialCategories);
+  const [layout, setLayout] = useState(initialLayout);
+  const [bookmarks, setBookmarks] = useState(initialBookmarks);
   const loadedLocaleRef = useRef(settings.locale);
 
   useEffect(() => {
     let isCurrent = true;
-    const applyCategories = (storedCategories: ShortcutCategory[]) => {
-      if (isCurrent) setCategories(storedCategories);
+    const applyLayout = (storedLayout: BookmarkLayoutCategory[]) => {
+      if (isCurrent) setLayout(storedLayout);
     };
 
     if (loadedLocaleRef.current !== settings.locale) {
       loadedLocaleRef.current = settings.locale;
-      void platform.launcher
+      void platform.bookmarkLayout
         .read(settings.locale)
-        .then(applyCategories, () => undefined);
+        .then(applyLayout, () => undefined);
     }
 
-    const unsubscribe = platform.launcher.subscribe(
+    const unsubscribeLayout = platform.bookmarkLayout.subscribe(
       settings.locale,
-      applyCategories,
+      applyLayout,
     );
+    const refreshBookmarks = () => {
+      void platform.bookmarks.read().then(
+        (nextBookmarks) => {
+          if (isCurrent) setBookmarks(nextBookmarks);
+        },
+        () => undefined,
+      );
+    };
+    const unsubscribeBookmarks = platform.bookmarks.subscribe(refreshBookmarks);
+
     return () => {
       isCurrent = false;
-      unsubscribe();
+      unsubscribeLayout();
+      unsubscribeBookmarks();
     };
   }, [settings.locale]);
 
-  const saveCategories = useCallback((nextCategories: ShortcutCategory[]) => {
-    setCategories(nextCategories);
-    void platform.launcher.save(nextCategories);
-  }, []);
+  const categories = useMemo(
+    () => resolveBookmarkLayout(layout, bookmarks),
+    [bookmarks, layout],
+  );
+
+  const saveCategories = useCallback(
+    (nextCategories: LauncherBookmarkCategory[]) => {
+      const nextLayout = toBookmarkLayout(nextCategories);
+      setLayout(nextLayout);
+      void platform.bookmarkLayout.save(nextLayout);
+    },
+    [],
+  );
 
   return (
     <LauncherContext.Provider value={{ categories, saveCategories }}>

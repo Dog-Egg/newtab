@@ -1,6 +1,10 @@
 import type { Settings } from "../Settings/settings";
 import type { AppLocale } from "../i18n/locale";
 import type { ShortcutCategory } from "../Launcher/launcher";
+import type {
+  BookmarkLayoutCategory,
+  BrowserBookmark,
+} from "../Launcher/bookmarkLayout";
 
 export const SEARCH_ENGINE_SETTINGS_KEY = "search-engine-settings";
 
@@ -32,6 +36,27 @@ export type Platform = {
       locale: AppLocale,
       onChange: (categories: ShortcutCategory[]) => void,
     ) => StorageUnsubscribe;
+  };
+  bookmarkLayout: {
+    read: (locale: AppLocale) => Promise<BookmarkLayoutCategory[]>;
+    save: (categories: BookmarkLayoutCategory[]) => Promise<void>;
+    subscribe: (
+      locale: AppLocale,
+      onChange: (categories: BookmarkLayoutCategory[]) => void,
+    ) => StorageUnsubscribe;
+  };
+  bookmarks: {
+    read: () => Promise<BrowserBookmark[]>;
+    create: (bookmark: {
+      title: string;
+      url: string;
+    }) => Promise<BrowserBookmark>;
+    update: (
+      id: string,
+      changes: { title: string; url: string },
+    ) => Promise<BrowserBookmark>;
+    remove: (id: string) => Promise<void>;
+    subscribe: (onChange: () => void) => StorageUnsubscribe;
   };
   activeCategoryId: {
     read: () => Promise<string>;

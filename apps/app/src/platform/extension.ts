@@ -12,6 +12,13 @@ import {
 import { normalizeSettings, SETTINGS_STORAGE_KEY } from "../Settings/settings";
 import { getLocaleFromLanguage } from "../i18n/locale";
 import { normalizeStoredExtensionLauncher } from "../Launcher/defaultLauncher";
+import { getDefaultCategoryNames } from "../Launcher/defaultLauncher";
+import {
+  BOOKMARK_LAYOUT_STORAGE_KEY,
+  normalizeBookmarkLayout,
+  type BrowserBookmark,
+} from "../Launcher/bookmarkLayout";
+import { getAllBookmarkItems } from "../next/bookmarks";
 const defaultLocale = getLocaleFromLanguage(chrome.i18n.getUILanguage());
 
 function getChromeStorage<T>(key: string, normalize: (value: unknown) => T) {
@@ -72,6 +79,79 @@ function subscribeChromeStorage<T>(
   return () => chrome.storage.onChanged.removeListener(handleStorageChange);
 }
 
+function getBookmarkError() {
+  const error = chrome.runtime.lastError;
+  return error ? new Error(error.message) : null;
+}
+
+function createBookmark(
+  details: chrome.bookmarks.CreateDetails,
+): Promise<BrowserBookmark> {
+  return new Promise((resolve, reject) => {
+    chrome.bookmarks.create(details, (bookmark) => {
+      const error = getBookmarkError();
+      if (error) {
+        reject(error);
+        return;
+      }
+      if (!bookmark.url) {
+        reject(new Error("Chrome created a bookmark without a URL"));
+        return;
+      }
+      resolve({
+        id: bookmark.id,
+        title: bookmark.title,
+        url: bookmark.url,
+      });
+    });
+  });
+}
+
+function updateBookmark(
+  id: string,
+  changes: chrome.bookmarks.UpdateChanges,
+): Promise<BrowserBookmark> {
+  return new Promise((resolve, reject) => {
+    chrome.bookmarks.update(id, changes, (bookmark) => {
+      const error = getBookmarkError();
+      if (error) {
+        reject(error);
+        return;
+      }
+      if (!bookmark.url) {
+        reject(new Error("Chrome updated bookmark without a URL"));
+        return;
+      }
+      resolve({
+        id: bookmark.id,
+        title: bookmark.title,
+        url: bookmark.url,
+      });
+    });
+  });
+}
+
+function removeBookmark(id: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    chrome.bookmarks.remove(id, () => {
+      const error = getBookmarkError();
+      if (error) reject(error);
+      else resolve();
+    });
+  });
+}
+
+function subscribeBookmarks(onChange: () => void) {
+  chrome.bookmarks.onCreated.addListener(onChange);
+  chrome.bookmarks.onChanged.addListener(onChange);
+  chrome.bookmarks.onRemoved.addListener(onChange);
+  return () => {
+    chrome.bookmarks.onCreated.removeListener(onChange);
+    chrome.bookmarks.onChanged.removeListener(onChange);
+    chrome.bookmarks.onRemoved.removeListener(onChange);
+  };
+}
+
 export const platform: Platform = {
   defaultLocale,
   launcher: {
@@ -86,6 +166,33 @@ export const platform: Platform = {
         (value) => normalizeStoredExtensionLauncher(value, locale),
         onChange,
       ),
+  },
+  bookmarkLayout: {
+    read: (locale) =>
+      getChromeStorage(BOOKMARK_LAYOUT_STORAGE_KEY, (value) =>
+        normalizeBookmarkLayout(value, getDefaultCategoryNames(locale).home),
+      ),
+    save: (categories) =>
+      setChromeStorage(BOOKMARK_LAYOUT_STORAGE_KEY, categories),
+    subscribe: (locale, onChange) =>
+      subscribeChromeStorage(
+        BOOKMARK_LAYOUT_STORAGE_KEY,
+        (value) =>
+          normalizeBookmarkLayout(value, getDefaultCategoryNames(locale).home),
+        onChange,
+      ),
+  },
+  bookmarks: {
+    read: async () =>
+      (await getAllBookmarkItems()).map(({ id, title, url }) => ({
+        id,
+        title,
+        url,
+      })),
+    create: (bookmark) => createBookmark(bookmark),
+    update: (id, changes) => updateBookmark(id, changes),
+    remove: removeBookmark,
+    subscribe: subscribeBookmarks,
   },
   activeCategoryId: {
     read: () =>

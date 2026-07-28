@@ -38,14 +38,15 @@ import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 import clsx from "clsx";
 import { ChevronRight, EllipsisVertical, Plus } from "lucide-react";
 import {
-  createShortcutSortableGroups,
-  mergeShortcutIntoNode,
-  resolveShortcutSortableGroups,
-  type ShortcutFolder,
-  type ShortcutItem,
-  type ShortcutNode,
-  type ShortcutCategory,
-} from "./launcher";
+  createBookmarkSortableGroups as createShortcutSortableGroups,
+  mergeBookmarkIntoNode as mergeShortcutIntoNode,
+  resolveBookmarkSortableGroups as resolveShortcutSortableGroups,
+  type LauncherBookmarkFolder as ShortcutFolder,
+  type LauncherBookmarkItem as ShortcutItem,
+  type LauncherBookmarkNode as ShortcutNode,
+  type LauncherBookmarkCategory as ShortcutCategory,
+} from "./bookmarkLayout";
+import { platform } from "@platform";
 import { Dialog, DialogTitle } from "../components/Dialog";
 import {
   DropdownMenu,
@@ -69,6 +70,12 @@ const ShortcutCategoriesContext = createContext<{
   categories: ShortcutCategory[];
   categoryId: string;
 }>({ categories: [], categoryId: "" });
+
+function reportBookmarkMutation(promise: Promise<unknown>, action: string) {
+  void promise.catch((error: unknown) => {
+    console.error(`Failed to ${action} browser bookmark`, error);
+  });
+}
 
 type ShortcutContainer =
   | { type: "root"; id: typeof ROOT_SORTABLE_GROUP }
@@ -956,15 +963,17 @@ function AddShortcutButton({ onClick }: { onClick: () => void }) {
 
 export function ShortcutPage({
   categoryId,
-  shortcuts: storedShortcuts,
+  bookmarks: storedShortcuts,
   categories,
   onChange,
+  onAdd,
   onMove,
 }: {
   categoryId: string;
-  shortcuts: ShortcutNode[];
+  bookmarks: ShortcutNode[];
   categories: ShortcutCategory[];
   onChange: (shortcuts: ShortcutNode[]) => void;
+  onAdd: (bookmark: ShortcutItem) => void;
   onMove: (
     sourceShortcuts: ShortcutNode[],
     shortcut: ShortcutNode,
@@ -1105,7 +1114,6 @@ export function ShortcutPage({
         sourceData.node.id,
         targetData.node.id,
         `folder:${crypto.randomUUID()}`,
-        Date.now(),
         t("launcher.folder"),
       );
       if (nextCategoryShortcuts !== shortcuts) {
@@ -1220,10 +1228,17 @@ export function ShortcutPage({
                     setPendingDeleteFolder(selectedNode);
                     return;
                   }
-                  saveShortcuts(
-                    shortcuts.filter(
-                      (candidate) => candidate.id !== selectedNode.id,
-                    ),
+                  void platform.bookmarks.remove(selectedNode.id).then(
+                    () => {
+                      saveShortcuts(
+                        shortcutsRef.current.filter(
+                          (candidate) => candidate.id !== selectedNode.id,
+                        ),
+                      );
+                    },
+                    (error: unknown) => {
+                      console.error("Failed to remove browser bookmark", error);
+                    },
                   );
                 }}
                 onMove={(selectedNode, categoryId) => {
@@ -1266,12 +1281,42 @@ export function ShortcutPage({
               setPendingDeleteFolder(null);
             }}
             onDeleteAll={() => {
-              saveShortcuts(
-                shortcutsRef.current.filter(
-                  (node) => node.id !== pendingDeleteFolder.id,
-                ),
-              );
-              setPendingDeleteFolder(null);
+              const folderId = pendingDeleteFolder.id;
+              const children = pendingDeleteFolder.children;
+              void Promise.allSettled(
+                children.map((item) => platform.bookmarks.remove(item.id)),
+              ).then((results) => {
+                const removedIds = new Set(
+                  results.flatMap((result, index) =>
+                    result.status === "fulfilled" ? [children[index].id] : [],
+                  ),
+                );
+                const errors = results.flatMap((result) =>
+                  result.status === "rejected" ? [result.reason] : [],
+                );
+                if (errors.length > 0) {
+                  console.error(
+                    "Failed to remove some folder bookmarks",
+                    errors,
+                  );
+                }
+
+                // 只从布局移除 Chrome 已确认删除的项，失败项继续留在原 Folder。
+                saveShortcuts(
+                  shortcutsRef.current.flatMap((node) => {
+                    if (node.type !== "folder" || node.id !== folderId) {
+                      return [node];
+                    }
+                    const remaining = node.children.filter(
+                      (item) => !removedIds.has(item.id),
+                    );
+                    return remaining.length
+                      ? [{ ...node, children: remaining }]
+                      : [];
+                  }),
+                );
+                setPendingDeleteFolder(null);
+              });
             }}
           />
         ) : null}
@@ -1282,24 +1327,32 @@ export function ShortcutPage({
             editTitleInitially={renameFolderId === displayedFolder.id}
             onEditItem={setEditingItem}
             onDeleteItem={(item) => {
-              const nextShortcuts = shortcutsRef.current
-                .filter(
-                  (node) =>
-                    node.type !== "folder" ||
-                    node.id !== displayedFolder.id ||
-                    node.children.length > 1,
-                )
-                .map((node) =>
-                  node.type === "folder" && node.id === displayedFolder.id
-                    ? {
-                        ...node,
-                        children: node.children.filter(
-                          (child) => child.id !== item.id,
-                        ),
-                      }
-                    : node,
-                );
-              saveShortcuts(nextShortcuts);
+              const folderId = displayedFolder.id;
+              void platform.bookmarks.remove(item.id).then(
+                () => {
+                  const nextShortcuts = shortcutsRef.current
+                    .filter(
+                      (node) =>
+                        node.type !== "folder" ||
+                        node.id !== folderId ||
+                        node.children.length > 1,
+                    )
+                    .map((node) =>
+                      node.type === "folder" && node.id === folderId
+                        ? {
+                            ...node,
+                            children: node.children.filter(
+                              (child) => child.id !== item.id,
+                            ),
+                          }
+                        : node,
+                    );
+                  saveShortcuts(nextShortcuts);
+                },
+                (error: unknown) => {
+                  console.error("Failed to remove browser bookmark", error);
+                },
+              );
             }}
             onMoveItem={(item, categoryId) => {
               const nextShortcuts = shortcutsRef.current.flatMap<ShortcutNode>(
@@ -1342,6 +1395,10 @@ export function ShortcutPage({
             item={editingItem}
             onClose={() => setEditingItem(null)}
             onSave={(title, url) => {
+              reportBookmarkMutation(
+                platform.bookmarks.update(editingItem.id, { title, url }),
+                "update",
+              );
               const nextShortcuts = shortcutsRef.current.map((node) => {
                 if (node.type === "item") {
                   return node.id === editingItem.id
@@ -1363,14 +1420,15 @@ export function ShortcutPage({
           <AddItemDialog
             onClose={() => setIsAddingItem(false)}
             onSave={(title, url) => {
-              const item: ShortcutItem = {
-                type: "item",
-                id: `shortcut:${crypto.randomUUID()}`,
-                title,
-                url,
-                createdAt: Date.now(),
-              };
-              saveShortcuts([...shortcutsRef.current, item]);
+              // Chrome 分配的 bookmark ID 是布局引用的唯一来源，不能预造临时 ID。
+              void platform.bookmarks.create({ title, url }).then(
+                (item) => {
+                  onAdd({ type: "item", ...item });
+                },
+                (error: unknown) => {
+                  console.error("Failed to create browser bookmark", error);
+                },
+              );
             }}
           />
         ) : null}

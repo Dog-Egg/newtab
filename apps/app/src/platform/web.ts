@@ -16,7 +16,18 @@ import {
 } from "../Settings/settings";
 import { getLocaleFromLanguage } from "../i18n/locale";
 import { normalizeStoredWebLauncher } from "../Launcher/defaultLauncher";
+import { getDefaultCategoryNames } from "../Launcher/defaultLauncher";
+import {
+  BOOKMARK_LAYOUT_STORAGE_KEY,
+  normalizeBookmarkLayout,
+  type BookmarkLayoutCategory,
+  type BrowserBookmark,
+} from "../Launcher/bookmarkLayout";
 import type { AppLocale } from "../i18n";
+import { createWebBookmarkMocks } from "./webBookmarkMocks";
+
+const WEB_BOOKMARKS_STORAGE_KEY = "web-bookmarks";
+const webBookmarkListeners = new Set<() => void>();
 
 const defaultLocale = getLocaleFromLanguage(
   new URLSearchParams(window.location.search).get("lang") ?? "en",
@@ -80,6 +91,56 @@ function saveStoredLauncher(categories: ShortcutCategory[]) {
   writeJsonStorageValue(LAUNCHER_STORAGE_KEY, categories);
 }
 
+function readStoredBookmarkLayout(locale: AppLocale) {
+  const storedValue = readJsonStorageValue(BOOKMARK_LAYOUT_STORAGE_KEY);
+  if (typeof storedValue === "undefined") {
+    return createWebBookmarkMocks(locale).layout;
+  }
+
+  return normalizeBookmarkLayout(
+    storedValue,
+    getDefaultCategoryNames(locale).home,
+  );
+}
+
+function saveStoredBookmarkLayout(categories: BookmarkLayoutCategory[]) {
+  writeJsonStorageValue(BOOKMARK_LAYOUT_STORAGE_KEY, categories);
+}
+
+function normalizeStoredWebBookmarks(value: unknown): BrowserBookmark[] | null {
+  if (!Array.isArray(value)) return null;
+
+  const bookmarks = value.flatMap<BrowserBookmark>((candidate) => {
+    if (!candidate || typeof candidate !== "object") return [];
+    const bookmark = candidate as Partial<BrowserBookmark>;
+    return typeof bookmark.id === "string" &&
+      bookmark.id &&
+      typeof bookmark.title === "string" &&
+      typeof bookmark.url === "string"
+      ? [{ id: bookmark.id, title: bookmark.title, url: bookmark.url }]
+      : [];
+  });
+
+  return bookmarks.filter(
+    (bookmark, index, all) =>
+      all.findIndex((candidate) => candidate.id === bookmark.id) === index,
+  );
+}
+
+function readStoredWebBookmarks() {
+  const storedValue = readJsonStorageValue(WEB_BOOKMARKS_STORAGE_KEY);
+  return (
+    normalizeStoredWebBookmarks(storedValue) ??
+    createWebBookmarkMocks(defaultLocale).bookmarks
+  );
+}
+
+function saveStoredWebBookmarks(bookmarks: BrowserBookmark[]) {
+  writeJsonStorageValue(WEB_BOOKMARKS_STORAGE_KEY, bookmarks);
+  // storage 事件不会回发到当前窗口，主动通知才能让编辑后的标题立即刷新。
+  for (const listener of webBookmarkListeners) listener();
+}
+
 function readStoredActiveCategoryId() {
   const value = readJsonStorageValue(ACTIVE_CATEGORY_ID_STORAGE_KEY);
   return typeof value === "string" ? value : DEFAULT_CATEGORY_ID;
@@ -112,6 +173,58 @@ export const platform: Platform = {
 
       window.addEventListener("storage", handleStorageChange);
       return () => window.removeEventListener("storage", handleStorageChange);
+    },
+  },
+  bookmarkLayout: {
+    read: async (locale) => readStoredBookmarkLayout(locale),
+    save: async (categories) => saveStoredBookmarkLayout(categories),
+    subscribe: (locale, onChange) => {
+      const handleStorageChange = (event: StorageEvent) => {
+        if (event.key === BOOKMARK_LAYOUT_STORAGE_KEY) {
+          onChange(readStoredBookmarkLayout(locale));
+        }
+      };
+      window.addEventListener("storage", handleStorageChange);
+      return () => window.removeEventListener("storage", handleStorageChange);
+    },
+  },
+  // Web 用 sessionStorage 模拟 chrome.bookmarks，预览中的增删改也能保持一致。
+  bookmarks: {
+    read: async () => readStoredWebBookmarks(),
+    create: async (bookmark) => {
+      const created = {
+        ...bookmark,
+        id: `web-bookmark-${window.crypto.randomUUID()}`,
+      };
+      saveStoredWebBookmarks([...readStoredWebBookmarks(), created]);
+      return created;
+    },
+    update: async (id, changes) => {
+      const bookmarks = readStoredWebBookmarks();
+      const current = bookmarks.find((bookmark) => bookmark.id === id);
+      if (!current) throw new Error(`Web bookmark not found: ${id}`);
+
+      const updated = { ...current, ...changes };
+      saveStoredWebBookmarks(
+        bookmarks.map((bookmark) => (bookmark.id === id ? updated : bookmark)),
+      );
+      return updated;
+    },
+    remove: async (id) => {
+      saveStoredWebBookmarks(
+        readStoredWebBookmarks().filter((bookmark) => bookmark.id !== id),
+      );
+    },
+    subscribe: (onChange) => {
+      const handleStorageChange = (event: StorageEvent) => {
+        if (event.key === WEB_BOOKMARKS_STORAGE_KEY) onChange();
+      };
+      webBookmarkListeners.add(onChange);
+      window.addEventListener("storage", handleStorageChange);
+      return () => {
+        webBookmarkListeners.delete(onChange);
+        window.removeEventListener("storage", handleStorageChange);
+      };
     },
   },
   activeCategoryId: {

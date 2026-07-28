@@ -27,17 +27,26 @@ async function main() {
     console.error("Failed to apply the initial locale", error);
   }
 
-  const initialLauncherCategories = await platform.launcher
-    .read(initialSettings.locale)
-    .catch((error: unknown) => {
-      console.error("Failed to read initial launcher", error);
+  const [initialBookmarkLayout, initialBookmarks] = await Promise.all([
+    platform.bookmarkLayout
+      .read(initialSettings.locale)
+      .catch((error: unknown) => {
+        console.error("Failed to read bookmark layout", error);
+        return [];
+      }),
+    platform.bookmarks.read().catch((error: unknown) => {
+      console.error("Failed to read browser bookmarks", error);
       return [];
-    });
+    }),
+  ]);
 
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <SettingsProvider initialSettings={initialSettings}>
-        <LauncherProvider initialCategories={initialLauncherCategories}>
+        <LauncherProvider
+          initialLayout={initialBookmarkLayout}
+          initialBookmarks={initialBookmarks}
+        >
           <App />
         </LauncherProvider>
       </SettingsProvider>

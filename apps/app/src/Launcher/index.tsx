@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { platform } from "@platform";
 import { CategoryTabs } from "./CategoryTabs";
-import {
-  DEFAULT_CATEGORY_ID,
-  normalizeActiveCategoryId,
-  type ShortcutCategory,
-  type ShortcutNode,
-} from "./launcher";
+import { DEFAULT_CATEGORY_ID, normalizeActiveCategoryId } from "./launcher";
+import type {
+  LauncherBookmarkCategory,
+  LauncherBookmarkItem,
+  LauncherBookmarkNode,
+} from "./bookmarkLayout";
+import { placeLauncherBookmarkAtRoot } from "./bookmarkLayout";
 import { DeleteShortcutCollectionDialog } from "./DeleteShortcutCollectionDialog";
 import { ShortcutPage } from "./ShortcutPage";
 import { Slider } from "./Slider";
@@ -18,7 +19,7 @@ export function Launcher() {
   const { categories, saveCategories } = useLauncher();
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [pendingDeleteCategory, setPendingDeleteCategory] =
-    useState<ShortcutCategory | null>(null);
+    useState<LauncherBookmarkCategory | null>(null);
   const categoriesRef = useRef(categories);
 
   useEffect(() => {
@@ -68,7 +69,7 @@ export function Launcher() {
 
   const loadedCategories = categories;
 
-  function persistCategories(nextCategories: ShortcutCategory[]) {
+  function persistCategories(nextCategories: LauncherBookmarkCategory[]) {
     // Keep subscription validation in sync immediately. Storage callbacks can
     // arrive before the categories effect runs after adding or deleting a tab.
     categoriesRef.current = nextCategories;
@@ -81,30 +82,40 @@ export function Launcher() {
     void platform.activeCategoryId.save(categoryId);
   }
 
-  function updateCategoryShortcuts(
+  function updateCategoryBookmarks(
     categoryId: string,
-    shortcuts: ShortcutNode[],
+    bookmarks: LauncherBookmarkNode[],
   ) {
     persistCategories(
-      loadedCategories.map((category) =>
-        category.id === categoryId ? { ...category, shortcuts } : category,
+      categoriesRef.current.map((category) =>
+        category.id === categoryId ? { ...category, bookmarks } : category,
       ),
     );
   }
 
-  function moveShortcut(
+  function addBookmark(categoryId: string, bookmark: LauncherBookmarkItem) {
+    // onCreated 可能先把新书签投影到 default；统一放置会先清除所有旧引用。
+    persistCategories(
+      placeLauncherBookmarkAtRoot(categoriesRef.current, categoryId, bookmark),
+    );
+  }
+
+  function moveBookmark(
     sourceCategoryId: string,
-    sourceShortcuts: ShortcutNode[],
-    shortcut: ShortcutNode,
+    sourceBookmarks: LauncherBookmarkNode[],
+    bookmark: LauncherBookmarkNode,
     targetCategoryId: string,
   ) {
     persistCategories(
       loadedCategories.map((category) => {
         if (category.id === sourceCategoryId) {
-          return { ...category, shortcuts: sourceShortcuts };
+          return { ...category, bookmarks: sourceBookmarks };
         }
         if (category.id === targetCategoryId) {
-          return { ...category, shortcuts: [...category.shortcuts, shortcut] };
+          return {
+            ...category,
+            bookmarks: [...category.bookmarks, bookmark],
+          };
         }
         return category;
       }),
@@ -112,18 +123,19 @@ export function Launcher() {
   }
 
   function deleteCategory(categoryId: string, moveToDefault: boolean) {
-    const deletedCategory = loadedCategories.find(
+    const currentCategories = categoriesRef.current;
+    const deletedCategory = currentCategories.find(
       (category) => category.id === categoryId,
     );
-    const nextCategories = loadedCategories
+    const nextCategories = currentCategories
       .filter((category) => category.id !== categoryId)
       .map((category) =>
         moveToDefault && category.id === DEFAULT_CATEGORY_ID
           ? {
               ...category,
-              shortcuts: [
-                ...category.shortcuts,
-                ...(deletedCategory?.shortcuts ?? []),
+              bookmarks: [
+                ...category.bookmarks,
+                ...(deletedCategory?.bookmarks ?? []),
               ],
             }
           : category,
@@ -141,25 +153,24 @@ export function Launcher() {
         <Slider
           // Embla keeps its selected index while its slide list changes. Remount
           // for structural changes so a newly active category opens its own page.
-          key={JSON.stringify(
-            loadedCategories.map((category) => category.id),
-          )}
+          key={JSON.stringify(loadedCategories.map((category) => category.id))}
           items={loadedCategories}
           activeId={activeCategoryId}
           onSelect={selectCategory}
           renderItem={(category) => (
             <ShortcutPage
               categoryId={category.id}
-              shortcuts={category.shortcuts}
+              bookmarks={category.bookmarks}
               categories={loadedCategories}
-              onChange={(shortcuts) =>
-                updateCategoryShortcuts(category.id, shortcuts)
+              onChange={(bookmarks) =>
+                updateCategoryBookmarks(category.id, bookmarks)
               }
-              onMove={(sourceShortcuts, shortcut, targetCategoryId) =>
-                moveShortcut(
+              onAdd={(bookmark) => addBookmark(category.id, bookmark)}
+              onMove={(sourceBookmarks, bookmark, targetCategoryId) =>
+                moveBookmark(
                   category.id,
-                  sourceShortcuts,
-                  shortcut,
+                  sourceBookmarks,
+                  bookmark,
                   targetCategoryId,
                 )
               }
@@ -189,7 +200,7 @@ export function Launcher() {
               (candidate) => candidate.id === categoryId,
             );
             if (!category) return;
-            const hasShortcuts = category.shortcuts.length > 0;
+            const hasShortcuts = category.bookmarks.length > 0;
             if (hasShortcuts) {
               setPendingDeleteCategory(category);
             } else {
@@ -204,7 +215,7 @@ export function Launcher() {
         <DeleteShortcutCollectionDialog
           title={t("launcher.deleteCategoryTitle")}
           collectionName={pendingDeleteCategory.name}
-          shortcutCount={pendingDeleteCategory.shortcuts.reduce(
+          shortcutCount={pendingDeleteCategory.bookmarks.reduce(
             (count, node) =>
               count + (node.type === "folder" ? node.children.length : 1),
             0,
@@ -212,7 +223,29 @@ export function Launcher() {
           keepShortcutsLabel={t("launcher.keepCategoryShortcuts")}
           deleteAllLabel={t("launcher.deleteCategoryAll")}
           onClose={() => setPendingDeleteCategory(null)}
-          onDeleteAll={() => deleteCategory(pendingDeleteCategory.id, false)}
+          onDeleteAll={() => {
+            const ids = pendingDeleteCategory.bookmarks.flatMap((node) =>
+              node.type === "folder"
+                ? node.children.map((child) => child.id)
+                : [node.id],
+            );
+            const categoryId = pendingDeleteCategory.id;
+            // 等 Chrome 完成后再删除布局。失败的实体仍存在，会按规则回到 default 根部。
+            void Promise.allSettled(
+              ids.map((id) => platform.bookmarks.remove(id)),
+            ).then((results) => {
+              const errors = results.flatMap((result) =>
+                result.status === "rejected" ? [result.reason] : [],
+              );
+              if (errors.length > 0) {
+                console.error(
+                  "Failed to remove some category bookmarks",
+                  errors,
+                );
+              }
+              deleteCategory(categoryId, false);
+            });
+          }}
           onKeepShortcuts={() => deleteCategory(pendingDeleteCategory.id, true)}
         />
       ) : null}

@@ -8,7 +8,8 @@ import { PointerActivationConstraints } from "@dnd-kit/dom";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 import clsx from "clsx";
 import { Check, House, Pencil, Plus, Settings2, X } from "lucide-react";
-import { DEFAULT_CATEGORY_ID, type ShortcutCategory } from "./launcher";
+import { DEFAULT_CATEGORY_ID } from "./launcher";
+import type { LauncherBookmarkCategory } from "./bookmarkLayout";
 import { useTranslation } from "react-i18next";
 
 const CATEGORY_SORTABLE_GROUP = "categories";
@@ -22,7 +23,7 @@ function SortableCategory({
   onRename,
   onDelete,
 }: {
-  category: ShortcutCategory;
+  category: LauncherBookmarkCategory;
   index: number;
   isActive: boolean;
   isManaging: boolean;
@@ -148,13 +149,13 @@ export function CategoryTabs({
   onDelete,
   onReorder,
 }: {
-  categories: ShortcutCategory[];
+  categories: LauncherBookmarkCategory[];
   activeCategoryId: string;
-  onAdd: (category: ShortcutCategory) => void;
+  onAdd: (category: LauncherBookmarkCategory) => void;
   onSelect: (categoryId: string) => void;
   onRename: (categoryId: string, name: string) => void;
   onDelete: (categoryId: string) => void;
-  onReorder: (categories: ShortcutCategory[]) => void;
+  onReorder: (categories: LauncherBookmarkCategory[]) => void;
 }) {
   const { t } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
@@ -181,7 +182,7 @@ export function CategoryTabs({
     const category = {
       id: `category-${Date.now()}`,
       name,
-      shortcuts: [],
+      bookmarks: [],
     };
     onAdd(category);
     cancelAdding();
