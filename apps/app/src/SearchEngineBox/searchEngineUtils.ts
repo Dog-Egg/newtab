@@ -58,6 +58,26 @@ export function normalizeCustomEngines(
   });
 }
 
+export function getAvailableSearchEngines(
+  settings: StoredSearchEngineSettings,
+): SearchEngine[] {
+  const customEngines = normalizeCustomEngines(settings.customEngines);
+  const customEngineById = new Map(
+    customEngines.map((engine) => [engine.id, engine]),
+  );
+  const defaultEngineIds = new Set(
+    DEFAULT_SEARCH_ENGINES.map((engine) => engine.id),
+  );
+  const visibleDefaultEngines = DEFAULT_SEARCH_ENGINES.filter(
+    (engine) => !settings.hiddenDefaultEngineIds?.includes(engine.id),
+  ).map((engine) => customEngineById.get(engine.id) ?? engine);
+  const addedEngines = customEngines.filter(
+    (engine) => !defaultEngineIds.has(engine.id),
+  );
+
+  return [...visibleDefaultEngines, ...addedEngines];
+}
+
 export function buildSearchUrl(urlFormat: string, query: string) {
   const encodedQuery = encodeURIComponent(query);
 
