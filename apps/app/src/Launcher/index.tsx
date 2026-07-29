@@ -150,11 +150,12 @@ const mergeCollisionDetector: SortableCollisionDetector = ({
   if (
     !sourceData ||
     sourceData.node.id === targetData?.node.id ||
-    sourceData.node.type !== "item" ||
     sourceData.container.id !== targetData?.container.id ||
     sourceData.node.unmodifiable === "managed" ||
     targetData?.node.unmodifiable === "managed" ||
-    (targetData?.node.type !== "folder" && sourceData.node.type !== "item") ||
+    // Folder 只能放入另一个 Folder；只有两个普通 Bookmark 才能合并成新 Folder。
+    (targetData?.node.type !== "folder" &&
+      (sourceData.node.type !== "item" || targetData?.node.type !== "item")) ||
     !target
   ) {
     return null;
