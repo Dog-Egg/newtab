@@ -63,6 +63,7 @@ type SortableCollisionDetector = NonNullable<
 
 const MERGE_TARGET_PREFIX = "merge:";
 const BREADCRUMB_TARGET_PREFIX = "breadcrumb:";
+const ROOT_TARGET_PREFIX = "root:";
 
 type BookmarkContainer =
   { type: "root"; id: string } | { type: "folder"; id: string };
@@ -85,6 +86,10 @@ function getMergeTargetId(bookmarkId: string) {
 
 function getBreadcrumbTargetId(folderId: string) {
   return `${BREADCRUMB_TARGET_PREFIX}${folderId}`;
+}
+
+function getRootTargetId(folderId: string) {
+  return `${ROOT_TARGET_PREFIX}${folderId}`;
 }
 
 /**
@@ -203,6 +208,41 @@ const breadcrumbCollisionDetector: SortableCollisionDetector = ({
   return { id: droppable.id, priority: 6, type: 2, value: 1 };
 };
 
+/**
+ * 浏览器根目录是跨根移动目标。只有指针真正进入按钮时才命中；
+ * 已经直属于该根目录的节点无需再次移动到目录末尾。
+ */
+const rootCollisionDetector: SortableCollisionDetector = ({
+  dragOperation,
+  droppable,
+}) => {
+  const sourceData = getBookmarkDndData(dragOperation.source);
+  const targetData = getBookmarkDndData(droppable);
+  const target = droppable.shape;
+  const pointer = dragOperation.position.current;
+  if (
+    !sourceData ||
+    targetData?.node.type !== "folder" ||
+    !target ||
+    sourceData.node.parentId === targetData.node.id
+  ) {
+    return null;
+  }
+
+  const rect = target.boundingRectangle;
+  if (
+    pointer.x < rect.left ||
+    pointer.x > rect.right ||
+    pointer.y < rect.top ||
+    pointer.y > rect.bottom
+  ) {
+    return null;
+  }
+
+  // 根目录按钮位于独立导航区，命中时应覆盖网格排序与面包屑目标。
+  return { id: droppable.id, priority: 8, type: 2, value: 1 };
+};
+
 function reportBookmarkMutation(promise: Promise<unknown>, action: string) {
   void promise.catch((error: unknown) => {
     console.error(`Failed to ${action} browser bookmark`, error);
@@ -217,6 +257,51 @@ function getRootIcon(folder: BrowserBookmarkFolder) {
 
 function isModifiableFolder(folder: BrowserBookmarkFolder) {
   return folder.unmodifiable !== "managed" && folder.folderType !== "managed";
+}
+
+function BookmarkRootDropTarget({
+  root,
+  active,
+  onSelect,
+}: {
+  root: BrowserBookmarkFolder;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  const Icon = getRootIcon(root);
+  const data: BookmarkDndData = {
+    node: root,
+    container: { type: "root", id: root.id },
+  };
+  const { ref, isDropTarget } = useDroppable<BookmarkDndData>({
+    id: getRootTargetId(root.id),
+    type: "bookmark-root",
+    data,
+    disabled: !isModifiableFolder(root),
+    collisionDetector: rootCollisionDetector,
+  });
+
+  return (
+    <button
+      ref={ref}
+      type="button"
+      aria-pressed={active}
+      className={clsx(
+        "flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-semibold shadow-sm outline-none backdrop-blur-xl transition duration-200 focus-visible:ring-2 focus-visible:ring-glass-focus",
+        // 命中状态使用深色半透明底，拖拽预览覆盖在附近时文字仍有足够对比度。
+        // ring 只负责强调目标，不会像 border 一样改变按钮和相邻元素的位置。
+        isDropTarget
+          ? "scale-105 bg-slate-950/75 text-white shadow-lg ring-2 ring-white/45"
+          : active
+            ? "bg-white text-slate-900 hover:bg-white/90"
+            : "bg-slate-900/35 text-white/70 hover:bg-slate-900/50 hover:text-white",
+      )}
+      onClick={onSelect}
+    >
+      <Icon className="size-[18px]" aria-hidden="true" />
+      {root.title}
+    </button>
+  );
 }
 
 function MergeTargetFrame({
@@ -953,6 +1038,27 @@ export function Launcher() {
     const targetData = getBookmarkDndData(target);
     if (!sourceData) return;
 
+    if (
+      target?.type === "bookmark-root" &&
+      targetData?.node.type === "folder"
+    ) {
+      if (
+        sourceData.node.parentId === targetData.node.id ||
+        !isModifiableFolder(targetData.node)
+      ) {
+        return;
+      }
+      // 跨根目录移动时放到目标根的末尾，现有书签顺序不会被打乱。
+      reportBookmarkMutation(
+        platform.bookmarks.move(sourceData.node.id, {
+          parentId: targetData.node.id,
+          index: targetData.node.children.length,
+        }),
+        "move to bookmark root",
+      );
+      return;
+    }
+
     if (target?.type === "breadcrumb" && targetData?.node.type === "folder") {
       if (!canMoveInside(sourceData.node.id, targetData.node)) return;
       // 页面化后不再依赖“拖出弹窗”：把节点放到任意祖先面包屑，
@@ -1100,26 +1206,16 @@ export function Launcher() {
           aria-label={t("launcher.bookmarkRoots")}
         >
           {/* 每个根目录独立成组，避免额外的外层玻璃容器抢占视觉层级。 */}
-          <span className="flex max-w-[calc(100vw-2rem)] items-center gap-2.5 overflow-x-auto [scrollbar-width:none]">
+          <span className="flex max-w-[calc(100vw-2rem)] items-center gap-2.5 overflow-x-auto p-1.5 [scrollbar-width:none]">
             {roots.map((root) => {
-              const Icon = getRootIcon(root);
               const isActive = root.id === activeRoot.id;
               return (
-                <button
+                <BookmarkRootDropTarget
                   key={root.id}
-                  type="button"
-                  aria-pressed={isActive}
-                  className={clsx(
-                    "flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-semibold shadow-sm outline-none backdrop-blur-xl transition duration-200 focus-visible:ring-2 focus-visible:ring-glass-focus",
-                    isActive
-                      ? "bg-white text-slate-900 hover:bg-white/90"
-                      : "bg-slate-900/35 text-white/70 hover:bg-slate-900/50 hover:text-white",
-                  )}
-                  onClick={() => selectRoot(root.id)}
-                >
-                  <Icon className="size-[18px]" aria-hidden="true" />
-                  {root.title}
-                </button>
+                  root={root}
+                  active={isActive}
+                  onSelect={() => selectRoot(root.id)}
+                />
               );
             })}
           </span>
