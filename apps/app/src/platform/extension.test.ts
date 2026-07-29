@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  BOOKMARK_TREE_MIGRATION_KEY,
   LAUNCHER_STORAGE_KEY,
   type LegacyLauncherCategory,
-} from "../Launcher/legacyLauncher";
+} from "../Launcher/legacy";
 
-const MIGRATION_KEY = "bookmark-tree-migration-completed";
 const legacyCategories: LegacyLauncherCategory[] = [
   {
     id: "default",
@@ -106,7 +106,10 @@ describe("extension legacy Launcher migration", () => {
     const tree: chrome.bookmarks.BookmarkTreeNode[] = [
       { id: "root", title: "", syncing: false, children: [] },
     ];
-    const chromeMock = createChromeMock({ [MIGRATION_KEY]: true }, [tree]);
+    const chromeMock = createChromeMock(
+      { [BOOKMARK_TREE_MIGRATION_KEY]: true },
+      [tree],
+    );
     const { platform } = await import("./extension");
 
     await expect(platform.bookmarks.read()).resolves.toEqual([
@@ -191,7 +194,7 @@ describe("extension legacy Launcher migration", () => {
       expect.any(Function),
     );
     expect(chromeMock.set).toHaveBeenCalledWith(
-      { [MIGRATION_KEY]: true },
+      { [BOOKMARK_TREE_MIGRATION_KEY]: true },
       expect.any(Function),
     );
   });
@@ -199,9 +202,10 @@ describe("extension legacy Launcher migration", () => {
 
 describe("extension bookmark mutations", () => {
   it("converts a forward reorder to Chrome's pre-removal insertion index", async () => {
-    const chromeMock = createChromeMock({ [MIGRATION_KEY]: true }, [
-      [{ id: "root", title: "", syncing: false, children: [] }],
-    ]);
+    const chromeMock = createChromeMock(
+      { [BOOKMARK_TREE_MIGRATION_KEY]: true },
+      [[{ id: "root", title: "", syncing: false, children: [] }]],
+    );
     chromeMock.get.mockImplementation(
       (
         _id: string,

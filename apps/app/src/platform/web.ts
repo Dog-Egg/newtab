@@ -1,5 +1,5 @@
 import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
-import { createWebDefaultBookmarkTree } from "../Launcher/defaultLauncher";
+import { createWebDefaultBookmarkTree } from "../Launcher/webDefaultBookmarks";
 import {
   SEARCH_ENGINE_SETTINGS_KEY,
   type Platform,

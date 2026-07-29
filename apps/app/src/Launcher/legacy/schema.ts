@@ -1,5 +1,5 @@
 /**
- * 旧 `launcher` 存储结构，仅用于一次性迁移。
+ * 旧 `launcher` 存储结构，仅用于 Extension 的一次性迁移。
  * 字段名 `shortcuts` 必须保持不变，才能读取已经发布版本写入的数据。
  */
 export type LegacyShortcutItem = {

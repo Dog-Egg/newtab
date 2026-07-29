@@ -1,6 +1,7 @@
-import { LAUNCHER_STORAGE_KEY } from "../Launcher/legacyLauncher";
-import { normalizeStoredExtensionLauncher } from "../Launcher/defaultLauncher";
-import { collectLegacyBookmarksToExport } from "../Launcher/migration/legacyLauncher";
+import {
+  LEGACY_LAUNCHER_MIGRATION_LOCK,
+  migrateLegacyLauncherOnce,
+} from "../Launcher/legacy";
 import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
 import {
   SEARCH_ENGINE_SETTINGS_KEY,
@@ -16,8 +17,6 @@ import {
 } from "./chromeBookmarks";
 
 const defaultLocale = getLocaleFromLanguage(chrome.i18n.getUILanguage());
-const BOOKMARK_TREE_MIGRATION_KEY = "bookmark-tree-migration-completed";
-const LEGACY_LAUNCHER_MIGRATION_LOCK = "legacy-launcher-bookmark-migration";
 
 function getChromeStorage<T>(key: string, normalize: (value: unknown) => T) {
   return new Promise<T>((resolve, reject) => {
@@ -162,53 +161,19 @@ function subscribeBookmarks(onChange: () => void) {
   };
 }
 
-/**
- * 迁移只写入独立完成标记；旧 launcher 保留不动。
- */
-async function migrateLegacyLauncherOnce() {
-  const items = await getChromeStorageItems([
-    BOOKMARK_TREE_MIGRATION_KEY,
-    LAUNCHER_STORAGE_KEY,
-  ]);
-  if (items[BOOKMARK_TREE_MIGRATION_KEY] === true) return;
-
-  const legacyCategories = normalizeStoredExtensionLauncher(
-    items[LAUNCHER_STORAGE_KEY],
-    defaultLocale,
-  );
-  const tree = await getBookmarkTree();
-  const browserItems = tree.flatMap(function collect(node): Array<{
-    id: string;
-    title: string;
-    url: string;
-  }> {
-    if (node.type === "item") return [node];
-    return node.children.flatMap(collect);
-  });
-  const bookmarksToExport = collectLegacyBookmarksToExport(
-    legacyCategories,
-    browserItems,
-  );
-
-  if (bookmarksToExport.length > 0) {
-    const folder = await createChromeBookmarkNode({ title: "NewTab" });
-    for (const bookmark of bookmarksToExport) {
-      await createChromeBookmarkNode({
-        parentId: folder.id,
-        title: bookmark.title,
-        url: bookmark.url,
-      });
-    }
-  }
-
-  await setChromeStorage(BOOKMARK_TREE_MIGRATION_KEY, true);
-}
-
 let pendingMigration: Promise<void> | null = null;
 
 function prepareBookmarks() {
   if (!pendingMigration) {
-    const migrate = () => migrateLegacyLauncherOnce();
+    // Chrome API 适配留在平台层，旧数据的迁移规则统一收口到 legacy。
+    const migrate = () =>
+      migrateLegacyLauncherOnce({
+        locale: defaultLocale,
+        readStorage: getChromeStorageItems,
+        writeStorage: setChromeStorage,
+        readBookmarks: getBookmarkTree,
+        createBookmark: createChromeBookmarkNode,
+      });
     const result =
       typeof navigator !== "undefined" && navigator.locks
         ? navigator.locks

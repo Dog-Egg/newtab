@@ -1,15 +1,9 @@
-import {
-  normalizeLegacyLauncher,
-  type LegacyLauncherCategory,
-} from "./legacyLauncher";
 import type {
   BrowserBookmarkFolder,
   BrowserBookmarkItem,
   BrowserBookmarkNode,
 } from "./bookmarkTree";
 import type { AppLocale } from "../i18n";
-import { en } from "../i18n/locales/en";
-import { zhCN } from "../i18n/locales/zh-CN";
 
 function createWebBookmarkFactory(locale: AppLocale) {
   const localize = (original: string, zh?: string) =>
@@ -201,29 +195,4 @@ export function createWebDefaultBookmarkTree(
       ),
     ]),
   ];
-}
-
-function createEmptyLegacyLauncherCategory(
-  locale: AppLocale,
-): LegacyLauncherCategory {
-  return {
-    id: "default",
-    name: getDefaultCategoryNames(locale).home,
-    shortcuts: [],
-  };
-}
-
-export function normalizeStoredExtensionLauncher(
-  value: unknown,
-  locale: AppLocale,
-) {
-  // Extension 不注入演示书签；已保存的旧 launcher 数据仍按原结构读取。
-  return normalizeLegacyLauncher(
-    value,
-    createEmptyLegacyLauncherCategory(locale),
-  );
-}
-
-export function getDefaultCategoryNames(locale: AppLocale) {
-  return (locale === "zh-CN" ? zhCN : en).launcher.defaultCategories;
 }
