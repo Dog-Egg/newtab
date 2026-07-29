@@ -76,7 +76,7 @@ export const zhCN = {
     collectionPrompt: "“{{name}}”中包含 {{count}} 个项目。你希望如何处理？",
     keepFolderItems: "仅删除文件夹，内容移到上一级文件夹",
     deleteFolderAll: "删除文件夹及其中的全部内容",
-    rename: "修改名称",
+    rename: "重命名",
     editBookmark: "编辑书签",
     addBookmark: "添加书签",
     name: "名称",
