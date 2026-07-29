@@ -731,22 +731,15 @@ function BookmarkBreadcrumb({
     if (nextTitle !== folder.title) onRename(nextTitle);
   }
 
+  const RootIcon = getRootIcon(path[0]);
+
   return (
     <nav
-      className="mb-8 flex min-h-10 items-center gap-2 text-white"
+      className="mb-8 flex min-h-10 items-center gap-2 border-b border-white/15 text-sm text-white"
       aria-label={t("launcher.breadcrumbs")}
     >
-      {path.length > 1 ? (
-        <button
-          type="button"
-          className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/10 outline-none transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/60"
-          aria-label={t("launcher.back")}
-          onClick={() => onNavigate(path[path.length - 2])}
-        >
-          <ArrowLeft className="size-4" aria-hidden="true" />
-        </button>
-      ) : null}
-      <ol className="flex min-w-0 items-center overflow-x-auto [scrollbar-width:none]">
+      {/* 两端为外扩焦点环留出空间；负边距抵消 padding，面包屑内容本身不会位移。 */}
+      <ol className="-mx-1 flex min-w-0 items-center overflow-x-auto p-1 [scrollbar-width:none]">
         {path.map((item, index) => {
           const isCurrent = index === path.length - 1;
           return (
@@ -757,11 +750,20 @@ function BookmarkBreadcrumb({
                   aria-hidden="true"
                 />
               ) : null}
-              {isCurrent ? (
+              {index === 0 && isCurrent ? (
+                // 第一个面包屑沿用根目录 nav 的“图标 + 标题”结构。
+                <span
+                  className="flex max-w-56 items-center gap-2 px-2 py-1.5 font-semibold"
+                  aria-current="page"
+                >
+                  <RootIcon className="size-4 shrink-0" aria-hidden="true" />
+                  <span className="truncate">{item.title}</span>
+                </span>
+              ) : isCurrent ? (
                 isEditingTitle && path.length > 1 ? (
                   <input
                     ref={titleInputRef}
-                    className="min-w-24 max-w-56 rounded-xl bg-white/15 px-3 py-1.5 text-lg font-bold outline-none ring-2 ring-white/60 [font:inherit]"
+                    className="min-w-24 max-w-56 rounded-xl bg-white/15 px-3 py-1.5 font-bold outline-none ring-2 ring-white/60 [font:inherit]"
                     value={title}
                     aria-label={t("launcher.renameFolder")}
                     onChange={(event) => setTitle(event.target.value)}
@@ -780,7 +782,7 @@ function BookmarkBreadcrumb({
                 ) : path.length > 1 && isModifiableFolder(item) ? (
                   <button
                     type="button"
-                    className="max-w-56 truncate rounded-xl bg-white/15 px-3 py-1.5 text-left text-lg font-bold outline-none transition hover:bg-white/25 focus-visible:ring-2 focus-visible:ring-white/60"
+                    className="max-w-56 truncate rounded-lg px-2 py-1.5 text-left font-bold outline-none transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/60"
                     aria-current="page"
                     onClick={() => {
                       setIsEditingTitle(true);
@@ -794,7 +796,7 @@ function BookmarkBreadcrumb({
                   </button>
                 ) : (
                   <span
-                    className="max-w-56 truncate rounded-xl bg-white/15 px-3 py-1.5 text-lg font-bold"
+                    className="max-w-56 truncate px-2 py-1.5 font-bold"
                     aria-current="page"
                   >
                     {item.title}
@@ -804,6 +806,7 @@ function BookmarkBreadcrumb({
                 <BreadcrumbDropTarget
                   folder={item}
                   isRoot={index === 0}
+                  showBackIcon={index === 0 && path.length > 1}
                   onNavigate={() => onNavigate(item)}
                 />
               )}
@@ -818,10 +821,12 @@ function BookmarkBreadcrumb({
 function BreadcrumbDropTarget({
   folder,
   isRoot,
+  showBackIcon,
   onNavigate,
 }: {
   folder: BrowserBookmarkFolder;
   isRoot: boolean;
+  showBackIcon: boolean;
   onNavigate: () => void;
 }) {
   const data: BookmarkDndData = {
@@ -841,12 +846,16 @@ function BreadcrumbDropTarget({
       ref={ref}
       type="button"
       className={clsx(
-        "max-w-44 shrink-0 truncate rounded-xl px-3 py-1.5 font-semibold text-white/70 outline-none transition hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white/60",
-        isDropTarget && "bg-white/25 text-white ring-2 ring-white/70",
+        "flex max-w-44 shrink-0 items-center gap-2 rounded-xl px-2 py-1.5 text-white/70 outline-none transition hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white/60",
+        isDropTarget &&
+          "bg-white/25 font-semibold text-white ring-2 ring-white/70",
       )}
       onClick={onNavigate}
     >
-      {folder.title}
+      {showBackIcon ? (
+        <ArrowLeft className="size-4 shrink-0" aria-hidden="true" />
+      ) : null}
+      <span className="truncate">{folder.title}</span>
     </button>
   );
 }
@@ -1018,7 +1027,7 @@ export function Launcher() {
     >
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="min-h-[15rem] flex-1 overflow-y-auto [-webkit-mask-image:linear-gradient(to_bottom,transparent_0,black_2rem,black_calc(100%_-_3rem),transparent_100%)] [mask-image:linear-gradient(to_bottom,transparent_0,black_2rem,black_calc(100%_-_3rem),transparent_100%)] [scrollbar-width:none]">
-          <section className="relative z-10 mx-auto flex min-h-full w-full max-w-6xl flex-col px-6 pb-8 pt-12 sm:px-10 sm:pt-14">
+          <section className="relative z-10 mx-auto flex min-h-full w-full max-w-6xl flex-col px-6 pb-8 pt-12 sm:px-10 sm:pt-5">
             <BookmarkBreadcrumb
               path={currentPath}
               editTitleInitially={renameFolderId === currentFolder.id}
@@ -1038,6 +1047,7 @@ export function Launcher() {
                 setRenameFolderId(null);
               }}
             />
+            {/* 书签网格独立居中，数量较少时仍保持新标签页的视觉重心。 */}
             <ul
               className="grid justify-center gap-x-3 gap-y-5 sm:gap-x-4"
               style={{
@@ -1089,7 +1099,8 @@ export function Launcher() {
           className="z-20 flex shrink-0 justify-center px-4 pb-10 pt-3 sm:pb-24"
           aria-label={t("launcher.bookmarkRoots")}
         >
-          <span className="glass-panel flex max-w-[calc(100vw-2rem)] items-center gap-1 overflow-x-auto p-1.5 [scrollbar-width:none]">
+          {/* 每个根目录独立成组，避免额外的外层玻璃容器抢占视觉层级。 */}
+          <span className="flex max-w-[calc(100vw-2rem)] items-center gap-2.5 overflow-x-auto [scrollbar-width:none]">
             {roots.map((root) => {
               const Icon = getRootIcon(root);
               const isActive = root.id === activeRoot.id;
@@ -1099,14 +1110,14 @@ export function Launcher() {
                   type="button"
                   aria-pressed={isActive}
                   className={clsx(
-                    "flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-3 text-control outline-none transition duration-200 focus-visible:ring-2 focus-visible:ring-glass-focus",
+                    "flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-semibold shadow-sm outline-none backdrop-blur-xl transition duration-200 focus-visible:ring-2 focus-visible:ring-glass-focus",
                     isActive
-                      ? "bg-glass-selected text-glass-selected-content shadow-sm"
-                      : "text-glass-content hover:bg-glass-hover hover:text-glass-strong",
+                      ? "bg-white text-slate-900 hover:bg-white/90"
+                      : "bg-slate-900/35 text-white/70 hover:bg-slate-900/50 hover:text-white",
                   )}
                   onClick={() => selectRoot(root.id)}
                 >
-                  <Icon className="size-4" aria-hidden="true" />
+                  <Icon className="size-[18px]" aria-hidden="true" />
                   {root.title}
                 </button>
               );
