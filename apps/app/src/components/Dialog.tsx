@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode, type Ref } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import * as RadixDialog from "@radix-ui/react-dialog";
 import clsx from "clsx";
 
@@ -20,20 +20,11 @@ export function MainDialogPortal() {
 export function Dialog({
   children,
   className = "",
-  contentRef,
-  isClosing = false,
-  isVisuallyClosing = false,
   onClose,
-  onInteractOutside,
 }: {
   children: ReactNode | ((close: () => void) => ReactNode);
   className?: string;
-  contentRef?: Ref<HTMLDivElement>;
-  isClosing?: boolean;
-  /** 播放关闭外观但保持内容挂载，供跨浮层拖拽继续持有原 draggable。 */
-  isVisuallyClosing?: boolean;
   onClose: () => void;
-  onInteractOutside?: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(true);
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(
@@ -59,35 +50,6 @@ export function Dialog({
       }
     };
   }, []);
-
-  useEffect(() => {
-    if (!isClosing) {
-      if (closeTimerRef.current) {
-        window.clearTimeout(closeTimerRef.current);
-        closeTimerRef.current = null;
-      }
-
-      setIsOpen(true);
-      return;
-    }
-
-    setIsOpen(false);
-    if (closeTimerRef.current) {
-      window.clearTimeout(closeTimerRef.current);
-    }
-
-    closeTimerRef.current = window.setTimeout(
-      () => onCloseRef.current(),
-      DIALOG_ANIMATION_MS,
-    );
-
-    return () => {
-      if (closeTimerRef.current) {
-        window.clearTimeout(closeTimerRef.current);
-        closeTimerRef.current = null;
-      }
-    };
-  }, [isClosing]);
 
   function handleOpenChange(open: boolean) {
     setIsOpen(open);
@@ -120,19 +82,15 @@ export function Dialog({
           <div
             className={clsx(
               "pointer-events-auto absolute inset-0 bg-slate-950/40 backdrop-blur-md motion-reduce:animate-none",
-              isOpen && !isVisuallyClosing
+              isOpen
                 ? "animate-dialog-overlay-in"
                 : "animate-dialog-overlay-out",
-              isVisuallyClosing && "pointer-events-none",
             )}
             aria-hidden="true"
           />
           <RadixDialog.Content
-            ref={contentRef}
             className={clsx(
               "pointer-events-auto absolute left-1/2 top-1/2 z-10 max-h-[calc(100%-3rem)] w-[calc(100%-3rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-glass border border-glass-border bg-white/30 text-glass-strong shadow-glass outline-none backdrop-blur-2xl focus-visible:ring-2 focus-visible:ring-glass-focus data-[state=closed]:animate-dialog-content-out data-[state=open]:animate-dialog-content-in motion-reduce:animate-none",
-              isVisuallyClosing &&
-                "pointer-events-none animate-dialog-content-out",
               className,
             )}
             onInteractOutside={(event) => {
@@ -142,10 +100,7 @@ export function Dialog({
                 target.closest("[data-drawer]")
               ) {
                 event.preventDefault();
-                return;
               }
-
-              onInteractOutside?.();
             }}
           >
             {content}
