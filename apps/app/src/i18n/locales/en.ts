@@ -35,7 +35,7 @@ export const en = {
     language: "Language",
     english: "English",
     chinese: "简体中文",
-    bookmarkSize: "Bookmark size",
+    iconSize: "Icon size",
     small: "Small",
     large: "Large",
     decrease: "Decrease {{label}}",

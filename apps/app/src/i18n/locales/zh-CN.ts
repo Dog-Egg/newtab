@@ -33,7 +33,7 @@ export const zhCN = {
     language: "语言",
     english: "English",
     chinese: "简体中文",
-    bookmarkSize: "书签大小",
+    iconSize: "图标大小",
     small: "小",
     large: "大",
     decrease: "减小{{label}}",
