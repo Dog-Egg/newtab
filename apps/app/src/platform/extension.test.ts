@@ -1,17 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  BOOKMARK_LAYOUT_STORAGE_KEY,
-  DEFAULT_CATEGORY_ID,
-} from "../Launcher/bookmarkLayout";
-import { MIGRATED_OTHER_BOOKMARKS_FOLDER_ID } from "../Launcher/migration/legacyLauncher";
-import {
   LAUNCHER_STORAGE_KEY,
   type LegacyLauncherCategory,
 } from "../Launcher/legacyLauncher";
 
+const MIGRATION_KEY = "bookmark-tree-migration-completed";
 const legacyCategories: LegacyLauncherCategory[] = [
   {
-    id: DEFAULT_CATEGORY_ID,
+    id: "default",
     name: "Home",
     shortcuts: [
       {
@@ -37,6 +33,10 @@ beforeEach(() => {
   vi.unstubAllGlobals();
 });
 
+function createEventMock() {
+  return { addListener: vi.fn(), removeListener: vi.fn() };
+}
+
 function createChromeMock(
   storedItems: Record<string, unknown>,
   bookmarkTrees: chrome.bookmarks.BookmarkTreeNode[][],
@@ -61,6 +61,12 @@ function createChromeMock(
       treeIndex += 1;
     },
   );
+  const set = vi.fn((items: Record<string, unknown>, callback: () => void) => {
+    Object.assign(storedItems, items);
+    callback();
+  });
+  const get = vi.fn();
+  const move = vi.fn();
 
   vi.stubGlobal("chrome", {
     i18n: { getUILanguage: () => "en" },
@@ -71,53 +77,51 @@ function createChromeMock(
           _keys: string | string[],
           callback: (items: Record<string, unknown>) => void,
         ) => callback(storedItems),
-        set: vi.fn(),
+        set,
       },
-      onChanged: {
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-      },
+      onChanged: createEventMock(),
     },
     bookmarks: {
       getTree,
       create,
+      get,
       update: vi.fn(),
+      move,
       remove: vi.fn(),
-      onCreated: { addListener: vi.fn(), removeListener: vi.fn() },
-      onChanged: { addListener: vi.fn(), removeListener: vi.fn() },
-      onRemoved: { addListener: vi.fn(), removeListener: vi.fn() },
+      removeTree: vi.fn(),
+      onCreated: createEventMock(),
+      onChanged: createEventMock(),
+      onMoved: createEventMock(),
+      onRemoved: createEventMock(),
+      onChildrenReordered: createEventMock(),
+      onImportEnded: createEventMock(),
     },
   });
 
-  return { create, getTree };
+  return { create, get, getTree, move, set };
 }
 
-describe("extension bookmark layout migration", () => {
-  it("uses an existing bookmark-layout without reading or exporting bookmarks", async () => {
-    const storedLayout = [
-      {
-        id: DEFAULT_CATEGORY_ID,
-        name: "Saved",
-        bookmarks: [{ type: "item" as const, id: "bookmark-saved" }],
-      },
+describe("extension legacy Launcher migration", () => {
+  it("skips legacy export after the dedicated migration marker exists", async () => {
+    const tree: chrome.bookmarks.BookmarkTreeNode[] = [
+      { id: "root", title: "", syncing: false, children: [] },
     ];
-    const chromeMock = createChromeMock(
-      {
-        [BOOKMARK_LAYOUT_STORAGE_KEY]: storedLayout,
-        [LAUNCHER_STORAGE_KEY]: legacyCategories,
-      },
-      [[]],
-    );
+    const chromeMock = createChromeMock({ [MIGRATION_KEY]: true }, [tree]);
     const { platform } = await import("./extension");
 
-    await expect(platform.bookmarkLayout.read("en")).resolves.toEqual(
-      storedLayout,
-    );
-    expect(chromeMock.getTree).not.toHaveBeenCalled();
+    await expect(platform.bookmarks.read()).resolves.toEqual([
+      {
+        type: "folder",
+        id: "root",
+        title: "",
+        children: [],
+      },
+    ]);
+    expect(chromeMock.getTree).toHaveBeenCalledOnce();
     expect(chromeMock.create).not.toHaveBeenCalled();
   });
 
-  it("exports missing legacy entries and returns the migrated layout in memory", async () => {
+  it("exports missing legacy URLs once, marks completion, then returns the native tree", async () => {
     const beforeExport: chrome.bookmarks.BookmarkTreeNode[] = [
       {
         id: "root",
@@ -130,12 +134,6 @@ describe("extension bookmark layout migration", () => {
             url: "https://docs.example",
             syncing: false,
           },
-          {
-            id: "bookmark-extra",
-            title: "Extra",
-            url: "https://extra.example",
-            syncing: false,
-          },
         ],
       },
     ];
@@ -145,10 +143,17 @@ describe("extension bookmark layout migration", () => {
         children: [
           ...beforeExport[0].children!,
           {
-            id: "bookmark-new",
-            title: "New",
-            url: "https://new.example",
+            id: "new-tab-folder",
+            title: "NewTab",
             syncing: false,
+            children: [
+              {
+                id: "bookmark-new",
+                title: "New",
+                url: "https://new.example",
+                syncing: false,
+              },
+            ],
           },
         ],
       },
@@ -159,22 +164,18 @@ describe("extension bookmark layout migration", () => {
     );
     const { platform } = await import("./extension");
 
-    await expect(platform.bookmarkLayout.read("en")).resolves.toEqual([
-      {
-        id: DEFAULT_CATEGORY_ID,
-        name: "Home",
-        bookmarks: [
-          { type: "item", id: "bookmark-docs" },
-          { type: "item", id: "bookmark-new" },
-          {
-            type: "folder",
-            id: MIGRATED_OTHER_BOOKMARKS_FOLDER_ID,
-            title: "Other",
-            children: [{ type: "item", id: "bookmark-extra" }],
-          },
-        ],
-      },
-    ]);
+    const tree = await platform.bookmarks.read();
+    expect(tree[0]).toMatchObject({
+      type: "folder",
+      children: [
+        { type: "item", id: "bookmark-docs" },
+        {
+          type: "folder",
+          id: "new-tab-folder",
+          children: [{ type: "item", id: "bookmark-new" }],
+        },
+      ],
+    });
     expect(chromeMock.create).toHaveBeenNthCalledWith(
       1,
       { title: "NewTab" },
@@ -187,6 +188,63 @@ describe("extension bookmark layout migration", () => {
         title: "New",
         url: "https://new.example",
       },
+      expect.any(Function),
+    );
+    expect(chromeMock.set).toHaveBeenCalledWith(
+      { [MIGRATION_KEY]: true },
+      expect.any(Function),
+    );
+  });
+});
+
+describe("extension bookmark mutations", () => {
+  it("converts a forward reorder to Chrome's pre-removal insertion index", async () => {
+    const chromeMock = createChromeMock({ [MIGRATION_KEY]: true }, [
+      [{ id: "root", title: "", syncing: false, children: [] }],
+    ]);
+    chromeMock.get.mockImplementation(
+      (
+        _id: string,
+        callback: (nodes: chrome.bookmarks.BookmarkTreeNode[]) => void,
+      ) => {
+        callback([
+          {
+            id: "second",
+            parentId: "bookmarks-bar",
+            index: 1,
+            title: "Second",
+            url: "https://second.example",
+            syncing: false,
+          },
+        ]);
+      },
+    );
+    chromeMock.move.mockImplementation(
+      (
+        id: string,
+        destination: chrome.bookmarks.MoveDestination,
+        callback: (node: chrome.bookmarks.BookmarkTreeNode) => void,
+      ) => {
+        callback({
+          id,
+          parentId: destination.parentId,
+          index: 2,
+          title: "Second",
+          url: "https://second.example",
+          syncing: false,
+        });
+      },
+    );
+    const { platform } = await import("./extension");
+
+    await platform.bookmarks.move("second", {
+      parentId: "bookmarks-bar",
+      index: 2,
+    });
+
+    expect(chromeMock.move).toHaveBeenCalledWith(
+      "second",
+      { parentId: "bookmarks-bar", index: 3 },
       expect.any(Function),
     );
   });

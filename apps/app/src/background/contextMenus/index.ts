@@ -4,11 +4,6 @@ import {
   SETTINGS_STORAGE_KEY,
 } from "../../Settings/settings";
 import { createRefreshScheduler } from "../contextMenuRefresh";
-import {
-  CATEGORY_MENU_STORAGE_KEYS,
-  createCategoryMenu,
-  handleCategoryMenuClick,
-} from "./categoryMenu";
 import { getLocalStorage, removeAllContextMenus } from "./chrome";
 import {
   createSelectedTextSearchMenu,
@@ -18,7 +13,6 @@ import {
 
 const CONTEXT_MENU_STORAGE_KEYS = [
   SETTINGS_STORAGE_KEY,
-  ...CATEGORY_MENU_STORAGE_KEYS,
   ...SELECTED_TEXT_SEARCH_MENU_STORAGE_KEYS,
 ];
 const defaultLocale = getLocaleFromLanguage(chrome.i18n.getUILanguage());
@@ -31,7 +25,6 @@ async function rebuildContextMenus() {
   );
 
   await removeAllContextMenus();
-  await createCategoryMenu(items, locale);
   await createSelectedTextSearchMenu(items, locale);
 }
 
@@ -52,10 +45,6 @@ export function shouldRefreshContextMenus(
   );
 }
 
-export function handleContextMenuClick(
-  info: chrome.contextMenus.OnClickData,
-  tab?: chrome.tabs.Tab,
-) {
-  if (handleSelectedTextSearchMenuClick(info)) return;
-  handleCategoryMenuClick(info, tab);
+export function handleContextMenuClick(info: chrome.contextMenus.OnClickData) {
+  handleSelectedTextSearchMenuClick(info);
 }

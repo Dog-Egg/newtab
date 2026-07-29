@@ -1,50 +1,44 @@
 import { describe, expect, it } from "vitest";
-import type { LauncherBookmarkCategory } from "../Launcher/bookmarkLayout";
+import type { BrowserBookmarkItem } from "../Launcher/bookmarkTree";
 import { findSearchSuggestions } from "./searchSuggestionUtils";
 
-const categories: LauncherBookmarkCategory[] = [
+const bookmarks: BrowserBookmarkItem[] = [
   {
-    id: "default",
-    name: "Default",
-    bookmarks: [
-      {
-        type: "item",
-        id: "design-docs",
-        title: "Product Design Documents",
-        url: "https://docs.example.com/design",
-      },
-      {
-        type: "item",
-        id: "dashboard",
-        title: "Dashboard",
-        url: "https://portal.example.com/dashboard",
-      },
-      {
-        type: "item",
-        id: "design-system",
-        title: "Design System",
-        url: "https://ui.example.com",
-      },
-      {
-        type: "item",
-        id: "cloudflare-access",
-        title: "Internal Gateway",
-        url: "https://myteam.cloudflareaccess.com/",
-      },
-      {
-        type: "item",
-        id: "cloudflare",
-        title: "Public Website",
-        url: "https://cloudflare.com/",
-      },
-    ],
+    type: "item",
+    id: "design-docs",
+    title: "Product Design Documents",
+    url: "https://docs.example.com/design",
+  },
+  {
+    type: "item",
+    id: "dashboard",
+    title: "Dashboard",
+    url: "https://portal.example.com/dashboard",
+  },
+  {
+    type: "item",
+    id: "design-system",
+    title: "Design System",
+    url: "https://ui.example.com",
+  },
+  {
+    type: "item",
+    id: "cloudflare-access",
+    title: "Internal Gateway",
+    url: "https://myteam.cloudflareaccess.com/",
+  },
+  {
+    type: "item",
+    id: "cloudflare",
+    title: "Public Website",
+    url: "https://cloudflare.com/",
   },
 ];
 
 function findBookmarks(input: string) {
   return findSearchSuggestions({
     engines: [],
-    categories,
+    bookmarks,
     input,
     selectedEngineId: "",
     temporaryEngineId: null,
@@ -59,7 +53,7 @@ function findBookmarks(input: string) {
 function findBookmarkSuggestions(input: string) {
   return findSearchSuggestions({
     engines: [],
-    categories,
+    bookmarks,
     input,
     selectedEngineId: "",
     temporaryEngineId: null,

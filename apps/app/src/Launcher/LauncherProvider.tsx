@@ -1,94 +1,60 @@
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
 import { platform } from "@platform";
-import { useSettings } from "../Settings/SettingsProvider";
 import {
-  resolveBookmarkLayout,
-  toBookmarkLayout,
-  type BookmarkLayoutCategory,
-  type BrowserBookmark,
-  type LauncherBookmarkCategory,
-} from "./bookmarkLayout";
+  flattenBookmarkItems,
+  type BrowserBookmarkItem,
+  type BrowserBookmarkNode,
+} from "./bookmarkTree";
 
 type LauncherContextValue = {
-  categories: LauncherBookmarkCategory[];
-  saveCategories: (categories: LauncherBookmarkCategory[]) => void;
+  bookmarkTree: BrowserBookmarkNode[];
+  bookmarks: BrowserBookmarkItem[];
 };
 
 const LauncherContext = createContext<LauncherContextValue | null>(null);
 
 export function LauncherProvider({
   children,
-  initialLayout,
   initialBookmarks,
 }: {
   children: ReactNode;
-  initialLayout: BookmarkLayoutCategory[];
-  initialBookmarks: BrowserBookmark[];
+  initialBookmarks: BrowserBookmarkNode[];
 }) {
-  const { settings } = useSettings();
-  const [layout, setLayout] = useState(initialLayout);
-  const [bookmarks, setBookmarks] = useState(initialBookmarks);
-  const loadedLocaleRef = useRef(settings.locale);
+  const [bookmarkTree, setBookmarkTree] = useState(initialBookmarks);
 
   useEffect(() => {
     let isCurrent = true;
-    const applyLayout = (storedLayout: BookmarkLayoutCategory[]) => {
-      if (isCurrent) setLayout(storedLayout);
-    };
-
-    if (loadedLocaleRef.current !== settings.locale) {
-      loadedLocaleRef.current = settings.locale;
-      void platform.bookmarkLayout
-        .read(settings.locale)
-        .then(applyLayout, () => undefined);
-    }
-
-    const unsubscribeLayout = platform.bookmarkLayout.subscribe(
-      settings.locale,
-      applyLayout,
-    );
     const refreshBookmarks = () => {
       void platform.bookmarks.read().then(
-        (nextBookmarks) => {
-          if (isCurrent) setBookmarks(nextBookmarks);
+        (nextTree) => {
+          if (isCurrent) setBookmarkTree(nextTree);
         },
-        () => undefined,
+        (error: unknown) => {
+          console.error("Failed to refresh browser bookmarks", error);
+        },
       );
     };
-    const unsubscribeBookmarks = platform.bookmarks.subscribe(refreshBookmarks);
-
+    const unsubscribe = platform.bookmarks.subscribe(refreshBookmarks);
     return () => {
       isCurrent = false;
-      unsubscribeLayout();
-      unsubscribeBookmarks();
+      unsubscribe();
     };
-  }, [settings.locale]);
+  }, []);
 
-  const categories = useMemo(
-    () => resolveBookmarkLayout(layout, bookmarks),
-    [bookmarks, layout],
-  );
-
-  const saveCategories = useCallback(
-    (nextCategories: LauncherBookmarkCategory[]) => {
-      const nextLayout = toBookmarkLayout(nextCategories);
-      setLayout(nextLayout);
-      void platform.bookmarkLayout.save(nextLayout);
-    },
-    [],
+  const bookmarks = useMemo(
+    () => flattenBookmarkItems(bookmarkTree),
+    [bookmarkTree],
   );
 
   return (
-    <LauncherContext.Provider value={{ categories, saveCategories }}>
+    <LauncherContext.Provider value={{ bookmarkTree, bookmarks }}>
       {children}
     </LauncherContext.Provider>
   );

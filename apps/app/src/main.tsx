@@ -27,14 +27,7 @@ async function main() {
     console.error("Failed to apply the initial locale", error);
   }
 
-  // Extension 首次读取布局时可能先把旧 Launcher 数据导出为 Chrome
-  // Bookmarks，因此实体必须在布局迁移完成后再读，避免首屏拿到迁移前的旧快照。
-  const initialBookmarkLayout = await platform.bookmarkLayout
-    .read(initialSettings.locale)
-    .catch((error: unknown) => {
-      console.error("Failed to read bookmark layout", error);
-      return [];
-    });
+  // Extension 首次读取书签树时会先完成旧 Launcher 的一次性导出。
   const initialBookmarks = await platform.bookmarks
     .read()
     .catch((error: unknown) => {
@@ -45,10 +38,7 @@ async function main() {
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <SettingsProvider initialSettings={initialSettings}>
-        <LauncherProvider
-          initialLayout={initialBookmarkLayout}
-          initialBookmarks={initialBookmarks}
-        >
+        <LauncherProvider initialBookmarks={initialBookmarks}>
           <App />
         </LauncherProvider>
       </SettingsProvider>

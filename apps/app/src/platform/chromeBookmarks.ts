@@ -1,40 +1,56 @@
-export type ChromeBookmarkItem = chrome.bookmarks.BookmarkTreeNode & {
-  url: string;
-};
-
-// Chrome 用 url 区分书签与目录：目录节点没有 url。
-function isBookmarkItem(
-  node: chrome.bookmarks.BookmarkTreeNode,
-): node is ChromeBookmarkItem {
-  return typeof node.url === "string";
-}
+import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
 
 /**
- * 按 Chrome 书签树原有的先序顺序展开所有 item。
- * 使用显式栈避免书签目录过深时递归调用栈溢出。
+ * 应用层的 index 表示节点移动完成后的最终位置；Chromium 的底层 Move
+ * 在同一目录向后移动时，仍按移除节点前的 children 计算插入点。
  */
-export function flattenBookmarkItems(
-  nodes: chrome.bookmarks.BookmarkTreeNode[],
-): ChromeBookmarkItem[] {
-  const items: ChromeBookmarkItem[] = [];
-  // 逆序入栈、正序出栈，确保同级书签的展示顺序不变。
-  const pending = [...nodes].reverse();
-
-  while (pending.length > 0) {
-    const node = pending.pop();
-    if (!node) continue;
-
-    if (isBookmarkItem(node)) items.push(node);
-
-    for (let index = (node.children?.length ?? 0) - 1; index >= 0; index--) {
-      pending.push(node.children![index]);
-    }
+export function toChromeMoveDestination(
+  node: Pick<chrome.bookmarks.BookmarkTreeNode, "parentId" | "index">,
+  destination: chrome.bookmarks.MoveDestination,
+): chrome.bookmarks.MoveDestination {
+  const destinationParentId = destination.parentId ?? node.parentId;
+  const destinationIndex = destination.index;
+  if (
+    typeof destinationIndex !== "number" ||
+    typeof node.index !== "number" ||
+    destinationParentId !== node.parentId ||
+    destinationIndex <= node.index
+  ) {
+    return destination;
   }
 
-  return items;
+  return {
+    ...destination,
+    // 向后移动时补偿源节点被移除后产生的一位偏移，否则相邻交换会变成原地移动。
+    index: destinationIndex + 1,
+  };
 }
 
-export function getAllBookmarkItems(): Promise<ChromeBookmarkItem[]> {
+/** 将 Chrome API 节点转换成应用统一使用的显式联合类型。 */
+export function toBrowserBookmarkNode(
+  node: chrome.bookmarks.BookmarkTreeNode,
+): BrowserBookmarkNode {
+  const common = {
+    id: node.id,
+    title: node.title,
+    ...(node.parentId ? { parentId: node.parentId } : {}),
+    ...(typeof node.index === "number" ? { index: node.index } : {}),
+    ...(node.unmodifiable ? { unmodifiable: node.unmodifiable } : {}),
+  };
+
+  if (typeof node.url === "string") {
+    return { ...common, type: "item", url: node.url };
+  }
+
+  return {
+    ...common,
+    type: "folder",
+    ...(node.folderType ? { folderType: node.folderType } : {}),
+    children: (node.children ?? []).map(toBrowserBookmarkNode),
+  };
+}
+
+export function getBookmarkTree(): Promise<BrowserBookmarkNode[]> {
   return new Promise((resolve, reject) => {
     chrome.bookmarks.getTree((tree) => {
       // lastError 只能在 Chrome API 回调执行期间读取。
@@ -43,8 +59,7 @@ export function getAllBookmarkItems(): Promise<ChromeBookmarkItem[]> {
         reject(new Error(error.message));
         return;
       }
-
-      resolve(flattenBookmarkItems(tree));
+      resolve(tree.map(toBrowserBookmarkNode));
     });
   });
 }

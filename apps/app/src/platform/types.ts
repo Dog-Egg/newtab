@@ -1,9 +1,6 @@
 import type { Settings } from "../Settings/settings";
 import type { AppLocale } from "../i18n/locale";
-import type {
-  BookmarkLayoutCategory,
-  BrowserBookmark,
-} from "../Launcher/bookmarkLayout";
+import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
 
 export const SEARCH_ENGINE_SETTINGS_KEY = "search-engine-settings";
 
@@ -21,31 +18,24 @@ export type StoredSearchEngineSettings = {
 
 export type Platform = {
   defaultLocale: AppLocale;
-  bookmarkLayout: {
-    read: (locale: AppLocale) => Promise<BookmarkLayoutCategory[]>;
-    save: (categories: BookmarkLayoutCategory[]) => Promise<void>;
-    subscribe: (
-      locale: AppLocale,
-      onChange: (categories: BookmarkLayoutCategory[]) => void,
-    ) => StorageUnsubscribe;
-  };
   bookmarks: {
-    read: () => Promise<BrowserBookmark[]>;
+    read: () => Promise<BrowserBookmarkNode[]>;
     create: (bookmark: {
+      parentId: string;
       title: string;
-      url: string;
-    }) => Promise<BrowserBookmark>;
+      url?: string;
+      index?: number;
+    }) => Promise<BrowserBookmarkNode>;
     update: (
       id: string,
-      changes: { title: string; url: string },
-    ) => Promise<BrowserBookmark>;
+      changes: { title?: string; url?: string },
+    ) => Promise<BrowserBookmarkNode>;
+    move: (
+      id: string,
+      destination: { parentId: string; index?: number },
+    ) => Promise<BrowserBookmarkNode>;
     remove: (id: string) => Promise<void>;
     subscribe: (onChange: () => void) => StorageUnsubscribe;
-  };
-  activeCategoryId: {
-    read: () => Promise<string>;
-    save: (categoryId: string) => Promise<void>;
-    subscribe: (onChange: (categoryId: string) => void) => StorageUnsubscribe;
   };
   settings: {
     read: () => Promise<Settings>;

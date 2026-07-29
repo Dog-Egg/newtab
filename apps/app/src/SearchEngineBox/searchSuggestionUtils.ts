@@ -1,7 +1,4 @@
-import type {
-  LauncherBookmarkCategory,
-  LauncherBookmarkItem,
-} from "../Launcher/bookmarkLayout";
+import type { BrowserBookmarkItem } from "../Launcher/bookmarkTree";
 import {
   getSearchEngineMatches,
   type SearchEngine,
@@ -15,7 +12,7 @@ export type SearchSuggestion =
   | { type: "engine"; engine: SearchEngine; matches: SearchEngineMatches }
   | {
       type: "bookmark";
-      bookmark: LauncherBookmarkItem;
+      bookmark: BrowserBookmarkItem;
       matches: { title: TextMatch[]; domain: TextMatch[] };
     };
 
@@ -87,9 +84,7 @@ function getBookmarkUrlMatchCandidates(url: string) {
   }
 }
 
-type SearchableCategory = LauncherBookmarkCategory;
-
-function findBookmarks(categories: SearchableCategory[], input: string) {
+function findBookmarks(bookmarks: BrowserBookmarkItem[], input: string) {
   const value = input.trim().toLowerCase();
   if (!value) return [];
 
@@ -98,67 +93,58 @@ function findBookmarks(categories: SearchableCategory[], input: string) {
     .replace(/^www\./, "");
   const seenBookmarkIds = new Set<string>();
 
-  return categories
-    .flatMap((category) =>
-      category.bookmarks.flatMap((node) => {
-        const bookmarks = node.type === "folder" ? node.children : [node];
+  return bookmarks
+    .flatMap((bookmark) => {
+      if (seenBookmarkIds.has(bookmark.id)) return [];
 
-        return bookmarks.flatMap((bookmark) => {
-          if (seenBookmarkIds.has(bookmark.id)) return [];
+      const trimmedTitle = bookmark.title.trim();
+      const titleMatchIndex = trimmedTitle.toLowerCase().indexOf(value);
+      const titleStart = bookmark.title.indexOf(trimmedTitle);
+      const urlMatch = getBookmarkUrlMatchCandidates(bookmark.url).find(
+        (candidate) => candidate.value.startsWith(urlPrefix),
+      );
+      if (titleMatchIndex < 0 && !urlMatch) return [];
 
-          const trimmedTitle = bookmark.title.trim();
-          const titleMatchIndex = trimmedTitle.toLowerCase().indexOf(value);
-          const titleStart = bookmark.title.indexOf(trimmedTitle);
-          const urlMatch = getBookmarkUrlMatchCandidates(bookmark.url).find(
-            (candidate) => candidate.value.startsWith(urlPrefix),
-          );
-          if (titleMatchIndex < 0 && !urlMatch) return [];
-
-          seenBookmarkIds.add(bookmark.id);
-          return [
-            {
-              bookmark,
-              matchIndex: Math.max(titleMatchIndex, 0),
-              matches: {
-                title:
-                  titleMatchIndex >= 0
-                    ? [
-                        {
-                          start: titleStart + titleMatchIndex,
-                          length: value.length,
-                        },
-                      ]
-                    : [],
-                domain: urlMatch
-                  ? [
-                      {
-                        start: urlMatch.domainStart,
-                        length: Math.min(
-                          urlPrefix.length,
-                          urlMatch.domainLength,
-                        ),
-                      },
-                    ]
-                  : [],
-              },
-            },
-          ];
-        });
-      }),
-    )
+      seenBookmarkIds.add(bookmark.id);
+      return [
+        {
+          bookmark,
+          matchIndex: Math.max(titleMatchIndex, 0),
+          matches: {
+            title:
+              titleMatchIndex >= 0
+                ? [
+                    {
+                      start: titleStart + titleMatchIndex,
+                      length: value.length,
+                    },
+                  ]
+                : [],
+            domain: urlMatch
+              ? [
+                  {
+                    start: urlMatch.domainStart,
+                    length: Math.min(urlPrefix.length, urlMatch.domainLength),
+                  },
+                ]
+              : [],
+          },
+        },
+      ];
+    })
     .sort((left, right) => left.matchIndex - right.matchIndex)
     .map(({ bookmark, matches }) => ({ bookmark, matches }));
 }
 
 export function findSearchSuggestions({
   engines,
-  categories,
+  bookmarks,
   input,
   selectedEngineId,
   temporaryEngineId,
 }: {
   engines: SearchEngine[];
-  categories: SearchableCategory[];
+  bookmarks: BrowserBookmarkItem[];
   input: string;
   selectedEngineId: string;
   temporaryEngineId: string | null;
@@ -175,7 +161,7 @@ export function findSearchSuggestions({
     return [{ type: "engine" as const, engine, matches }];
   });
   const bookmarkSuggestions: SearchSuggestion[] = findBookmarks(
-    categories,
+    bookmarks,
     input,
   ).map(({ bookmark, matches }) => ({
     type: "bookmark",

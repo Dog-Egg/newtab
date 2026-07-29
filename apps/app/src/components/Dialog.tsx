@@ -22,6 +22,7 @@ export function Dialog({
   className = "",
   contentRef,
   isClosing = false,
+  isVisuallyClosing = false,
   onClose,
   onInteractOutside,
 }: {
@@ -29,6 +30,8 @@ export function Dialog({
   className?: string;
   contentRef?: Ref<HTMLDivElement>;
   isClosing?: boolean;
+  /** 播放关闭外观但保持内容挂载，供跨浮层拖拽继续持有原 draggable。 */
+  isVisuallyClosing?: boolean;
   onClose: () => void;
   onInteractOutside?: () => void;
 }) {
@@ -117,9 +120,10 @@ export function Dialog({
           <div
             className={clsx(
               "pointer-events-auto absolute inset-0 bg-slate-950/40 backdrop-blur-md motion-reduce:animate-none",
-              isOpen
+              isOpen && !isVisuallyClosing
                 ? "animate-dialog-overlay-in"
                 : "animate-dialog-overlay-out",
+              isVisuallyClosing && "pointer-events-none",
             )}
             aria-hidden="true"
           />
@@ -127,6 +131,8 @@ export function Dialog({
             ref={contentRef}
             className={clsx(
               "pointer-events-auto absolute left-1/2 top-1/2 z-10 max-h-[calc(100%-3rem)] w-[calc(100%-3rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-glass border border-glass-border bg-white/30 text-glass-strong shadow-glass outline-none backdrop-blur-2xl focus-visible:ring-2 focus-visible:ring-glass-focus data-[state=closed]:animate-dialog-content-out data-[state=open]:animate-dialog-content-in motion-reduce:animate-none",
+              isVisuallyClosing &&
+                "pointer-events-none animate-dialog-content-out",
               className,
             )}
             onInteractOutside={(event) => {

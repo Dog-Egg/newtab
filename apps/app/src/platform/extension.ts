@@ -1,4 +1,7 @@
 import { LAUNCHER_STORAGE_KEY } from "../Launcher/legacyLauncher";
+import { normalizeStoredExtensionLauncher } from "../Launcher/defaultLauncher";
+import { collectLegacyBookmarksToExport } from "../Launcher/migration/legacyLauncher";
+import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
 import {
   SEARCH_ENGINE_SETTINGS_KEY,
   type Platform,
@@ -6,50 +9,22 @@ import {
 } from "./types";
 import { normalizeSettings, SETTINGS_STORAGE_KEY } from "../Settings/settings";
 import { getLocaleFromLanguage } from "../i18n/locale";
-import { normalizeStoredExtensionLauncher } from "../Launcher/defaultLauncher";
 import {
-  getDefaultCategoryNames,
-  getOtherBookmarksFolderTitle,
-} from "../Launcher/defaultLauncher";
-import {
-  ACTIVE_CATEGORY_ID_STORAGE_KEY,
-  BOOKMARK_LAYOUT_STORAGE_KEY,
-  DEFAULT_CATEGORY_ID,
-  normalizeBookmarkLayout,
-  type BookmarkLayoutCategory,
-  type BrowserBookmark,
-} from "../Launcher/bookmarkLayout";
-import {
-  collectLegacyBookmarksToExport,
-  migrateLegacyLauncherToBookmarkLayout,
-} from "../Launcher/migration/legacyLauncher";
-import { getAllBookmarkItems } from "./chromeBookmarks";
+  getBookmarkTree,
+  toBrowserBookmarkNode,
+  toChromeMoveDestination,
+} from "./chromeBookmarks";
+
 const defaultLocale = getLocaleFromLanguage(chrome.i18n.getUILanguage());
+const BOOKMARK_TREE_MIGRATION_KEY = "bookmark-tree-migration-completed";
+const LEGACY_LAUNCHER_MIGRATION_LOCK = "legacy-launcher-bookmark-migration";
 
 function getChromeStorage<T>(key: string, normalize: (value: unknown) => T) {
   return new Promise<T>((resolve, reject) => {
     chrome.storage.local.get(key, (items) => {
       const error = chrome.runtime.lastError;
-      if (error) {
-        reject(new Error(error.message));
-        return;
-      }
-
-      resolve(normalize(items[key]));
-    });
-  });
-}
-
-function setChromeStorage(key: string, value: unknown) {
-  return new Promise<void>((resolve, reject) => {
-    chrome.storage.local.set({ [key]: value }, () => {
-      const error = chrome.runtime.lastError;
-      if (error) {
-        reject(new Error(error.message));
-        return;
-      }
-
-      resolve();
+      if (error) reject(new Error(error.message));
+      else resolve(normalize(items[key]));
     });
   });
 }
@@ -58,12 +33,18 @@ function getChromeStorageItems(keys: string[]) {
   return new Promise<Record<string, unknown>>((resolve, reject) => {
     chrome.storage.local.get(keys, (items) => {
       const error = chrome.runtime.lastError;
-      if (error) {
-        reject(new Error(error.message));
-        return;
-      }
+      if (error) reject(new Error(error.message));
+      else resolve(items);
+    });
+  });
+}
 
-      resolve(items);
+function setChromeStorage(key: string, value: unknown) {
+  return new Promise<void>((resolve, reject) => {
+    chrome.storage.local.set({ [key]: value }, () => {
+      const error = chrome.runtime.lastError;
+      if (error) reject(new Error(error.message));
+      else resolve();
     });
   });
 }
@@ -71,11 +52,9 @@ function getChromeStorageItems(keys: string[]) {
 function normalizeSearchEngineSettings(
   value: unknown,
 ): StoredSearchEngineSettings {
-  if (!value || typeof value !== "object") {
-    return {};
-  }
-
-  return value as StoredSearchEngineSettings;
+  return value && typeof value === "object"
+    ? (value as StoredSearchEngineSettings)
+    : {};
 }
 
 function subscribeChromeStorage<T>(
@@ -87,13 +66,10 @@ function subscribeChromeStorage<T>(
     changes: Record<string, { newValue?: unknown }>,
     areaName: string,
   ) => {
-    if (areaName !== "local" || !changes[key]) {
-      return;
+    if (areaName === "local" && changes[key]) {
+      onChange(normalize(changes[key].newValue));
     }
-
-    onChange(normalize(changes[key].newValue));
   };
-
   chrome.storage.onChanged.addListener(handleStorageChange);
   return () => chrome.storage.onChanged.removeListener(handleStorageChange);
 }
@@ -109,68 +85,112 @@ function createChromeBookmarkNode(
   return new Promise((resolve, reject) => {
     chrome.bookmarks.create(details, (bookmark) => {
       const error = getBookmarkError();
-      if (error) {
-        reject(error);
-        return;
-      }
-      resolve(bookmark);
+      if (error) reject(error);
+      else resolve(bookmark);
     });
   });
 }
 
-async function createBookmark(
-  details: chrome.bookmarks.CreateDetails,
-): Promise<BrowserBookmark> {
-  const bookmark = await createChromeBookmarkNode(details);
+function updateBookmark(
+  id: string,
+  changes: chrome.bookmarks.UpdateChanges,
+): Promise<BrowserBookmarkNode> {
+  return new Promise((resolve, reject) => {
+    chrome.bookmarks.update(id, changes, (bookmark) => {
+      const error = getBookmarkError();
+      if (error) reject(error);
+      else resolve(toBrowserBookmarkNode(bookmark));
+    });
+  });
+}
 
-  if (!bookmark.url) {
-    throw new Error("Chrome created a bookmark without a URL");
-  }
+async function moveBookmark(
+  id: string,
+  destination: chrome.bookmarks.MoveDestination,
+): Promise<BrowserBookmarkNode> {
+  const current = await getChromeBookmark(id);
+  const chromeDestination = toChromeMoveDestination(current, destination);
 
-  return {
-    id: bookmark.id,
-    title: bookmark.title,
-    url: bookmark.url,
+  return new Promise((resolve, reject) => {
+    chrome.bookmarks.move(id, chromeDestination, (bookmark) => {
+      const error = getBookmarkError();
+      if (error) reject(error);
+      else resolve(toBrowserBookmarkNode(bookmark));
+    });
+  });
+}
+
+function getChromeBookmark(id: string) {
+  return new Promise<chrome.bookmarks.BookmarkTreeNode>((resolve, reject) => {
+    chrome.bookmarks.get(id, (nodes) => {
+      const error = getBookmarkError();
+      if (error) reject(error);
+      else if (!nodes[0]) reject(new Error(`Bookmark not found: ${id}`));
+      else resolve(nodes[0]);
+    });
+  });
+}
+
+async function removeBookmark(id: string): Promise<void> {
+  const bookmark = await getChromeBookmark(id);
+  return new Promise((resolve, reject) => {
+    const done = () => {
+      const error = getBookmarkError();
+      if (error) reject(error);
+      else resolve();
+    };
+    // 文件夹可能包含任意深度的后代，必须使用 removeTree。
+    if (bookmark.url) chrome.bookmarks.remove(id, done);
+    else chrome.bookmarks.removeTree(id, done);
+  });
+}
+
+function subscribeBookmarks(onChange: () => void) {
+  chrome.bookmarks.onCreated.addListener(onChange);
+  chrome.bookmarks.onChanged.addListener(onChange);
+  chrome.bookmarks.onMoved.addListener(onChange);
+  chrome.bookmarks.onRemoved.addListener(onChange);
+  chrome.bookmarks.onChildrenReordered.addListener(onChange);
+  chrome.bookmarks.onImportEnded.addListener(onChange);
+  return () => {
+    chrome.bookmarks.onCreated.removeListener(onChange);
+    chrome.bookmarks.onChanged.removeListener(onChange);
+    chrome.bookmarks.onMoved.removeListener(onChange);
+    chrome.bookmarks.onRemoved.removeListener(onChange);
+    chrome.bookmarks.onChildrenReordered.removeListener(onChange);
+    chrome.bookmarks.onImportEnded.removeListener(onChange);
   };
 }
 
-function toBrowserBookmarks(
-  bookmarks: Awaited<ReturnType<typeof getAllBookmarkItems>>,
-): BrowserBookmark[] {
-  return bookmarks.map(({ id, title, url }) => ({ id, title, url }));
-}
-
-let pendingBookmarkLayoutRead: Promise<BookmarkLayoutCategory[]> | null = null;
-const LEGACY_LAUNCHER_MIGRATION_LOCK = "legacy-launcher-bookmark-migration";
-
-async function readStoredBookmarkLayout(locale: typeof defaultLocale) {
+/**
+ * 迁移只写入独立完成标记；旧 launcher 保留不动。
+ */
+async function migrateLegacyLauncherOnce() {
   const items = await getChromeStorageItems([
-    BOOKMARK_LAYOUT_STORAGE_KEY,
+    BOOKMARK_TREE_MIGRATION_KEY,
     LAUNCHER_STORAGE_KEY,
   ]);
-
-  // key 存在即表示用户已经进入新数据结构；即使值损坏也不能回头覆盖它。
-  if (
-    Object.prototype.hasOwnProperty.call(items, BOOKMARK_LAYOUT_STORAGE_KEY)
-  ) {
-    return normalizeBookmarkLayout(
-      items[BOOKMARK_LAYOUT_STORAGE_KEY],
-      getDefaultCategoryNames(locale).home,
-    );
-  }
+  if (items[BOOKMARK_TREE_MIGRATION_KEY] === true) return;
 
   const legacyCategories = normalizeStoredExtensionLauncher(
     items[LAUNCHER_STORAGE_KEY],
-    locale,
+    defaultLocale,
   );
-  let browserBookmarks = toBrowserBookmarks(await getAllBookmarkItems());
+  const tree = await getBookmarkTree();
+  const browserItems = tree.flatMap(function collect(node): Array<{
+    id: string;
+    title: string;
+    url: string;
+  }> {
+    if (node.type === "item") return [node];
+    return node.children.flatMap(collect);
+  });
   const bookmarksToExport = collectLegacyBookmarksToExport(
     legacyCategories,
-    browserBookmarks,
+    browserItems,
   );
 
   if (bookmarksToExport.length > 0) {
-    // 延续旧版本的迁移行为：新建的浏览器书签集中放入 Chrome 的 NewTab 目录。
     const folder = await createChromeBookmarkNode({ title: "NewTab" });
     for (const bookmark of bookmarksToExport) {
       await createChromeBookmarkNode({
@@ -179,118 +199,42 @@ async function readStoredBookmarkLayout(locale: typeof defaultLocale) {
         url: bookmark.url,
       });
     }
-
-    // Chrome 分配 ID 后必须重新读取；迁移结果不能引用旧 Launcher ID。
-    browserBookmarks = toBrowserBookmarks(await getAllBookmarkItems());
   }
 
-  // 这里只返回内存布局。用户第一次修改排序或嵌套时才由 save() 正式落盘。
-  return migrateLegacyLauncherToBookmarkLayout(
-    legacyCategories,
-    browserBookmarks,
-    getOtherBookmarksFolderTitle(locale),
-  );
+  await setChromeStorage(BOOKMARK_TREE_MIGRATION_KEY, true);
 }
 
-function readBookmarkLayout(locale: typeof defaultLocale) {
-  // Promise 防止同一页面重复执行；Web Lock 再把多个同时打开的新标签页串行化，
-  // 后进入的页面会重新读取 Chrome Bookmarks，因此不会重复导出同一批 URL。
-  if (!pendingBookmarkLayoutRead) {
-    const read = () => readStoredBookmarkLayout(locale);
+let pendingMigration: Promise<void> | null = null;
+
+function prepareBookmarks() {
+  if (!pendingMigration) {
+    const migrate = () => migrateLegacyLauncherOnce();
     const result =
       typeof navigator !== "undefined" && navigator.locks
         ? navigator.locks
-            .request(LEGACY_LAUNCHER_MIGRATION_LOCK, read)
-            .then((layout) => layout)
-        : read();
-    const pending = result.finally(() => {
-      pendingBookmarkLayoutRead = null;
+            .request(LEGACY_LAUNCHER_MIGRATION_LOCK, migrate)
+            .then(() => undefined)
+        : migrate();
+    pendingMigration = result.finally(() => {
+      pendingMigration = null;
     });
-    pendingBookmarkLayoutRead = pending;
-    return pending;
   }
-  return pendingBookmarkLayoutRead;
-}
-
-function updateBookmark(
-  id: string,
-  changes: chrome.bookmarks.UpdateChanges,
-): Promise<BrowserBookmark> {
-  return new Promise((resolve, reject) => {
-    chrome.bookmarks.update(id, changes, (bookmark) => {
-      const error = getBookmarkError();
-      if (error) {
-        reject(error);
-        return;
-      }
-      if (!bookmark.url) {
-        reject(new Error("Chrome updated bookmark without a URL"));
-        return;
-      }
-      resolve({
-        id: bookmark.id,
-        title: bookmark.title,
-        url: bookmark.url,
-      });
-    });
-  });
-}
-
-function removeBookmark(id: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    chrome.bookmarks.remove(id, () => {
-      const error = getBookmarkError();
-      if (error) reject(error);
-      else resolve();
-    });
-  });
-}
-
-function subscribeBookmarks(onChange: () => void) {
-  chrome.bookmarks.onCreated.addListener(onChange);
-  chrome.bookmarks.onChanged.addListener(onChange);
-  chrome.bookmarks.onRemoved.addListener(onChange);
-  return () => {
-    chrome.bookmarks.onCreated.removeListener(onChange);
-    chrome.bookmarks.onChanged.removeListener(onChange);
-    chrome.bookmarks.onRemoved.removeListener(onChange);
-  };
+  return pendingMigration;
 }
 
 export const platform: Platform = {
   defaultLocale,
-  bookmarkLayout: {
-    read: readBookmarkLayout,
-    save: (categories) =>
-      setChromeStorage(BOOKMARK_LAYOUT_STORAGE_KEY, categories),
-    subscribe: (locale, onChange) =>
-      subscribeChromeStorage(
-        BOOKMARK_LAYOUT_STORAGE_KEY,
-        (value) =>
-          normalizeBookmarkLayout(value, getDefaultCategoryNames(locale).home),
-        onChange,
-      ),
-  },
   bookmarks: {
-    read: async () => toBrowserBookmarks(await getAllBookmarkItems()),
-    create: (bookmark) => createBookmark(bookmark),
-    update: (id, changes) => updateBookmark(id, changes),
+    read: async () => {
+      await prepareBookmarks();
+      return getBookmarkTree();
+    },
+    create: async (bookmark) =>
+      toBrowserBookmarkNode(await createChromeBookmarkNode(bookmark)),
+    update: updateBookmark,
+    move: moveBookmark,
     remove: removeBookmark,
     subscribe: subscribeBookmarks,
-  },
-  activeCategoryId: {
-    read: () =>
-      getChromeStorage(ACTIVE_CATEGORY_ID_STORAGE_KEY, (value) =>
-        typeof value === "string" ? value : DEFAULT_CATEGORY_ID,
-      ),
-    save: (categoryId) =>
-      setChromeStorage(ACTIVE_CATEGORY_ID_STORAGE_KEY, categoryId),
-    subscribe: (onChange) =>
-      subscribeChromeStorage(
-        ACTIVE_CATEGORY_ID_STORAGE_KEY,
-        (value) => (typeof value === "string" ? value : DEFAULT_CATEGORY_ID),
-        onChange,
-      ),
   },
   settings: {
     read: () =>

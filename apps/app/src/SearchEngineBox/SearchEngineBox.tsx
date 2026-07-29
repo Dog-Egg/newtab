@@ -35,7 +35,7 @@ import {
 
 export function SearchEngineBox() {
   const { t } = useTranslation();
-  const { categories: bookmarkCategories } = useLauncher();
+  const { bookmarks } = useLauncher();
   const inputRef = useRef<HTMLInputElement>(null);
   const [storedSettings, setStoredSettings] =
     useState<StoredSearchEngineSettings>({});
@@ -75,7 +75,7 @@ export function SearchEngineBox() {
   const suggestionQuery = retainedSuggestionQuery ?? query;
   const suggestions = findSearchSuggestions({
     engines: searchEngines,
-    categories: bookmarkCategories,
+    bookmarks,
     input: suggestionQuery,
     selectedEngineId: selectedEngine.id,
     temporaryEngineId,
