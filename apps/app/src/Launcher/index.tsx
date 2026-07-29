@@ -244,10 +244,8 @@ const rootCollisionDetector: SortableCollisionDetector = ({
   return { id: droppable.id, priority: 8, type: 2, value: 1 };
 };
 
-function reportBookmarkMutation(promise: Promise<unknown>, action: string) {
-  void promise.catch((error: unknown) => {
-    console.error(`Failed to ${action} browser bookmark`, error);
-  });
+function runBookmarkMutation(promise: Promise<unknown>) {
+  void promise.catch(console.error);
 }
 
 function getRootIcon(folder: BrowserBookmarkFolder) {
@@ -611,23 +609,21 @@ function BookmarkEditorDialog({
     if (!normalizedTitle || (!isFolder && !normalizedUrl)) return;
 
     if (state.mode === "edit") {
-      reportBookmarkMutation(
+      runBookmarkMutation(
         platform.bookmarks.update(
           state.node.id,
           state.node.type === "folder"
             ? { title: normalizedTitle }
             : { title: normalizedTitle, url: normalizedUrl },
         ),
-        "update",
       );
     } else {
-      reportBookmarkMutation(
+      runBookmarkMutation(
         platform.bookmarks.create({
           parentId: state.parentId,
           title: normalizedTitle,
           ...(isFolder ? {} : { url: normalizedUrl }),
         }),
-        "create",
       );
     }
     onClose();
@@ -1050,12 +1046,11 @@ export function Launcher() {
         return;
       }
       // 跨根目录移动时放到目标根的末尾，现有书签顺序不会被打乱。
-      reportBookmarkMutation(
+      runBookmarkMutation(
         platform.bookmarks.move(sourceData.node.id, {
           parentId: targetData.node.id,
           index: targetData.node.children.length,
         }),
-        "move to bookmark root",
       );
       return;
     }
@@ -1064,12 +1059,11 @@ export function Launcher() {
       if (!canMoveInside(sourceData.node.id, targetData.node)) return;
       // 页面化后不再依赖“拖出弹窗”：把节点放到任意祖先面包屑，
       // 即可一次完成跨层移动，并保留该祖先中已有内容的顺序。
-      reportBookmarkMutation(
+      runBookmarkMutation(
         platform.bookmarks.move(sourceData.node.id, {
           parentId: targetData.node.id,
           index: targetData.node.children.length,
         }),
-        "move to ancestor folder",
       );
       return;
     }
@@ -1077,21 +1071,19 @@ export function Launcher() {
     if (target?.type === "merge" && targetData) {
       if (targetData.node.type === "folder") {
         if (!canMoveInside(sourceData.node.id, targetData.node)) return;
-        reportBookmarkMutation(
+        runBookmarkMutation(
           platform.bookmarks.move(sourceData.node.id, {
             parentId: targetData.node.id,
             index: targetData.node.children.length,
           }),
-          "move",
         );
       } else if (sourceData.node.type === "item") {
-        reportBookmarkMutation(
+        runBookmarkMutation(
           mergeBookmarksIntoNewFolder(
             sourceData.node,
             targetData.node,
             targetData.container.id,
           ),
-          "merge",
         );
       }
       return;
@@ -1104,9 +1096,8 @@ export function Launcher() {
     );
     if (!destination) return;
     // 排序结果属于 source；结束瞬间 target 可能为空，不能因此跳过 Chrome 写入。
-    reportBookmarkMutation(
+    runBookmarkMutation(
       platform.bookmarks.move(sourceData.node.id, destination),
-      "reorder",
     );
   }
 
@@ -1147,9 +1138,8 @@ export function Launcher() {
                 }
               }}
               onRename={(title) => {
-                reportBookmarkMutation(
+                runBookmarkMutation(
                   platform.bookmarks.update(currentFolder.id, { title }),
-                  "rename",
                 );
                 setRenameFolderId(null);
               }}
@@ -1241,17 +1231,13 @@ export function Launcher() {
             deleteAllLabel={t("launcher.deleteFolderAll")}
             onClose={() => setPendingDelete(null)}
             onKeepItems={() => {
-              reportBookmarkMutation(
+              runBookmarkMutation(
                 deleteFolderKeepingContents(platform.bookmarks, pendingDelete),
-                "delete folder while keeping its contents",
               );
               setPendingDelete(null);
             }}
             onDeleteAll={() => {
-              reportBookmarkMutation(
-                platform.bookmarks.remove(pendingDelete.id),
-                "remove bookmark folder tree",
-              );
+              runBookmarkMutation(platform.bookmarks.remove(pendingDelete.id));
               setPendingDelete(null);
             }}
           />
@@ -1260,10 +1246,7 @@ export function Launcher() {
             node={pendingDelete}
             onClose={() => setPendingDelete(null)}
             onConfirm={() => {
-              reportBookmarkMutation(
-                platform.bookmarks.remove(pendingDelete.id),
-                "remove",
-              );
+              runBookmarkMutation(platform.bookmarks.remove(pendingDelete.id));
               setPendingDelete(null);
             }}
           />
