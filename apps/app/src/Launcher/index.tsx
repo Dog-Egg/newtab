@@ -417,16 +417,22 @@ function BookmarkNodeCard({
   index,
   group,
   container,
+  isRenaming,
   onOpen,
   onEdit,
+  onRename,
+  onCancelRename,
   onDelete,
 }: {
   node: BrowserBookmarkNode;
   index: number;
   group: string;
   container: BookmarkContainer;
+  isRenaming: boolean;
   onOpen: () => void;
   onEdit: () => void;
+  onRename: (title: string) => void;
+  onCancelRename: () => void;
   onDelete: () => void;
 }) {
   const { t } = useTranslation();
@@ -434,6 +440,8 @@ function BookmarkNodeCard({
     settings: { nodeScale },
   } = useSettings();
   const isModifiable = node.unmodifiable !== "managed";
+  const [draftTitle, setDraftTitle] = useState(node.title);
+  const renameInputRef = useRef<HTMLInputElement>(null);
   const data: BookmarkDndData = { node, container };
   const { ref, handleRef, isDragging } = useSortable<BookmarkDndData>({
     id: node.id,
@@ -441,7 +449,7 @@ function BookmarkNodeCard({
     group,
     type: node.type,
     data,
-    disabled: !isModifiable,
+    disabled: !isModifiable || isRenaming,
     collisionDetector: reorderCollisionDetector,
   });
   const { ref: mergeRef, isDropTarget: isMergeTarget } =
@@ -449,9 +457,27 @@ function BookmarkNodeCard({
       id: getMergeTargetId(node.id),
       type: "merge",
       data,
-      disabled: !isModifiable,
+      disabled: !isModifiable || isRenaming,
       collisionDetector: mergeCollisionDetector,
     });
+
+  useEffect(() => {
+    setDraftTitle(node.title);
+    if (!isRenaming) return;
+    requestAnimationFrame(() => {
+      renameInputRef.current?.focus();
+      renameInputRef.current?.select();
+    });
+  }, [isRenaming, node.title]);
+
+  function commitRename() {
+    const title = draftTitle.trim();
+    if (!title || title === node.title) {
+      onCancelRename();
+      return;
+    }
+    onRename(title);
+  }
 
   const content =
     node.type === "item" ? (
@@ -466,6 +492,42 @@ function BookmarkNodeCard({
         <BookmarkPreview bookmark={node} isMergeTarget={isMergeTarget} />
         <NodeLabel node={node} hidden={isDragging} />
       </a>
+    ) : isRenaming ? (
+      <div
+        className="flex flex-col items-center gap-2 rounded-[30px] text-center"
+        style={{ width: 80 * nodeScale }}
+      >
+        <FolderPreview folder={node} />
+        <span
+          className="flex w-full items-start justify-center"
+          style={{ minHeight: 40 * nodeScale }}
+        >
+          <input
+            ref={renameInputRef}
+            className="w-full rounded-lg bg-white/20 px-1.5 py-1 text-center font-semibold text-white shadow-sm outline-none ring-2 ring-white/70 backdrop-blur-md"
+            style={{
+              fontSize: 14 * nodeScale,
+              lineHeight: `${20 * nodeScale}px`,
+            }}
+            value={draftTitle}
+            aria-label={t("launcher.renameFolder")}
+            onChange={(event) => setDraftTitle(event.target.value)}
+            onBlur={commitRename}
+            onClick={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                event.currentTarget.blur();
+              } else if (event.key === "Escape") {
+                event.preventDefault();
+                setDraftTitle(node.title);
+                onCancelRename();
+              }
+            }}
+          />
+        </span>
+      </div>
     ) : (
       <button
         ref={handleRef as Ref<HTMLButtonElement>}
@@ -1101,11 +1163,8 @@ export function Launcher() {
     );
   }
 
-  function openFolderNode(
-    folder: BrowserBookmarkFolder,
-    editTitleInitially = false,
-  ) {
-    setRenameFolderId(editTitleInitially ? folder.id : null);
+  function openFolderNode(folder: BrowserBookmarkFolder) {
+    setRenameFolderId(null);
     setOpenFolderId(folder.id);
   }
 
@@ -1165,16 +1224,24 @@ export function Launcher() {
                       currentFolder.id === activeRoot.id ? "root" : "folder",
                     id: currentFolder.id,
                   }}
+                  isRenaming={renameFolderId === node.id}
                   onOpen={() => {
                     if (node.type === "folder") openFolderNode(node);
                   }}
                   onEdit={() => {
                     if (node.type === "folder") {
-                      openFolderNode(node, true);
+                      setRenameFolderId(node.id);
                     } else {
                       setEditor({ mode: "edit", node });
                     }
                   }}
+                  onRename={(title) => {
+                    runBookmarkMutation(
+                      platform.bookmarks.update(node.id, { title }),
+                    );
+                    setRenameFolderId(null);
+                  }}
+                  onCancelRename={() => setRenameFolderId(null)}
                   onDelete={() => setPendingDelete(node)}
                 />
               ))}
