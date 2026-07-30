@@ -11,7 +11,8 @@ import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { platform } from "@platform";
 import type { StoredSearchEngineSettings } from "../platform/types";
-import { useLauncher } from "../Launcher/LauncherProvider";
+import { useBookmarkNavigation } from "../Launcher/BookmarkNavigationProvider";
+import { useBookmarks } from "../Launcher/BookmarkProvider";
 import { SearchEngineDialogs } from "./SearchEngineDialog";
 import { SearchEngineSelector } from "./SearchEngineSelector";
 import {
@@ -35,7 +36,8 @@ import {
 
 export function SearchEngineBox() {
   const { t } = useTranslation();
-  const { bookmarks } = useLauncher();
+  const { bookmarks } = useBookmarks();
+  const { revealBookmark } = useBookmarkNavigation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [storedSettings, setStoredSettings] =
     useState<StoredSearchEngineSettings>({});
@@ -227,6 +229,12 @@ export function SearchEngineBox() {
     window.open(suggestion.bookmark.url, "_parent", "noreferrer");
   }
 
+  function locateBookmarkSuggestion(bookmarkId: string) {
+    revealBookmark(bookmarkId);
+    setDismissedSuggestionQuery(suggestionQuery);
+    setRetainedSuggestionQuery(null);
+  }
+
   function acceptSuggestion(
     suggestion: SearchSuggestionItem,
     retainSuggestions = false,
@@ -406,6 +414,7 @@ export function SearchEngineBox() {
                   : null
               }
               onAccept={acceptSuggestion}
+              onLocateBookmark={locateBookmarkSuggestion}
             />
           ) : null}
         </div>

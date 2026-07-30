@@ -24,6 +24,7 @@ export const zhCN = {
     engineSuggestions: "搜索引擎建议",
     suggestions: "搜索建议",
     useEngine: "使用 {{name}} 搜索",
+    locateBookmark: "在书签中定位{{name}}",
     temporaryEngine: "临时使用 {{name}} 搜索，点击可选择搜索引擎",
     clearTemporaryEngine: "退出使用 {{name}} 搜索",
   },

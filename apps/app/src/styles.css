@@ -12,6 +12,40 @@
   }
 }
 
+@keyframes bookmark-locate-shake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0);
+  }
+
+  15%,
+  45%,
+  75% {
+    transform: translateX(-0.35rem) rotate(-3deg);
+  }
+
+  30%,
+  60%,
+  90% {
+    transform: translateX(0.35rem) rotate(3deg);
+  }
+}
+
+@keyframes bookmark-locate-highlight {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+
+  50% {
+    box-shadow: 0 0 0 0.3rem rgba(255, 255, 255, 0.82);
+  }
+}
+
+.bookmark-locate-shake {
+  animation: bookmark-locate-shake 620ms ease-in-out;
+}
+
 .wallpaper-fade-in {
   animation-name: wallpaper-fade-in;
   animation-timing-function: ease-out;
@@ -21,6 +55,11 @@
 @media (prefers-reduced-motion: reduce) {
   .wallpaper-fade-in {
     animation-duration: 0.01ms !important;
+  }
+
+  .bookmark-locate-shake {
+    animation: bookmark-locate-highlight 620ms ease-in-out;
+    border-radius: 1.875rem;
   }
 }
 

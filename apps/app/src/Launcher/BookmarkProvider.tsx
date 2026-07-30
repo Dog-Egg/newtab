@@ -13,14 +13,14 @@ import {
   type BrowserBookmarkNode,
 } from "./bookmarkTree";
 
-type LauncherContextValue = {
+type BookmarkContextValue = {
   bookmarkTree: BrowserBookmarkNode[];
   bookmarks: BrowserBookmarkItem[];
 };
 
-const LauncherContext = createContext<LauncherContextValue | null>(null);
+const BookmarkContext = createContext<BookmarkContextValue | null>(null);
 
-export function LauncherProvider({
+export function BookmarkProvider({
   children,
   initialBookmarks,
 }: {
@@ -54,16 +54,16 @@ export function LauncherProvider({
   );
 
   return (
-    <LauncherContext.Provider value={{ bookmarkTree, bookmarks }}>
+    <BookmarkContext.Provider value={{ bookmarkTree, bookmarks }}>
       {children}
-    </LauncherContext.Provider>
+    </BookmarkContext.Provider>
   );
 }
 
-export function useLauncher() {
-  const context = useContext(LauncherContext);
+export function useBookmarks() {
+  const context = useContext(BookmarkContext);
   if (!context) {
-    throw new Error("useLauncher must be used within LauncherProvider");
+    throw new Error("useBookmarks must be used within BookmarkProvider");
   }
   return context;
 }

@@ -2,7 +2,8 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { platform } from "@platform";
 import { App } from "./App";
-import { LauncherProvider } from "./Launcher/LauncherProvider";
+import { BookmarkNavigationProvider } from "./Launcher/BookmarkNavigationProvider";
+import { BookmarkProvider } from "./Launcher/BookmarkProvider";
 import { SettingsProvider } from "./Settings/SettingsProvider";
 import { normalizeSettings } from "./Settings/settings";
 import i18n from "./i18n";
@@ -38,9 +39,11 @@ async function main() {
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <SettingsProvider initialSettings={initialSettings}>
-        <LauncherProvider initialBookmarks={initialBookmarks}>
-          <App />
-        </LauncherProvider>
+        <BookmarkProvider initialBookmarks={initialBookmarks}>
+          <BookmarkNavigationProvider>
+            <App />
+          </BookmarkNavigationProvider>
+        </BookmarkProvider>
       </SettingsProvider>
     </StrictMode>,
   );

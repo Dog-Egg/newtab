@@ -25,6 +25,7 @@ export const en = {
     engineSuggestions: "Search engine suggestions",
     suggestions: "Search suggestions",
     useEngine: "Search with {{name}}",
+    locateBookmark: "Show {{name}} in bookmarks",
     temporaryEngine:
       "Temporarily searching with {{name}}; select search engine",
     clearTemporaryEngine: "Stop searching with {{name}}",

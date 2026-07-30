@@ -50,7 +50,8 @@ import {
 import { getBookmarkReorderDestination } from "./bookmarkDrag";
 import { DeleteBookmarkCollectionDialog } from "./DeleteBookmarkCollectionDialog";
 import { deleteFolderKeepingContents } from "./folderDeletion";
-import { useLauncher } from "./LauncherProvider";
+import { useBookmarkNavigation } from "./BookmarkNavigationProvider";
+import { useBookmarks } from "./BookmarkProvider";
 
 type EditorState =
   | { mode: "create-item"; parentId: string }
@@ -418,6 +419,7 @@ function BookmarkNodeCard({
   group,
   container,
   isRenaming,
+  isLocated,
   onOpen,
   onEdit,
   onRename,
@@ -429,6 +431,7 @@ function BookmarkNodeCard({
   group: string;
   container: BookmarkContainer;
   isRenaming: boolean;
+  isLocated: boolean;
   onOpen: () => void;
   onEdit: () => void;
   onRename: (title: string) => void;
@@ -442,6 +445,7 @@ function BookmarkNodeCard({
   const isModifiable = node.unmodifiable !== "managed";
   const [draftTitle, setDraftTitle] = useState(node.title);
   const renameInputRef = useRef<HTMLInputElement>(null);
+  const locatedCardRef = useRef<HTMLDivElement>(null);
   const data: BookmarkDndData = { node, container };
   const { ref, handleRef, isDragging } = useSortable<BookmarkDndData>({
     id: node.id,
@@ -469,6 +473,16 @@ function BookmarkNodeCard({
       renameInputRef.current?.select();
     });
   }, [isRenaming, node.title]);
+
+  useEffect(() => {
+    if (!isLocated) return;
+    locatedCardRef.current?.scrollIntoView({
+      block: "center",
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+    });
+  }, [isLocated]);
 
   function commitRename() {
     const title = draftTitle.trim();
@@ -587,7 +601,12 @@ function BookmarkNodeCard({
           </DropdownMenu.Root>
         </div>
       ) : null}
-      {content}
+      <div
+        ref={locatedCardRef}
+        className={clsx(isLocated && "bookmark-locate-shake")}
+      >
+        {content}
+      </div>
     </li>
   );
 }
@@ -1006,13 +1025,18 @@ function BreadcrumbDropTarget({
 
 export function Launcher() {
   const { t } = useTranslation();
-  const { bookmarkTree } = useLauncher();
+  const { bookmarkTree } = useBookmarks();
+  const {
+    activeRootId,
+    openFolderId,
+    revealedBookmark,
+    selectRoot,
+    navigateToFolder,
+  } = useBookmarkNavigation();
   const {
     settings: { nodeScale },
   } = useSettings();
   const roots = useMemo(() => getBookmarkRoots(bookmarkTree), [bookmarkTree]);
-  const [activeRootId, setActiveRootId] = useState("");
-  const [openFolderId, setOpenFolderId] = useState<string | null>(null);
   const [renameFolderId, setRenameFolderId] = useState<string | null>(null);
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [pendingDelete, setPendingDelete] =
@@ -1036,21 +1060,9 @@ export function Launcher() {
     openFolderPath.length > 0 ? openFolderPath : activeRoot ? [activeRoot] : []
   ).filter((node): node is BrowserBookmarkFolder => node.type === "folder");
 
-  useEffect(() => {
-    if (!activeRoot) return;
-    if (activeRootId !== activeRoot.id) setActiveRootId(activeRoot.id);
-    if (openFolderId && !findBookmarkFolder([activeRoot], openFolderId)) {
-      setOpenFolderId(null);
-    }
-  }, [activeRoot, activeRootId, openFolderId]);
+  useEffect(() => setRenameFolderId(null), [activeRootId, openFolderId]);
 
   if (!activeRoot || !currentFolder) return null;
-
-  function selectRoot(rootId: string) {
-    setActiveRootId(rootId);
-    setOpenFolderId(null);
-    setRenameFolderId(null);
-  }
 
   function canMoveInside(draggedNodeId: string, target: BrowserBookmarkFolder) {
     if (draggedNodeId === target.id || !isModifiableFolder(target)) {
@@ -1164,8 +1176,7 @@ export function Launcher() {
   }
 
   function openFolderNode(folder: BrowserBookmarkFolder) {
-    setRenameFolderId(null);
-    setOpenFolderId(folder.id);
+    navigateToFolder(folder.id);
   }
 
   return (
@@ -1190,8 +1201,7 @@ export function Launcher() {
               editTitleInitially={renameFolderId === currentFolder.id}
               onNavigate={(folder) => {
                 if (folder.id === activeRoot.id) {
-                  setOpenFolderId(null);
-                  setRenameFolderId(null);
+                  navigateToFolder(null);
                 } else {
                   openFolderNode(folder);
                 }
@@ -1215,7 +1225,11 @@ export function Launcher() {
             >
               {currentFolder.children.map((node, index) => (
                 <BookmarkNodeCard
-                  key={node.id}
+                  key={`${node.id}:${
+                    revealedBookmark?.bookmarkId === node.id
+                      ? revealedBookmark?.revealKey
+                      : ""
+                  }`}
                   node={node}
                   index={index}
                   group={currentFolder.id}
@@ -1225,6 +1239,7 @@ export function Launcher() {
                     id: currentFolder.id,
                   }}
                   isRenaming={renameFolderId === node.id}
+                  isLocated={revealedBookmark?.bookmarkId === node.id}
                   onOpen={() => {
                     if (node.type === "folder") openFolderNode(node);
                   }}

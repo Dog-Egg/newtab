@@ -1,6 +1,6 @@
 import * as Popover from "@radix-ui/react-popover";
 import clsx from "clsx";
-import { Search } from "lucide-react";
+import { LocateFixed, Search } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { SiteIcon } from "../components/SiteIcon";
@@ -79,10 +79,12 @@ export function SearchSuggestion({
   suggestions,
   activeSuggestionKey,
   onAccept,
+  onLocateBookmark,
 }: {
   suggestions: SearchSuggestionItem[];
   activeSuggestionKey: string | null;
   onAccept: (suggestion: SearchSuggestionItem) => void;
+  onLocateBookmark: (bookmarkId: string) => void;
 }) {
   const { t } = useTranslation();
   const activeItemRef = useRef<HTMLElement>(null);
@@ -170,7 +172,7 @@ export function SearchSuggestion({
                       matches={suggestion.matches.title}
                     />
                   </span>
-                  <span className="max-w-[45%] shrink-0 truncate text-sm text-slate-500">
+                  <span className="max-w-[45%] shrink-0 truncate text-sm text-slate-500 transition-[margin,opacity] duration-200 group-hover:mr-9 group-hover:opacity-75 motion-reduce:transition-none">
                     <HighlightedText
                       text={domain ?? ""}
                       matches={suggestion.matches.domain}
@@ -183,7 +185,7 @@ export function SearchSuggestion({
 
           if (!isEngine) {
             return (
-              <a
+              <div
                 ref={
                   isActive
                     ? (element) => {
@@ -193,15 +195,32 @@ export function SearchSuggestion({
                 }
                 key={suggestionKey}
                 id={getSearchSuggestionId(suggestion)}
-                className={className}
-                href={suggestion.bookmark.url}
-                target="_parent"
-                rel="noreferrer"
+                className={clsx(className, "group relative")}
                 role="option"
                 aria-selected={isActive}
               >
-                {content}
-              </a>
+                <a
+                  className="flex min-w-0 flex-1 items-center gap-3 self-stretch"
+                  href={suggestion.bookmark.url}
+                  target="_parent"
+                  rel="noreferrer"
+                >
+                  {content}
+                </a>
+                <button
+                  type="button"
+                  className="pointer-events-none absolute right-3 grid size-7 translate-x-1 scale-90 place-items-center rounded-full border border-white/60 bg-white/55 text-slate-500 opacity-0 shadow-[0_3px_10px_rgba(15,23,42,0.1)] outline-none backdrop-blur-md transition-[color,background-color,box-shadow,opacity,transform] duration-200 hover:border-blue-500/70 hover:bg-blue-600 hover:text-white hover:shadow-[0_5px_14px_rgba(37,99,235,0.28)] focus-visible:pointer-events-auto focus-visible:translate-x-0 focus-visible:scale-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-blue-500/60 group-hover:pointer-events-auto group-hover:translate-x-0 group-hover:scale-100 group-hover:opacity-100 motion-reduce:transition-none"
+                  aria-label={t("search.locateBookmark", {
+                    name: suggestion.bookmark.title,
+                  })}
+                  title={t("search.locateBookmark", {
+                    name: suggestion.bookmark.title,
+                  })}
+                  onClick={() => onLocateBookmark(suggestion.bookmark.id)}
+                >
+                  <LocateFixed aria-hidden="true" className="size-3.5" />
+                </button>
+              </div>
             );
           }
 
