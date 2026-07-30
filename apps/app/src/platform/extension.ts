@@ -1,7 +1,3 @@
-import {
-  LEGACY_LAUNCHER_MIGRATION_LOCK,
-  migrateLegacyLauncherOnce,
-} from "../Launcher/legacy";
 import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
 import {
   SEARCH_ENGINE_SETTINGS_KEY,
@@ -11,42 +7,14 @@ import {
 import { normalizeSettings, SETTINGS_STORAGE_KEY } from "../Settings/settings";
 import { getLocaleFromLanguage } from "../i18n/locale";
 import {
+  createChromeBookmarkNode,
   getBookmarkTree,
   toBrowserBookmarkNode,
   toChromeMoveDestination,
 } from "./chromeBookmarks";
+import { getChromeStorage, setChromeStorage } from "./chromeStorage";
 
 const defaultLocale = getLocaleFromLanguage(chrome.i18n.getUILanguage());
-
-function getChromeStorage<T>(key: string, normalize: (value: unknown) => T) {
-  return new Promise<T>((resolve, reject) => {
-    chrome.storage.local.get(key, (items) => {
-      const error = chrome.runtime.lastError;
-      if (error) reject(new Error(error.message));
-      else resolve(normalize(items[key]));
-    });
-  });
-}
-
-function getChromeStorageItems(keys: string[]) {
-  return new Promise<Record<string, unknown>>((resolve, reject) => {
-    chrome.storage.local.get(keys, (items) => {
-      const error = chrome.runtime.lastError;
-      if (error) reject(new Error(error.message));
-      else resolve(items);
-    });
-  });
-}
-
-function setChromeStorage(key: string, value: unknown) {
-  return new Promise<void>((resolve, reject) => {
-    chrome.storage.local.set({ [key]: value }, () => {
-      const error = chrome.runtime.lastError;
-      if (error) reject(new Error(error.message));
-      else resolve();
-    });
-  });
-}
 
 function normalizeSearchEngineSettings(
   value: unknown,
@@ -76,18 +44,6 @@ function subscribeChromeStorage<T>(
 function getBookmarkError() {
   const error = chrome.runtime.lastError;
   return error ? new Error(error.message) : null;
-}
-
-function createChromeBookmarkNode(
-  details: chrome.bookmarks.CreateDetails,
-): Promise<chrome.bookmarks.BookmarkTreeNode> {
-  return new Promise((resolve, reject) => {
-    chrome.bookmarks.create(details, (bookmark) => {
-      const error = getBookmarkError();
-      if (error) reject(error);
-      else resolve(bookmark);
-    });
-  });
 }
 
 function updateBookmark(
@@ -161,39 +117,10 @@ function subscribeBookmarks(onChange: () => void) {
   };
 }
 
-let pendingMigration: Promise<void> | null = null;
-
-function prepareBookmarks() {
-  if (!pendingMigration) {
-    // Chrome API 适配留在平台层，旧数据的迁移规则统一收口到 legacy。
-    const migrate = () =>
-      migrateLegacyLauncherOnce({
-        locale: defaultLocale,
-        readStorage: getChromeStorageItems,
-        writeStorage: setChromeStorage,
-        readBookmarks: getBookmarkTree,
-        createBookmark: createChromeBookmarkNode,
-      });
-    const result =
-      typeof navigator !== "undefined" && navigator.locks
-        ? navigator.locks
-            .request(LEGACY_LAUNCHER_MIGRATION_LOCK, migrate)
-            .then(() => undefined)
-        : migrate();
-    pendingMigration = result.finally(() => {
-      pendingMigration = null;
-    });
-  }
-  return pendingMigration;
-}
-
 export const platform: Platform = {
   defaultLocale,
   bookmarks: {
-    read: async () => {
-      await prepareBookmarks();
-      return getBookmarkTree();
-    },
+    read: getBookmarkTree,
     create: async (bookmark) =>
       toBrowserBookmarkNode(await createChromeBookmarkNode(bookmark)),
     update: updateBookmark,

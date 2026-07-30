@@ -101,11 +101,11 @@ export type LegacyLauncherCategory = {
 };
 
 export const LAUNCHER_STORAGE_KEY = "launcher";
+
 export function normalizeLegacyLauncher(
   value: unknown,
-  defaultCategory: LegacyLauncherCategory,
 ): LegacyLauncherCategory[] {
-  if (!Array.isArray(value)) return [defaultCategory];
+  if (!Array.isArray(value)) return [];
 
   const categories = value.flatMap<LegacyLauncherCategory>((item) => {
     if (!item || typeof item !== "object") return [];
@@ -127,8 +127,5 @@ export function normalizeLegacyLauncher(
     (category, index, all) =>
       all.findIndex((candidate) => candidate.id === category.id) === index,
   );
-  const hasDefault = uniqueCategories.some(
-    (category) => category.id === "default",
-  );
-  return hasDefault ? uniqueCategories : [defaultCategory, ...uniqueCategories];
+  return uniqueCategories;
 }

@@ -1,5 +1,22 @@
 import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
 
+function getBookmarkError() {
+  const error = chrome.runtime.lastError;
+  return error ? new Error(error.message) : null;
+}
+
+export function createChromeBookmarkNode(
+  details: chrome.bookmarks.CreateDetails,
+): Promise<chrome.bookmarks.BookmarkTreeNode> {
+  return new Promise((resolve, reject) => {
+    chrome.bookmarks.create(details, (bookmark) => {
+      const error = getBookmarkError();
+      if (error) reject(error);
+      else resolve(bookmark);
+    });
+  });
+}
+
 /**
  * 应用层的 index 表示节点移动完成后的最终位置；Chromium 的底层 Move
  * 在同一目录向后移动时，仍按移除节点前的 children 计算插入点。

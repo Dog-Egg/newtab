@@ -1,32 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  BOOKMARK_TREE_MIGRATION_KEY,
-  LAUNCHER_STORAGE_KEY,
-  type LegacyLauncherCategory,
-} from "../Launcher/legacy";
-
-const legacyCategories: LegacyLauncherCategory[] = [
-  {
-    id: "default",
-    name: "Home",
-    shortcuts: [
-      {
-        type: "item",
-        id: "old-docs",
-        title: "Docs",
-        url: "https://docs.example",
-        createdAt: 1,
-      },
-      {
-        type: "item",
-        id: "old-new",
-        title: "New",
-        url: "https://new.example",
-        createdAt: 2,
-      },
-    ],
-  },
-];
 
 beforeEach(() => {
   vi.resetModules();
@@ -65,6 +37,12 @@ function createChromeMock(
     Object.assign(storedItems, items);
     callback();
   });
+  const storageGet = vi.fn(
+    (
+      _keys: string | string[],
+      callback: (items: Record<string, unknown>) => void,
+    ) => callback(storedItems),
+  );
   const get = vi.fn();
   const move = vi.fn();
 
@@ -73,10 +51,7 @@ function createChromeMock(
     runtime: {},
     storage: {
       local: {
-        get: (
-          _keys: string | string[],
-          callback: (items: Record<string, unknown>) => void,
-        ) => callback(storedItems),
+        get: storageGet,
         set,
       },
       onChanged: createEventMock(),
@@ -98,114 +73,37 @@ function createChromeMock(
     },
   });
 
-  return { create, get, getTree, move, set };
+  return { create, get, getTree, move, set, storageGet };
 }
 
-describe("extension legacy Launcher migration", () => {
-  it("skips legacy export after the dedicated migration marker exists", async () => {
+describe("extension bookmark reads", () => {
+  it("reads the native tree without checking or running legacy migration", async () => {
     const tree: chrome.bookmarks.BookmarkTreeNode[] = [
-      { id: "root", title: "", syncing: false, children: [] },
-    ];
-    const chromeMock = createChromeMock(
-      { [BOOKMARK_TREE_MIGRATION_KEY]: true },
-      [tree],
-    );
-    const { platform } = await import("./extension");
-
-    await expect(platform.bookmarks.read()).resolves.toEqual([
-      {
-        type: "folder",
-        id: "root",
-        title: "",
-        children: [],
-      },
-    ]);
-    expect(chromeMock.getTree).toHaveBeenCalledOnce();
-    expect(chromeMock.create).not.toHaveBeenCalled();
-  });
-
-  it("exports missing legacy URLs once, marks completion, then returns the native tree", async () => {
-    const beforeExport: chrome.bookmarks.BookmarkTreeNode[] = [
       {
         id: "root",
         title: "",
         syncing: false,
-        children: [
-          {
-            id: "bookmark-docs",
-            title: "Docs in Chrome",
-            url: "https://docs.example",
-            syncing: false,
-          },
-        ],
+        children: [],
       },
     ];
-    const afterExport: chrome.bookmarks.BookmarkTreeNode[] = [
-      {
-        ...beforeExport[0],
-        children: [
-          ...beforeExport[0].children!,
-          {
-            id: "new-tab-folder",
-            title: "NewTab",
-            syncing: false,
-            children: [
-              {
-                id: "bookmark-new",
-                title: "New",
-                url: "https://new.example",
-                syncing: false,
-              },
-            ],
-          },
-        ],
-      },
-    ];
-    const chromeMock = createChromeMock(
-      { [LAUNCHER_STORAGE_KEY]: legacyCategories },
-      [beforeExport, afterExport],
-    );
+    const chromeMock = createChromeMock({ unrelated: "stored value" }, [tree]);
     const { platform } = await import("./extension");
 
-    const tree = await platform.bookmarks.read();
-    expect(tree[0]).toMatchObject({
-      type: "folder",
-      children: [
-        { type: "item", id: "bookmark-docs" },
-        {
-          type: "folder",
-          id: "new-tab-folder",
-          children: [{ type: "item", id: "bookmark-new" }],
-        },
-      ],
-    });
-    expect(chromeMock.create).toHaveBeenNthCalledWith(
-      1,
-      { title: "NewTab" },
-      expect.any(Function),
-    );
-    expect(chromeMock.create).toHaveBeenNthCalledWith(
-      2,
-      {
-        parentId: "new-tab-folder",
-        title: "New",
-        url: "https://new.example",
-      },
-      expect.any(Function),
-    );
-    expect(chromeMock.set).toHaveBeenCalledWith(
-      { [BOOKMARK_TREE_MIGRATION_KEY]: true },
-      expect.any(Function),
-    );
+    await expect(platform.bookmarks.read()).resolves.toEqual([
+      { type: "folder", id: "root", title: "", children: [] },
+    ]);
+    expect(chromeMock.getTree).toHaveBeenCalledOnce();
+    expect(chromeMock.storageGet).not.toHaveBeenCalled();
+    expect(chromeMock.create).not.toHaveBeenCalled();
+    expect(chromeMock.set).not.toHaveBeenCalled();
   });
 });
 
 describe("extension bookmark mutations", () => {
   it("converts a forward reorder to Chrome's pre-removal insertion index", async () => {
-    const chromeMock = createChromeMock(
-      { [BOOKMARK_TREE_MIGRATION_KEY]: true },
-      [[{ id: "root", title: "", syncing: false, children: [] }]],
-    );
+    const chromeMock = createChromeMock({}, [
+      [{ id: "root", title: "", syncing: false, children: [] }],
+    ]);
     chromeMock.get.mockImplementation(
       (
         _id: string,
