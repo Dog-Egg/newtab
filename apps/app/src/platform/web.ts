@@ -1,5 +1,8 @@
 import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
-import { createWebDefaultBookmarkTree } from "../Launcher/webDefaultBookmarks";
+import {
+  createWebDefaultBookmarkTree,
+  localizeWebDefaultBookmarkTree,
+} from "../Launcher/webDefaultBookmarks";
 import {
   SEARCH_ENGINE_SETTINGS_KEY,
   type Platform,
@@ -10,6 +13,7 @@ import {
   SETTINGS_STORAGE_KEY,
   type Settings,
 } from "../Settings/settings";
+import i18n from "../i18n";
 import { getLocaleFromLanguage } from "../i18n/locale";
 
 const WEB_BOOKMARKS_STORAGE_KEY = "web-bookmarks";
@@ -17,6 +21,12 @@ const webBookmarkListeners = new Set<() => void>();
 const defaultLocale = getLocaleFromLanguage(
   new URLSearchParams(window.location.search).get("lang") ?? "en",
 );
+
+function notifyWebBookmarkListeners() {
+  for (const listener of webBookmarkListeners) listener();
+}
+
+i18n.on("languageChanged", notifyWebBookmarkListeners);
 
 function readJsonStorageValue(key: string) {
   const saved = window.sessionStorage.getItem(key);
@@ -68,18 +78,20 @@ function normalizeWebBookmarkNode(value: unknown): BrowserBookmarkNode | null {
 
 function readStoredWebBookmarks() {
   const value = readJsonStorageValue(WEB_BOOKMARKS_STORAGE_KEY);
-  if (!Array.isArray(value)) return createWebDefaultBookmarkTree(defaultLocale);
+  if (!Array.isArray(value)) return createWebDefaultBookmarkTree();
   const tree = value.flatMap((node) => {
     const normalized = normalizeWebBookmarkNode(node);
     return normalized ? [normalized] : [];
   });
-  return tree.length > 0 ? tree : createWebDefaultBookmarkTree(defaultLocale);
+  return tree.length > 0
+    ? localizeWebDefaultBookmarkTree(tree)
+    : createWebDefaultBookmarkTree();
 }
 
 function saveStoredWebBookmarks(tree: BrowserBookmarkNode[]) {
   writeJsonStorageValue(WEB_BOOKMARKS_STORAGE_KEY, tree);
   // storage 事件不会回发到当前窗口，主动通知当前预览页面。
-  for (const listener of webBookmarkListeners) listener();
+  notifyWebBookmarkListeners();
 }
 
 function mapTree(
