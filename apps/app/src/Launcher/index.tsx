@@ -898,7 +898,7 @@ function BookmarkBreadcrumb({
 
   return (
     <nav
-      className="mb-8 flex min-h-10 items-center gap-2 border-b border-white/15 text-sm text-white"
+      className="flex min-h-10 items-center gap-2 border-b border-white/15 text-sm text-white"
       aria-label={t("launcher.breadcrumbs")}
     >
       {/* 两端为外扩焦点环留出空间；负边距抵消 padding，面包屑内容本身不会位移。 */}
@@ -1193,9 +1193,9 @@ export function Launcher() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div className="min-h-[15rem] flex-1 overflow-y-auto [-webkit-mask-image:linear-gradient(to_bottom,transparent_0,black_2rem,black_calc(100%_-_3rem),transparent_100%)] [mask-image:linear-gradient(to_bottom,transparent_0,black_2rem,black_calc(100%_-_3rem),transparent_100%)] [scrollbar-width:none]">
-          <section className="relative z-10 mx-auto flex min-h-full w-full max-w-6xl flex-col px-6 pb-8 pt-12 sm:px-10 sm:pt-5">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <section className="relative z-10 mx-auto flex min-h-[15rem] w-full max-w-6xl flex-1 flex-col pt-12 sm:pt-5">
+          <div className="shrink-0 px-6 sm:px-10">
             <BookmarkBreadcrumb
               path={currentPath}
               editTitleInitially={renameFolderId === currentFolder.id}
@@ -1213,6 +1213,8 @@ export function Launcher() {
                 setRenameFolderId(null);
               }}
             />
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-8 [-webkit-mask-image:linear-gradient(to_bottom,transparent_0,black_2rem,black_calc(100%_-_2rem),transparent_100%)] [mask-image:linear-gradient(to_bottom,transparent_0,black_2rem,black_calc(100%_-_2rem),transparent_100%)] [scrollbar-width:none] sm:px-10">
             {/* 书签网格独立居中，数量较少时仍保持新标签页的视觉重心。 */}
             <ul
               className="grid justify-center gap-x-3 gap-y-5 sm:gap-x-4"
@@ -1271,11 +1273,11 @@ export function Launcher() {
                 />
               ) : null}
             </ul>
-          </section>
-        </div>
+          </div>
+        </section>
 
         <nav
-          className="z-20 flex shrink-0 justify-center px-4 pb-10 pt-3 sm:pb-24"
+          className="z-20 flex shrink-0 justify-center px-4 pb-8 pt-3 sm:pb-12 md:pb-16"
           aria-label={t("launcher.bookmarkRoots")}
         >
           {/* 每个根目录独立成组，避免额外的外层玻璃容器抢占视觉层级。 */}
