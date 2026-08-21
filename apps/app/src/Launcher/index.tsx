@@ -328,11 +328,12 @@ function MergeTargetFrame({
     >
       <span
         aria-hidden="true"
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/30 shadow-[0_18px_35px_rgba(15,23,42,0.22)] transition-all duration-200 ease-out"
+        className="absolute left-1/2 top-1/2 bg-white/30 shadow-[0_18px_35px_rgba(15,23,42,0.22)] transition-[width,height,border-radius] duration-200 ease-out"
         style={{
-          width: (active ? 72 : 64) * nodeScale,
-          height: (active ? 72 : 64) * nodeScale,
-          borderRadius: (active ? 22 : 18) * nodeScale,
+          width: active ? 72 : 64,
+          height: active ? 72 : 64,
+          borderRadius: active ? 22 : 18,
+          transform: `translate(-50%, -50%) scale(${nodeScale})`,
         }}
       />
       <span className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
