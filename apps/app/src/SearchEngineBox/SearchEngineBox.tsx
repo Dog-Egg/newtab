@@ -333,7 +333,7 @@ export function SearchEngineBox() {
           <Popover.Anchor asChild>
             <div
               className={clsx(
-                "flex h-12 cursor-text items-center border border-white/50 px-3 text-slate-800 shadow-[0_16px_42px_rgba(15,23,42,0.2)] backdrop-blur-2xl transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-white/95 focus-within:shadow-[0_22px_58px_rgba(15,23,42,0.32)] motion-reduce:transition-none sm:h-[52px] [&_button]:cursor-pointer",
+                "flex h-12 cursor-text items-center border border-white/50 px-3.5 text-slate-800 shadow-[0_16px_42px_rgba(15,23,42,0.2)] backdrop-blur-2xl transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-white/95 focus-within:shadow-[0_22px_58px_rgba(15,23,42,0.32)] motion-reduce:transition-none sm:h-[52px] [&_button]:cursor-pointer",
                 isSuggestionOpen
                   ? "rounded-b-none rounded-t-glass border-b-slate-400/20 bg-slate-100"
                   : "rounded-glass bg-white/55 focus-within:bg-white/80",
@@ -366,7 +366,7 @@ export function SearchEngineBox() {
                 }}
               />
 
-              <div className="mx-1 h-6 w-px shrink-0 bg-slate-500/30" />
+              <div className="mx-3 h-6 w-px shrink-0 bg-slate-500/30" />
 
               <form
                 className="flex min-w-0 flex-1 items-center"
@@ -375,7 +375,7 @@ export function SearchEngineBox() {
                 <input
                   ref={inputRef}
                   autoFocus
-                  className="min-w-0 flex-1 bg-transparent px-3 text-[15px] text-slate-800 outline-none placeholder:text-slate-600/75 sm:text-base [&::-webkit-search-cancel-button]:appearance-none"
+                  className="min-w-0 flex-1 bg-transparent text-[15px] text-slate-800 outline-none placeholder:text-slate-600/75 sm:text-base [&::-webkit-search-cancel-button]:appearance-none"
                   type="search"
                   role="combobox"
                   value={query}

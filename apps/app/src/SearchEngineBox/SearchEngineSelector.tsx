@@ -1,6 +1,6 @@
 import * as Popover from "@radix-ui/react-popover";
 import clsx from "clsx";
-import { ChevronDown, EllipsisVertical, Plus, X } from "lucide-react";
+import { EllipsisVertical, Plus, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
@@ -62,7 +62,7 @@ export function SearchEngineSelector({
   if (temporaryEngine) {
     return (
       <div
-        className="flex h-9 min-w-0 shrink-0 items-center gap-1.5 rounded-xl border border-slate-300/70 bg-white/45 py-1 pl-1.5 pr-1 text-slate-800 shadow-sm"
+        className="flex h-9 min-w-0 shrink-0 items-center gap-1.5 rounded-xl border border-slate-300/70 bg-white/45 py-1 pl-1.5 pr-1 text-slate-800"
         aria-label={t("search.temporaryEngine", {
           name: temporaryEngine.name,
         })}
@@ -98,7 +98,6 @@ export function SearchEngineSelector({
           title={selectedEngine.name}
         >
           <SearchEngineGlyph engine={selectedEngine} size="small" />
-          <ChevronDown aria-hidden="true" className="size-4" />
         </button>
       </Popover.Trigger>
 
