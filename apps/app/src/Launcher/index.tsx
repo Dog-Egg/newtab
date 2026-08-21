@@ -636,7 +636,7 @@ function NodeLabel({
         className="line-clamp-2 w-full text-balance font-semibold text-white drop-shadow-[0_1px_2px_rgba(15,23,42,0.45)]"
         style={{
           minHeight: 40 * nodeScale,
-          fontSize: 14 * nodeScale,
+          fontSize: 12 * nodeScale,
           lineHeight: `${20 * nodeScale}px`,
         }}
       >
