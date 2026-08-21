@@ -1,6 +1,7 @@
 import * as Popover from "@radix-ui/react-popover";
 import clsx from "clsx";
 import { EllipsisVertical, Plus, X } from "lucide-react";
+import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
@@ -35,6 +36,7 @@ function SearchEngineGlyph({
 }
 
 export function SearchEngineSelector({
+  anchorElement,
   engines,
   selectedEngine,
   temporaryEngine,
@@ -46,6 +48,7 @@ export function SearchEngineSelector({
   onEdit,
   onRequestDelete,
 }: {
+  anchorElement: HTMLDivElement | null;
   engines: SearchEngine[];
   selectedEngine: SearchEngine;
   temporaryEngine?: SearchEngine | null;
@@ -90,6 +93,10 @@ export function SearchEngineSelector({
 
   return (
     <Popover.Root open={isOpen} onOpenChange={onOpenChange}>
+      <Popover.Anchor
+        virtualRef={{ current: anchorElement } as RefObject<HTMLDivElement>}
+      />
+
       <Popover.Trigger asChild>
         <button
           className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-2 text-slate-700 outline-none transition hover:bg-white/45 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
@@ -103,10 +110,9 @@ export function SearchEngineSelector({
 
       <Popover.Portal>
         <Popover.Content
-          className="glass-panel z-30 w-[calc(100vw-2rem)] max-w-[526px] overflow-hidden p-2"
-          sideOffset={16}
+          className="glass-panel z-30 w-[var(--radix-popover-trigger-width)] overflow-hidden p-2"
+          sideOffset={6}
           align="start"
-          alignOffset={-12}
         >
           <div
             className="flex items-center gap-2 overflow-x-auto p-1"

@@ -39,6 +39,9 @@ export function SearchEngineBox() {
   const { bookmarks } = useBookmarks();
   const { revealBookmark } = useBookmarkNavigation();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [searchBoxAnchor, setSearchBoxAnchor] = useState<HTMLDivElement | null>(
+    null,
+  );
   const [storedSettings, setStoredSettings] =
     useState<StoredSearchEngineSettings>({});
   const [query, setQuery] = useState("");
@@ -329,7 +332,11 @@ export function SearchEngineBox() {
           }
         }}
       >
-        <div className="relative mx-auto w-full max-w-[526px]" role="search">
+        <div
+          ref={setSearchBoxAnchor}
+          className="relative mx-auto w-full max-w-[526px]"
+          role="search"
+        >
           <Popover.Anchor asChild>
             <div
               className={clsx(
@@ -351,6 +358,7 @@ export function SearchEngineBox() {
               }}
             >
               <SearchEngineSelector
+                anchorElement={searchBoxAnchor}
                 engines={searchEngines}
                 selectedEngine={selectedEngine}
                 temporaryEngine={temporaryEngine}
