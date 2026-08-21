@@ -65,6 +65,13 @@ type SortableCollisionDetector = NonNullable<
 const MERGE_TARGET_PREFIX = "merge:";
 const BREADCRUMB_TARGET_PREFIX = "breadcrumb:";
 const ROOT_TARGET_PREFIX = "root:";
+const bookmarkNodeClassName = clsx(
+  "flex flex-col items-center gap-2 rounded-2xl text-center",
+);
+const interactiveBookmarkNodeClassName = clsx(
+  bookmarkNodeClassName,
+  "outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70",
+);
 
 type BookmarkContainer =
   { type: "root"; id: string } | { type: "folder"; id: string };
@@ -497,7 +504,7 @@ function BookmarkNodeCard({
     node.type === "item" ? (
       <a
         ref={handleRef as Ref<HTMLAnchorElement>}
-        className="flex flex-col items-center gap-2 rounded-[30px] text-center outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
+        className={interactiveBookmarkNodeClassName}
         style={{ width: 80 * nodeScale }}
         href={node.url}
         target="_parent"
@@ -507,10 +514,7 @@ function BookmarkNodeCard({
         <NodeLabel node={node} hidden={isDragging} />
       </a>
     ) : isRenaming ? (
-      <div
-        className="flex flex-col items-center gap-2 rounded-[30px] text-center"
-        style={{ width: 80 * nodeScale }}
-      >
+      <div className={bookmarkNodeClassName} style={{ width: 80 * nodeScale }}>
         <FolderPreview folder={node} />
         <span
           className="flex w-full items-start justify-center"
@@ -546,7 +550,7 @@ function BookmarkNodeCard({
       <button
         ref={handleRef as Ref<HTMLButtonElement>}
         type="button"
-        className="flex flex-col items-center gap-2 rounded-[30px] text-center outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
+        className={interactiveBookmarkNodeClassName}
         style={{ width: 80 * nodeScale }}
         onClick={onOpen}
       >
