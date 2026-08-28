@@ -11,7 +11,8 @@ import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { platform } from "@platform";
 import type { StoredSearchEngineSettings } from "../platform/types";
-import { useLauncher } from "../Launcher/LauncherProvider";
+import { useBookmarkNavigation } from "../Launcher/BookmarkNavigationProvider";
+import { useBookmarks } from "../Launcher/BookmarkProvider";
 import { SearchEngineDialogs } from "./SearchEngineDialog";
 import { SearchEngineSelector } from "./SearchEngineSelector";
 import {
@@ -35,8 +36,12 @@ import {
 
 export function SearchEngineBox() {
   const { t } = useTranslation();
-  const { categories: shortcutCategories } = useLauncher();
+  const { bookmarks } = useBookmarks();
+  const { revealBookmark } = useBookmarkNavigation();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [searchBoxAnchor, setSearchBoxAnchor] = useState<HTMLDivElement | null>(
+    null,
+  );
   const [storedSettings, setStoredSettings] =
     useState<StoredSearchEngineSettings>({});
   const [query, setQuery] = useState("");
@@ -75,7 +80,7 @@ export function SearchEngineBox() {
   const suggestionQuery = retainedSuggestionQuery ?? query;
   const suggestions = findSearchSuggestions({
     engines: searchEngines,
-    categories: shortcutCategories,
+    bookmarks,
     input: suggestionQuery,
     selectedEngineId: selectedEngine.id,
     temporaryEngineId,
@@ -222,9 +227,15 @@ export function SearchEngineBox() {
     inputRef.current?.focus();
   }
 
-  function openShortcutSuggestion(suggestion: SearchSuggestionItem) {
-    if (suggestion.type !== "shortcut") return;
-    window.open(suggestion.shortcut.url, "_parent", "noreferrer");
+  function openBookmarkSuggestion(suggestion: SearchSuggestionItem) {
+    if (suggestion.type !== "bookmark") return;
+    window.open(suggestion.bookmark.url, "_parent", "noreferrer");
+  }
+
+  function locateBookmarkSuggestion(bookmarkId: string) {
+    revealBookmark(bookmarkId);
+    setDismissedSuggestionQuery(suggestionQuery);
+    setRetainedSuggestionQuery(null);
   }
 
   function acceptSuggestion(
@@ -236,7 +247,7 @@ export function SearchEngineBox() {
       return;
     }
 
-    openShortcutSuggestion(suggestion);
+    openBookmarkSuggestion(suggestion);
   }
 
   function selectAdjacentSuggestion(direction: 1 | -1) {
@@ -295,8 +306,8 @@ export function SearchEngineBox() {
 
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (activeSuggestion?.type === "shortcut") {
-      openShortcutSuggestion(activeSuggestion);
+    if (activeSuggestion?.type === "bookmark") {
+      openBookmarkSuggestion(activeSuggestion);
       return;
     }
 
@@ -321,11 +332,15 @@ export function SearchEngineBox() {
           }
         }}
       >
-        <div className="relative mx-auto w-full max-w-[526px]" role="search">
+        <div
+          ref={setSearchBoxAnchor}
+          className="relative mx-auto w-full max-w-[526px]"
+          role="search"
+        >
           <Popover.Anchor asChild>
             <div
               className={clsx(
-                "flex h-12 cursor-text items-center border border-white/50 px-3 text-slate-800 shadow-[0_16px_42px_rgba(15,23,42,0.2)] backdrop-blur-2xl transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-white/95 focus-within:shadow-[0_22px_58px_rgba(15,23,42,0.32)] motion-reduce:transition-none sm:h-[52px] [&_button]:cursor-pointer",
+                "flex h-12 cursor-text items-center border border-white/50 px-3.5 text-slate-800 shadow-[0_16px_42px_rgba(15,23,42,0.2)] backdrop-blur-2xl transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-white/95 focus-within:shadow-[0_22px_58px_rgba(15,23,42,0.32)] motion-reduce:transition-none sm:h-[52px] [&_button]:cursor-pointer",
                 isSuggestionOpen
                   ? "rounded-b-none rounded-t-glass border-b-slate-400/20 bg-slate-100"
                   : "rounded-glass bg-white/55 focus-within:bg-white/80",
@@ -343,6 +358,7 @@ export function SearchEngineBox() {
               }}
             >
               <SearchEngineSelector
+                anchorElement={searchBoxAnchor}
                 engines={searchEngines}
                 selectedEngine={selectedEngine}
                 temporaryEngine={temporaryEngine}
@@ -358,7 +374,7 @@ export function SearchEngineBox() {
                 }}
               />
 
-              <div className="mx-1 h-6 w-px shrink-0 bg-slate-500/30" />
+              <div className="mx-3 h-6 w-px shrink-0 bg-slate-500/30" />
 
               <form
                 className="flex min-w-0 flex-1 items-center"
@@ -366,7 +382,7 @@ export function SearchEngineBox() {
               >
                 <input
                   ref={inputRef}
-                  className="min-w-0 flex-1 bg-transparent px-3 text-[15px] text-slate-800 outline-none placeholder:text-slate-600/75 sm:text-base [&::-webkit-search-cancel-button]:appearance-none"
+                  className="min-w-0 flex-1 bg-transparent text-[15px] text-slate-800 outline-none placeholder:text-slate-600/75 sm:text-base [&::-webkit-search-cancel-button]:appearance-none"
                   type="search"
                   role="combobox"
                   value={query}
@@ -405,6 +421,7 @@ export function SearchEngineBox() {
                   : null
               }
               onAccept={acceptSuggestion}
+              onLocateBookmark={locateBookmarkSuggestion}
             />
           ) : null}
         </div>

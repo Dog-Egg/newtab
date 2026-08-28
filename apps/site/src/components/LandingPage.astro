@@ -213,19 +213,19 @@ const buttonBase =
           <div
             class="mb-6 font-mono text-[10px] uppercase tracking-[.14em] text-brand"
           >
-            {t.features.spotlight.label}
+            {t.features.search.label}
           </div>
           <h3
             class="m-0 max-w-[440px] text-[clamp(34px,3.8vw,54px)] font-normal leading-[1.04] tracking-[-.055em]"
           >
-            {t.features.spotlight.title}
+            {t.features.search.title}
           </h3>
           <p class="mb-7 mt-6 max-w-[460px] text-sm leading-[1.8] text-muted">
-            {t.features.spotlight.description}
+            {t.features.search.description}
           </p>
           <ul class="m-0 grid list-none gap-3 p-0">
             {
-              t.features.spotlight.points.map((point) => (
+              t.features.search.points.map((point) => (
                 <li class="flex items-center gap-3 text-[13px] text-[#5f5b55]">
                   <span
                     class="size-1.5 shrink-0 rounded-full bg-brand"
@@ -241,12 +241,12 @@ const buttonBase =
           class="relative flex min-h-[520px] items-center justify-center overflow-hidden px-[clamp(24px,4vw,62px)] py-[70px] max-lg:min-h-0 max-sm:px-3 max-sm:py-10"
         >
           <SearchShowcase
-            query={t.features.spotlight.preview.query}
-            engineHost={t.features.spotlight.preview.engineHost}
-            searchAction={t.features.spotlight.preview.searchAction}
-            groupLabel={t.features.spotlight.preview.groupLabel}
-            shortcuts={t.features.spotlight.preview.shortcuts}
-            ariaLabel={t.features.spotlight.imageAlt}
+            query={t.features.search.preview.query}
+            engineHost={t.features.search.preview.engineHost}
+            searchAction={t.features.search.preview.searchAction}
+            groupLabel={t.features.search.preview.groupLabel}
+            bookmarks={t.features.search.preview.bookmarks}
+            ariaLabel={t.features.search.imageAlt}
           />
         </div>
       </div>
@@ -323,12 +323,12 @@ const buttonBase =
         aria-hidden="true"
       >
         <span
-          class="absolute left-[19%] top-[8%] font-serif text-[380px] font-light leading-none text-brand max-sm:left-[10%] max-sm:text-[260px]"
+          class="absolute left-[19%] top-[calc(38%_-_190px)] font-serif text-[380px] font-light leading-none text-brand max-[1199px]:left-[10%] max-[1199px]:top-[calc(38%_-_160px)] max-[1199px]:text-[320px] max-lg:left-[4%] max-lg:top-[calc(38%_-_140px)] max-lg:text-[280px] max-md:left-[8%] max-md:top-[calc(38%_-_150px)] max-md:text-[300px] max-sm:left-[10%] max-sm:top-[calc(38%_-_110px)] max-sm:text-[220px]"
           >{`{`}</span
         ><span
-          class="absolute left-1/2 top-1/2 size-[115px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand shadow-[0_0_0_18px_rgba(255,79,36,.12)]"
+          class="absolute left-1/2 top-1/2 size-[clamp(88px,12vw,115px)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand shadow-[0_0_0_clamp(14px,1.4vw,18px)_rgba(255,79,36,.12)]"
         ></span><span
-          class="absolute right-[19%] top-[31%] font-serif text-[380px] font-light leading-none text-brand max-sm:right-[10%] max-sm:text-[260px]"
+          class="absolute right-[19%] top-[calc(62%_-_190px)] font-serif text-[380px] font-light leading-none text-brand max-[1199px]:right-[10%] max-[1199px]:top-[calc(62%_-_160px)] max-[1199px]:text-[320px] max-lg:right-[4%] max-lg:top-[calc(62%_-_140px)] max-lg:text-[280px] max-md:right-[8%] max-md:top-[calc(62%_-_150px)] max-md:text-[300px] max-sm:right-[10%] max-sm:top-[calc(62%_-_110px)] max-sm:text-[220px]"
           >{`}`}</span
         >
       </div>

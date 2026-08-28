@@ -2,7 +2,8 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { platform } from "@platform";
 import { App } from "./App";
-import { LauncherProvider } from "./Launcher/LauncherProvider";
+import { BookmarkNavigationProvider } from "./Launcher/BookmarkNavigationProvider";
+import { BookmarkProvider } from "./Launcher/BookmarkProvider";
 import { SettingsProvider } from "./Settings/SettingsProvider";
 import { normalizeSettings } from "./Settings/settings";
 import i18n from "./i18n";
@@ -27,19 +28,22 @@ async function main() {
     console.error("Failed to apply the initial locale", error);
   }
 
-  const initialLauncherCategories = await platform.launcher
-    .read(initialSettings.locale)
+  // Extension 首次读取书签树时会先完成旧 Launcher 的一次性导出。
+  const initialBookmarks = await platform.bookmarks
+    .read()
     .catch((error: unknown) => {
-      console.error("Failed to read initial launcher", error);
+      console.error("Failed to read browser bookmarks", error);
       return [];
     });
 
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <SettingsProvider initialSettings={initialSettings}>
-        <LauncherProvider initialCategories={initialLauncherCategories}>
-          <App />
-        </LauncherProvider>
+        <BookmarkProvider initialBookmarks={initialBookmarks}>
+          <BookmarkNavigationProvider>
+            <App />
+          </BookmarkNavigationProvider>
+        </BookmarkProvider>
       </SettingsProvider>
     </StrictMode>,
   );

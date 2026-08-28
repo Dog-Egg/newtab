@@ -27,11 +27,11 @@ const copy = isEnglish
   ? {
       lang: "en",
       title: `Privacy Policy — ${PRODUCT_NAME}`,
-      description: `How ${PRODUCT_NAME} handles browser bookmarks, shortcuts, settings, and third-party requests.`,
+      description: `How ${PRODUCT_NAME} handles browser bookmarks, settings, selected-text searches, and third-party requests.`,
       label: "PRIVACY POLICY",
       heading: "Your new tab should stay yours.",
-      summary: `${PRODUCT_NAME} has no account system, advertising, analytics, or developer-operated data server. Your shortcuts and preferences are stored locally in your browser. Some features make requests to services you choose or to image providers, as explained below.`,
-      effective: "Effective July 19, 2026",
+      summary: `${PRODUCT_NAME} has no account system, advertising, analytics, or developer-operated data server. It works directly with your browser’s bookmark tree, while preferences stay in local extension storage. Some features make requests to services you choose or to image providers, as explained below.`,
+      effective: "Effective July 30, 2026",
       home: "Back to NewTab",
       contents: "On this page",
       sections: [
@@ -43,27 +43,27 @@ const copy = isEnglish
         [
           "data",
           "2. Information handled by the extension",
-          `<p>${PRODUCT_NAME} handles only the information needed to provide its new-tab features:</p><ul><li><strong>Shortcuts and bookmarks:</strong> website titles, URLs, category and folder names, and related ordering information that you create or choose to import.</li><li><strong>Current page information:</strong> the title and URL of the page are used only when you select the “Add Website to Category” command from the right-click menu.</li><li><strong>Preferences:</strong> language, selected and custom search engines, hidden search engines, wallpaper URL, shortcut size, wallpaper overlay, and similar display settings.</li></ul><p>The extension does not request your name, email address, payment information, passwords, precise location, personal communications, or health information.</p>`,
+          `<p>${PRODUCT_NAME} handles only the information needed to provide its new-tab features:</p><ul><li><strong>Browser bookmarks:</strong> website titles, URLs, folder names, bookmark-root information, and ordering data from your browser bookmark tree.</li><li><strong>Selected text:</strong> when you explicitly choose the ${PRODUCT_NAME} search command from a page’s right-click menu, the browser provides the selected text so the extension can open a search with your chosen engine.</li><li><strong>Preferences:</strong> language, selected and custom search engines, hidden search engines, wallpaper URL, icon size, wallpaper overlay, and similar display settings.</li></ul><p>The extension does not request your name, email address, payment information, passwords, precise location, personal communications, or health information.</p>`,
         ],
         [
           "local-storage",
           "3. Local storage and retention",
-          `<p>Shortcuts, imported bookmarks, and preferences are stored with the browser’s local extension storage. They are not uploaded to a server operated by the ${PRODUCT_NAME} developer and are not synchronized through a ${PRODUCT_NAME} account.</p><p>Data remains in your browser until you edit or delete it, clear the extension’s data, or uninstall the extension. Uninstalling the extension normally removes its local extension storage.</p>`,
+          `<p>Your bookmarks remain in the browser’s bookmark store. ${PRODUCT_NAME} does not make a separate copy of the bookmark tree in its extension storage. When you create, edit, move, or delete a bookmark in ${PRODUCT_NAME}, the change is made directly to that store.</p><p>Preferences are saved in local extension storage. They are not uploaded to a server operated by the ${PRODUCT_NAME} developer or synchronized through a ${PRODUCT_NAME} account. Your browser may synchronize bookmarks through its own account and sync settings; that is controlled by the browser provider, not ${PRODUCT_NAME}. Uninstalling ${PRODUCT_NAME} normally removes its extension preferences but does not remove your browser bookmarks.</p>`,
         ],
         [
           "permissions",
           "4. Browser permissions",
-          `<ul><li><strong>bookmarks:</strong> reads your browser bookmark tree only after you explicitly choose to import bookmarks. The imported titles, URLs, and folders become local ${PRODUCT_NAME} shortcuts.</li><li><strong>contextMenus:</strong> adds a right-click command that lets you save the current page title and URL to a category you select.</li><li><strong>storage:</strong> saves shortcuts, categories, search-engine settings, language, wallpaper settings, and other preferences locally.</li></ul>`,
+          `<ul><li><strong>bookmarks:</strong> reads and displays your browser bookmark tree whenever the new-tab page is used, listens for bookmark changes, and lets you create, edit, move, reorder, and delete bookmarks and folders directly.</li><li><strong>contextMenus:</strong> adds a right-click command for searching text you have selected with a configured search engine.</li><li><strong>storage:</strong> saves search-engine settings, language, wallpaper settings, icon size, and other preferences locally.</li></ul>`,
         ],
         [
           "external-services",
           "5. Requests to external services",
-          `<p>${PRODUCT_NAME} does not send data to a developer-operated backend. The following user-facing features may contact third parties:</p><ul><li><strong>Search:</strong> when you submit a search, your query is sent directly to the search engine you selected (for example, Google, Bing, or a custom provider). That provider’s privacy policy applies.</li><li><strong>Opening shortcuts:</strong> when you open a shortcut, your browser connects to the destination website as it normally would.</li><li><strong>Wallpapers:</strong> the default wallpaper is loaded from Unsplash. If you set a custom wallpaper URL, your browser requests the image from that provider. The provider may receive standard request information such as your IP address and browser details.</li><li><strong>Website icons:</strong> builds configured to show remote website logos may send the domain portion of a saved shortcut to logo.dev to request an icon. The full page path, bookmark title, and your other shortcuts are not included in that icon request.</li></ul><p>${PRODUCT_NAME} does not control these third-party services. Their own privacy policies govern the information they receive.</p>`,
+          `<p>${PRODUCT_NAME} does not send data to a developer-operated backend. The following user-facing features may contact third parties:</p><ul><li><strong>Search:</strong> when you submit a search from the new-tab page or selected-text context menu, your query is sent directly to the search engine you selected (for example, Google, Bing, or a custom provider). That provider’s privacy policy applies.</li><li><strong>Opening bookmarks:</strong> when you open a bookmark, your browser connects to the destination website as it normally would.</li><li><strong>Wallpapers:</strong> the default wallpaper is loaded from Unsplash. If you set a custom wallpaper URL, your browser requests the image from that provider. The provider may receive standard request information such as your IP address and browser details.</li><li><strong>Website icons:</strong> in builds configured to show remote website logos, the extension may send the domain portion of a bookmark URL to logo.dev to request an icon. The full page path, bookmark title, and your other bookmarks are not included in that icon request.</li></ul><p>${PRODUCT_NAME} does not control these third-party services. Their own privacy policies govern the information they receive.</p>`,
         ],
         [
           "sharing",
           "6. Sharing, selling, and advertising",
-          `<p>We do not sell user data. We do not use or transfer user data for personalized advertising, retargeting, creditworthiness, lending, or unrelated purposes. The ${PRODUCT_NAME} developer does not receive or have access to your locally stored shortcuts or settings.</p><p>Any transmission initiated by the extension is limited to providing a disclosed feature, such as performing a search, opening a site, displaying the default wallpaper, or loading an image from a URL you provide.</p>`,
+          `<p>We do not sell user data. We do not use or transfer user data for personalized advertising, retargeting, creditworthiness, lending, or unrelated purposes. The ${PRODUCT_NAME} developer does not receive or have access to your browser bookmarks or locally stored settings.</p><p>Any transmission initiated by the extension is limited to providing a disclosed feature, such as performing a search, opening a bookmark, displaying the default wallpaper, or loading an image from a URL you provide.</p>`,
         ],
         [
           "limited-use",
@@ -73,12 +73,12 @@ const copy = isEnglish
         [
           "edge-store",
           "8. Supplemental disclosure for the Microsoft Edge Add-ons version",
-          `<p>This section applies only to the version distributed through Microsoft Edge Add-ons. Its data-handling practices are the same as those described in this policy. The extension accesses bookmarks, current-page information, and locally stored settings only to provide its disclosed, user-facing features. This information is not uploaded to a developer-operated server and is not used for advertising, analytics, sale, or purposes unrelated to the extension’s functionality.</p>`,
+          `<p>This section applies only to the version distributed through Microsoft Edge Add-ons. Its data-handling practices are the same as those described in this policy. The extension accesses browser bookmarks, selected text used with its context-menu search command, and locally stored settings only to provide its disclosed, user-facing features. This information is not uploaded to a developer-operated server and is not used for advertising, analytics, sale, or purposes unrelated to the extension’s functionality.</p>`,
         ],
         [
           "security",
           "9. Security",
-          `<p>${PRODUCT_NAME} minimizes data handling by keeping extension data in browser-managed local storage. External resources configured by the developer use HTTPS. A custom URL you provide is subject to the security of that URL and its provider. No method of storage or transmission is completely secure, but we limit access and transmission to what the disclosed features require.</p>`,
+          `<p>${PRODUCT_NAME} minimizes data handling by using the browser’s bookmark store and browser-managed local extension storage. External resources configured by the developer use HTTPS. A custom URL you provide is subject to the security of that URL and its provider. No method of storage or transmission is completely secure, but we limit access and transmission to what the disclosed features require.</p>`,
         ],
         [
           "children",
@@ -100,11 +100,11 @@ const copy = isEnglish
   : {
       lang: "zh-CN",
       title: `隐私政策 — ${PRODUCT_NAME}`,
-      description: `${PRODUCT_NAME} 如何处理浏览器书签、快捷方式、设置及第三方请求。`,
+      description: `${PRODUCT_NAME} 如何处理浏览器书签、设置、划词搜索及第三方请求。`,
       label: "隐私政策",
       heading: "你的新标签页，应该只属于你。",
-      summary: `${PRODUCT_NAME} 没有账号系统、广告、数据分析或开发者运营的数据服务器。快捷方式和偏好设置保存在浏览器本地。部分功能会向你选择的服务或图片提供商发起请求，具体说明如下。`,
-      effective: "生效日期：2026 年 7 月 19 日",
+      summary: `${PRODUCT_NAME} 没有账号系统、广告、数据分析或开发者运营的数据服务器。扩展直接使用浏览器书签树，偏好设置保存在扩展本地存储中。部分功能会向你选择的服务或图片提供商发起请求，具体说明如下。`,
+      effective: "生效日期：2026 年 7 月 30 日",
       home: "返回 NewTab",
       contents: "本页目录",
       sections: [
@@ -116,42 +116,42 @@ const copy = isEnglish
         [
           "data",
           "2. 扩展处理的信息",
-          `<p>${PRODUCT_NAME} 仅处理实现新标签页功能所需的信息：</p><ul><li><strong>快捷方式和书签：</strong>你创建或选择导入的网站标题、网址、分类及文件夹名称，以及相关排序信息。</li><li><strong>当前网页信息：</strong>仅当你在右键菜单中选择“将网站添加到分类”时，扩展才会使用当前网页的标题和网址。</li><li><strong>偏好设置：</strong>语言、选中及自定义的搜索引擎、隐藏的搜索引擎、壁纸网址、快捷方式大小、壁纸遮罩和类似显示设置。</li></ul><p>扩展不会要求你的姓名、电子邮箱、付款信息、密码、精确位置、私人通信或健康信息。</p>`,
+          `<p>${PRODUCT_NAME} 仅处理实现新标签页功能所需的信息：</p><ul><li><strong>浏览器书签：</strong>浏览器书签树中的网站标题、网址、文件夹名称、书签根目录信息及排序数据。</li><li><strong>选中的文字：</strong>仅当你主动在网页右键菜单中选择 ${PRODUCT_NAME} 搜索命令时，浏览器才会把选中的文字提供给扩展，以便使用你选择的搜索引擎打开搜索。</li><li><strong>偏好设置：</strong>语言、选中及自定义的搜索引擎、隐藏的搜索引擎、壁纸网址、图标大小、壁纸遮罩和类似显示设置。</li></ul><p>扩展不会要求你的姓名、电子邮箱、付款信息、密码、精确位置、私人通信或健康信息。</p>`,
         ],
         [
           "local-storage",
           "3. 本地存储与保留期限",
-          `<p>快捷方式、导入的书签和偏好设置使用浏览器的扩展本地存储保存，不会上传到 ${PRODUCT_NAME} 开发者运营的服务器，也不会通过 ${PRODUCT_NAME} 账号同步。</p><p>这些数据会保留在浏览器中，直至你编辑或删除它们、清除扩展数据，或卸载扩展。卸载扩展通常会同时删除其本地扩展存储。</p>`,
+          `<p>你的书签保存在浏览器的书签存储中。${PRODUCT_NAME} 不会在扩展存储中额外复制整棵书签树。你在 ${PRODUCT_NAME} 中新建、编辑、移动或删除书签时，修改会直接写入浏览器书签。</p><p>偏好设置保存在扩展本地存储中，不会上传到 ${PRODUCT_NAME} 开发者运营的服务器，也不会通过 ${PRODUCT_NAME} 账号同步。浏览器可能根据你在浏览器账号中的同步设置同步书签；该行为由浏览器提供商控制，与 ${PRODUCT_NAME} 无关。卸载 ${PRODUCT_NAME} 通常会删除扩展偏好设置，但不会删除你的浏览器书签。</p>`,
         ],
         [
           "permissions",
           "4. 浏览器权限",
-          `<ul><li><strong>bookmarks：</strong>仅在你主动选择导入书签后读取浏览器书签树。导入的标题、网址和文件夹会成为保存在本地的 ${PRODUCT_NAME} 快捷方式。</li><li><strong>contextMenus：</strong>在右键菜单中添加命令，让你把当前网页的标题和网址保存到所选分类。</li><li><strong>storage：</strong>在本地保存快捷方式、分类、搜索引擎设置、语言、壁纸设置及其他偏好。</li></ul>`,
+          `<ul><li><strong>bookmarks：</strong>在使用新标签页时读取并展示浏览器书签树、监听书签变化，并允许你直接新建、编辑、移动、排序和删除书签及文件夹。</li><li><strong>contextMenus：</strong>在右键菜单中添加命令，用配置的搜索引擎搜索你选中的文字。</li><li><strong>storage：</strong>在本地保存搜索引擎设置、语言、壁纸设置、图标大小及其他偏好。</li></ul>`,
         ],
         [
           "external-services",
           "5. 向外部服务发起的请求",
-          `<p>${PRODUCT_NAME} 不会把数据发送到开发者运营的后端。以下面向用户的功能可能连接第三方：</p><ul><li><strong>搜索：</strong>当你提交搜索时，搜索词会直接发送给你选择的搜索引擎（例如 Google、Bing 或自定义提供商），并受该提供商隐私政策约束。</li><li><strong>打开快捷方式：</strong>打开快捷方式时，浏览器会像正常访问网站一样连接目标网站。</li><li><strong>壁纸：</strong>默认壁纸从 Unsplash 加载。如果你设置自定义壁纸网址，浏览器会向相应提供商请求图片。提供商可能收到 IP 地址、浏览器信息等标准请求信息。</li><li><strong>网站图标：</strong>如果某个构建版本启用了远程网站标志，扩展可能把已保存快捷方式的域名部分发送给 logo.dev 以请求图标。该请求不会包含完整页面路径、书签标题或其他快捷方式。</li></ul><p>${PRODUCT_NAME} 无法控制这些第三方服务；它们收到的信息受各自隐私政策约束。</p>`,
+          `<p>${PRODUCT_NAME} 不会把数据发送到开发者运营的后端。以下面向用户的功能可能连接第三方：</p><ul><li><strong>搜索：</strong>当你从新标签页或划词搜索右键菜单提交搜索时，搜索词会直接发送给你选择的搜索引擎（例如 Google、Bing 或自定义提供商），并受该提供商隐私政策约束。</li><li><strong>打开书签：</strong>打开书签时，浏览器会像正常访问网站一样连接目标网站。</li><li><strong>壁纸：</strong>默认壁纸从 Unsplash 加载。如果你设置自定义壁纸网址，浏览器会向相应提供商请求图片。提供商可能收到 IP 地址、浏览器信息等标准请求信息。</li><li><strong>网站图标：</strong>在启用远程网站标志的构建版本中，扩展可能把书签网址的域名部分发送给 logo.dev 以请求图标。该请求不会包含完整页面路径、书签标题或其他书签。</li></ul><p>${PRODUCT_NAME} 无法控制这些第三方服务；它们收到的信息受各自隐私政策约束。</p>`,
         ],
         [
           "sharing",
           "6. 分享、出售与广告",
-          `<p>我们不会出售用户数据，不会将用户数据用于或传输给第三方以提供个性化广告、再营销、信用评估、贷款或其他无关用途。${PRODUCT_NAME} 开发者不会收到，也无法访问你保存在本地的快捷方式或设置。</p><p>扩展发起的任何传输仅限于提供已披露的功能，例如执行搜索、打开网站、显示默认壁纸，或从你提供的网址加载图片。</p>`,
+          `<p>我们不会出售用户数据，不会将用户数据用于或传输给第三方以提供个性化广告、再营销、信用评估、贷款或其他无关用途。${PRODUCT_NAME} 开发者不会收到，也无法访问你的浏览器书签或保存在本地的设置。</p><p>扩展发起的任何传输仅限于提供已披露的功能，例如执行搜索、打开书签、显示默认壁纸，或从你提供的网址加载图片。</p>`,
         ],
         [
           "limited-use",
           "7. Chrome 应用商店版本补充声明",
-          `<p>本节仅适用于通过 Chrome 应用商店分发的版本。${PRODUCT_NAME} 对从 Google API 获得的信息的使用和传输遵守 <a href="https://developer.chrome.com/docs/webstore/program-policies/user-data-faq" rel="noreferrer">Chrome 应用商店用户数据政策</a>，包括“有限使用”要求。</p><p>通过扩展权限访问的信息仅用于提供或改进扩展的单一用途及面向用户的功能。除提供这些功能、遵守适用法律、保护安全或政策允许的业务转移所必需外，不会传输这些信息；绝不会用于个性化广告。除该政策允许的有限情形外，也不允许人工读取这些信息。</p>`,
+          `<p>本节仅适用于通过 Chrome 应用商店分发的版本。${PRODUCT_NAME} 对从 Google API 获得的信息的使用和传输遵守 <a href="https://developer.chrome.com/docs/webstore/program-policies/user-data-faq" rel="noreferrer">Chrome 应用商店用户数据政策</a>，包括“有限使用”要求。</p><p>通过扩展权限访问的信息仅用于提供或改进扩展的单一用途及面向用户的功能。除非为提供这些功能、遵守适用法律、保护安全或完成政策允许的业务转移而有必要，否则不会传输这些信息；绝不会用于个性化广告。除该政策允许的有限情形外，也不允许人工读取这些信息。</p>`,
         ],
         [
           "edge-store",
           "8. Microsoft Edge 加载项版本补充说明",
-          `<p>本节仅适用于通过 Microsoft Edge 加载项商店分发的版本。该版本的数据处理方式与本政策所述一致。扩展仅为提供已披露的面向用户的功能而访问书签、当前网页信息和本地设置；这些信息不会上传至开发者运营的服务器，也不会用于广告、数据分析、出售或与扩展功能无关的用途。</p>`,
+          `<p>本节仅适用于通过 Microsoft Edge 加载项商店分发的版本。该版本的数据处理方式与本政策所述一致。扩展仅为提供已披露的面向用户的功能而访问浏览器书签、用于右键搜索命令的选中文字和本地设置；这些信息不会上传至开发者运营的服务器，也不会用于广告、数据分析、出售或与扩展功能无关的用途。</p>`,
         ],
         [
           "security",
           "9. 安全",
-          `<p>${PRODUCT_NAME} 通过把扩展数据保存在浏览器管理的本地存储中来减少数据处理。开发者配置的外部资源使用 HTTPS；你自行提供的网址则取决于该网址及其提供商的安全性。任何存储或传输方式都无法保证绝对安全，但我们将访问和传输限制在已披露功能所需范围内。</p>`,
+          `<p>${PRODUCT_NAME} 通过使用浏览器的书签存储和浏览器管理的扩展本地存储来减少数据处理。开发者配置的外部资源使用 HTTPS；你自行提供的网址则取决于该网址及其提供商的安全性。任何存储或传输方式都无法保证绝对安全，但我们将访问和传输限制在已披露功能所需范围内。</p>`,
         ],
         [
           "children",

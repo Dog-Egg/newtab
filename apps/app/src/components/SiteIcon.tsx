@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import clsx from "clsx";
 
 const SITE_ICON_GRADIENTS = [
@@ -13,8 +13,6 @@ const SITE_ICON_GRADIENTS = [
 ];
 
 const LOGO_DEV_API_TOKEN = import.meta.env.VITE_LOGO_DEV_API_TOKEN?.trim();
-
-const loadedSiteIconImageUrls = new Set<string>();
 
 type SiteIconProps = {
   title: string;
@@ -84,15 +82,8 @@ export function SiteIcon({
 }: SiteIconProps) {
   const imageUrl = getSiteIconImageUrl(url, format);
   const iconText = getSiteIconText({ title, url });
-  const [isImageLoaded, setIsImageLoaded] = useState(() =>
-    Boolean(imageUrl && loadedSiteIconImageUrls.has(imageUrl)),
-  );
-
-  useEffect(() => {
-    setIsImageLoaded(
-      Boolean(imageUrl && loadedSiteIconImageUrls.has(imageUrl)),
-    );
-  }, [imageUrl]);
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
+  const hasImageError = failedImageUrl === imageUrl;
 
   return (
     <span
@@ -102,25 +93,22 @@ export function SiteIcon({
       )}
       style={{
         ...style,
-        background: isImageLoaded ? "transparent" : getSiteIconBackground(seed),
+        background: !hasImageError
+          ? "transparent"
+          : getSiteIconBackground(seed),
       }}
     >
-      {isImageLoaded ? null : iconText}
+      {!hasImageError ? null : iconText}
       {imageUrl ? (
         <img
           alt=""
           className={clsx(
             "absolute inset-0 size-full object-cover",
-            isImageLoaded ? "opacity-100" : "opacity-0",
+            hasImageError && "hidden",
           )}
           src={imageUrl}
-          onLoad={() => {
-            loadedSiteIconImageUrls.add(imageUrl);
-            setIsImageLoaded(true);
-          }}
           onError={() => {
-            loadedSiteIconImageUrls.delete(imageUrl);
-            setIsImageLoaded(false);
+            setFailedImageUrl(imageUrl);
           }}
         />
       ) : null}

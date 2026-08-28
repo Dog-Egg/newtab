@@ -1,4 +1,4 @@
-import type { ShortcutCategory, ShortcutItem } from "../Launcher/launcher";
+import type { BrowserBookmarkItem } from "../Launcher/bookmarkTree";
 import {
   getSearchEngineMatches,
   type SearchEngine,
@@ -11,18 +11,18 @@ const MAX_SEARCH_SUGGESTIONS = 8;
 export type SearchSuggestion =
   | { type: "engine"; engine: SearchEngine; matches: SearchEngineMatches }
   | {
-      type: "shortcut";
-      shortcut: ShortcutItem;
+      type: "bookmark";
+      bookmark: BrowserBookmarkItem;
       matches: { title: TextMatch[]; domain: TextMatch[] };
     };
 
 export function getSearchSuggestionKey(suggestion: SearchSuggestion) {
   return suggestion.type === "engine"
     ? `engine:${suggestion.engine.id}`
-    : `shortcut:${suggestion.shortcut.id}`;
+    : `bookmark:${suggestion.bookmark.id}`;
 }
 
-function getShortcutUrlMatchCandidates(url: string) {
+function getBookmarkUrlMatchCandidates(url: string) {
   try {
     const parsedUrl = new URL(url);
     const hostname = parsedUrl.hostname
@@ -84,76 +84,67 @@ function getShortcutUrlMatchCandidates(url: string) {
   }
 }
 
-function findShortcuts(categories: ShortcutCategory[], input: string) {
+function findBookmarks(bookmarks: BrowserBookmarkItem[], input: string) {
   const value = input.trim().toLowerCase();
   if (!value) return [];
 
   const urlPrefix = value
     .replace(/^[a-z][a-z\d+.-]*:\/\//, "")
     .replace(/^www\./, "");
-  const seenShortcutIds = new Set<string>();
+  const seenBookmarkIds = new Set<string>();
 
-  return categories
-    .flatMap((category) =>
-      category.shortcuts.flatMap((node) => {
-        const shortcuts = node.type === "folder" ? node.children : [node];
+  return bookmarks
+    .flatMap((bookmark) => {
+      if (seenBookmarkIds.has(bookmark.id)) return [];
 
-        return shortcuts.flatMap((shortcut) => {
-          if (seenShortcutIds.has(shortcut.id)) return [];
+      const trimmedTitle = bookmark.title.trim();
+      const titleMatchIndex = trimmedTitle.toLowerCase().indexOf(value);
+      const titleStart = bookmark.title.indexOf(trimmedTitle);
+      const urlMatch = getBookmarkUrlMatchCandidates(bookmark.url).find(
+        (candidate) => candidate.value.startsWith(urlPrefix),
+      );
+      if (titleMatchIndex < 0 && !urlMatch) return [];
 
-          const trimmedTitle = shortcut.title.trim();
-          const titleMatchIndex = trimmedTitle.toLowerCase().indexOf(value);
-          const titleStart = shortcut.title.indexOf(trimmedTitle);
-          const urlMatch = getShortcutUrlMatchCandidates(shortcut.url).find(
-            (candidate) => candidate.value.startsWith(urlPrefix),
-          );
-          if (titleMatchIndex < 0 && !urlMatch) return [];
-
-          seenShortcutIds.add(shortcut.id);
-          return [
-            {
-              shortcut,
-              matchIndex: Math.max(titleMatchIndex, 0),
-              matches: {
-                title:
-                  titleMatchIndex >= 0
-                    ? [
-                        {
-                          start: titleStart + titleMatchIndex,
-                          length: value.length,
-                        },
-                      ]
-                    : [],
-                domain: urlMatch
-                  ? [
-                      {
-                        start: urlMatch.domainStart,
-                        length: Math.min(
-                          urlPrefix.length,
-                          urlMatch.domainLength,
-                        ),
-                      },
-                    ]
-                  : [],
-              },
-            },
-          ];
-        });
-      }),
-    )
+      seenBookmarkIds.add(bookmark.id);
+      return [
+        {
+          bookmark,
+          matchIndex: Math.max(titleMatchIndex, 0),
+          matches: {
+            title:
+              titleMatchIndex >= 0
+                ? [
+                    {
+                      start: titleStart + titleMatchIndex,
+                      length: value.length,
+                    },
+                  ]
+                : [],
+            domain: urlMatch
+              ? [
+                  {
+                    start: urlMatch.domainStart,
+                    length: Math.min(urlPrefix.length, urlMatch.domainLength),
+                  },
+                ]
+              : [],
+          },
+        },
+      ];
+    })
     .sort((left, right) => left.matchIndex - right.matchIndex)
-    .map(({ shortcut, matches }) => ({ shortcut, matches }));
+    .map(({ bookmark, matches }) => ({ bookmark, matches }));
 }
 
 export function findSearchSuggestions({
   engines,
-  categories,
+  bookmarks,
   input,
   selectedEngineId,
   temporaryEngineId,
 }: {
   engines: SearchEngine[];
-  categories: ShortcutCategory[];
+  bookmarks: BrowserBookmarkItem[];
   input: string;
   selectedEngineId: string;
   temporaryEngineId: string | null;
@@ -169,16 +160,16 @@ export function findSearchSuggestions({
 
     return [{ type: "engine" as const, engine, matches }];
   });
-  const shortcutSuggestions: SearchSuggestion[] = findShortcuts(
-    categories,
+  const bookmarkSuggestions: SearchSuggestion[] = findBookmarks(
+    bookmarks,
     input,
-  ).map(({ shortcut, matches }) => ({
-    type: "shortcut",
-    shortcut,
+  ).map(({ bookmark, matches }) => ({
+    type: "bookmark",
+    bookmark,
     matches,
   }));
 
-  return [...engineSuggestions, ...shortcutSuggestions].slice(
+  return [...engineSuggestions, ...bookmarkSuggestions].slice(
     0,
     MAX_SEARCH_SUGGESTIONS,
   );

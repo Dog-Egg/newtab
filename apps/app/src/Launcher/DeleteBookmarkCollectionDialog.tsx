@@ -1,26 +1,27 @@
-import { Dialog, DialogTitle } from "../components/Dialog";
 import { useTranslation } from "react-i18next";
+import { Dialog, DialogTitle } from "../components/Dialog";
 
-export function DeleteShortcutCollectionDialog({
+export function DeleteBookmarkCollectionDialog({
   title,
   collectionName,
-  shortcutCount,
-  keepShortcutsLabel,
+  itemCount,
+  keepItemsLabel,
   deleteAllLabel,
   onClose,
-  onKeepShortcuts,
+  onKeepItems,
   onDeleteAll,
 }: {
   title: string;
   collectionName: string;
-  shortcutCount: number;
-  keepShortcutsLabel: string;
+  itemCount: number;
+  keepItemsLabel: string;
   deleteAllLabel: string;
   onClose: () => void;
-  onKeepShortcuts: () => void;
+  onKeepItems: () => void;
   onDeleteAll: () => void;
 }) {
   const { t } = useTranslation();
+
   return (
     <Dialog onClose={onClose} className="max-w-md p-7">
       {(close) => (
@@ -29,7 +30,7 @@ export function DeleteShortcutCollectionDialog({
           <p className="mt-3 text-sm leading-6 text-white/70">
             {t("launcher.collectionPrompt", {
               name: collectionName,
-              count: shortcutCount,
+              count: itemCount,
             })}
           </p>
           <div className="mt-6 flex flex-col gap-2">
@@ -37,11 +38,11 @@ export function DeleteShortcutCollectionDialog({
               type="button"
               className="rounded-xl bg-white px-4 py-3 text-left text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
               onClick={() => {
-                onKeepShortcuts();
+                onKeepItems();
                 close();
               }}
             >
-              {keepShortcutsLabel}
+              {keepItemsLabel}
             </button>
             <button
               type="button"

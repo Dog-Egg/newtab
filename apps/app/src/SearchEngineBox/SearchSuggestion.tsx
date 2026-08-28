@@ -1,6 +1,6 @@
 import * as Popover from "@radix-ui/react-popover";
 import clsx from "clsx";
-import { Search } from "lucide-react";
+import { LocateFixed, Search } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { SiteIcon } from "../components/SiteIcon";
@@ -20,7 +20,7 @@ export function getSearchSuggestionId(suggestion: SearchSuggestionItem) {
   return `search-suggestion-${getSearchSuggestionKey(suggestion)}`;
 }
 
-function getShortcutDomain(url: string) {
+function getBookmarkDomain(url: string) {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
   } catch {
@@ -79,10 +79,12 @@ export function SearchSuggestion({
   suggestions,
   activeSuggestionKey,
   onAccept,
+  onLocateBookmark,
 }: {
   suggestions: SearchSuggestionItem[];
   activeSuggestionKey: string | null;
   onAccept: (suggestion: SearchSuggestionItem) => void;
+  onLocateBookmark: (bookmarkId: string) => void;
 }) {
   const { t } = useTranslation();
   const activeItemRef = useRef<HTMLElement>(null);
@@ -98,7 +100,7 @@ export function SearchSuggestion({
     <Popover.Portal>
       <Popover.Content
         id={SEARCH_SUGGESTIONS_ID}
-        className="glass-panel z-20 max-h-[min(50rem,var(--radix-popover-content-available-height))] w-[var(--radix-popover-trigger-width)] overflow-y-auto rounded-b-glass rounded-t-none border-t-0 border-white/95 bg-slate-100 p-1.5 pt-2 shadow-[0_22px_58px_rgba(15,23,42,0.32)]"
+        className="glass-panel z-20 flex max-h-[min(50rem,var(--radix-popover-content-available-height))] w-[var(--radix-popover-trigger-width)] flex-col gap-1 overflow-y-auto rounded-b-glass rounded-t-none border-t-0 border-white/95 bg-slate-100 p-1.5 pt-2 shadow-none"
         side="bottom"
         align="start"
         sideOffset={-1}
@@ -114,30 +116,37 @@ export function SearchSuggestion({
           const isEngine = suggestion.type === "engine";
           const title = isEngine
             ? suggestion.engine.name
-            : suggestion.shortcut.title;
+            : suggestion.bookmark.title;
           const url = isEngine
             ? getSearchEngineIconSource(suggestion.engine.urlFormat)
-            : suggestion.shortcut.url;
+            : suggestion.bookmark.url;
           const domain = isEngine
             ? getSearchEngineDomain(suggestion.engine)
-            : getShortcutDomain(suggestion.shortcut.url);
+            : getBookmarkDomain(suggestion.bookmark.url);
           const engineActionText = isEngine
             ? t("search.useEngine", { name: suggestion.engine.name })
             : "";
 
           const className = clsx(
-            "flex min-h-14 w-full items-center gap-3 rounded-xl px-3 text-left text-slate-700 outline-none transition-colors hover:bg-slate-200/80 hover:text-slate-950 motion-reduce:transition-none",
+            "group relative flex min-h-14 w-full items-center gap-3 overflow-hidden rounded-[14px] px-3 text-left text-slate-700 outline-none transition-colors duration-150 focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:ring-offset-1 focus-within:ring-offset-white/20 motion-reduce:transition-none",
+            "hover:bg-slate-200/60 hover:text-slate-950 hover:ring-1 hover:ring-slate-300/60",
             isActive &&
-              "bg-white text-slate-950 shadow-sm ring-1 ring-slate-200/80",
+              "bg-slate-200/60 text-slate-950 ring-1 ring-slate-300/60",
           );
+          const rowChrome = isActive ? (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-2 left-0 z-20 w-1 rounded-r-full bg-blue-600"
+            />
+          ) : null;
           const content = (
-            <>
+            <div className="flex min-w-0 flex-1 items-center gap-3">
               <SiteIcon
                 title={title}
                 url={url}
                 seed={suggestionKey}
                 format="png"
-                className="size-7 rounded-full text-[12px] font-black shadow-sm"
+                className="size-7 rounded-full text-[12px] font-black"
               />
 
               {isEngine ? (
@@ -150,14 +159,7 @@ export function SearchSuggestion({
                       />
                     ) : null}
                   </span>
-                  <span
-                    className={clsx(
-                      "flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold",
-                      isActive
-                        ? "border-blue-600/20 bg-blue-600/10 text-blue-700"
-                        : "border-slate-300 bg-white/60 text-slate-700",
-                    )}
-                  >
+                  <span className="flex shrink-0 items-center gap-2 rounded-[11px] border border-slate-300/90 bg-white/65 px-3 py-2 text-sm font-semibold text-slate-700 transition-colors duration-150 group-hover:border-slate-400/90 group-hover:bg-white/90 motion-reduce:transition-none">
                     <Search aria-hidden="true" className="size-4" />
                     {engineActionText}
                   </span>
@@ -166,11 +168,15 @@ export function SearchSuggestion({
                 <>
                   <span className="min-w-0 flex-1 truncate text-sm">
                     <HighlightedText
-                      text={suggestion.shortcut.title}
+                      text={suggestion.bookmark.title}
                       matches={suggestion.matches.title}
                     />
                   </span>
-                  <span className="max-w-[45%] shrink-0 truncate text-sm text-slate-500">
+                  <span
+                    className={clsx(
+                      "max-w-[45%] shrink-0 truncate text-sm text-slate-500 transition-[color,margin,opacity] duration-150 group-hover:mr-9 group-hover:text-slate-700 group-hover:opacity-75 motion-reduce:transition-none",
+                    )}
+                  >
                     <HighlightedText
                       text={domain ?? ""}
                       matches={suggestion.matches.domain}
@@ -178,12 +184,12 @@ export function SearchSuggestion({
                   </span>
                 </>
               )}
-            </>
+            </div>
           );
 
           if (!isEngine) {
             return (
-              <a
+              <div
                 ref={
                   isActive
                     ? (element) => {
@@ -193,15 +199,34 @@ export function SearchSuggestion({
                 }
                 key={suggestionKey}
                 id={getSearchSuggestionId(suggestion)}
-                className={className}
-                href={suggestion.shortcut.url}
-                target="_parent"
-                rel="noreferrer"
+                className={clsx(className, "group relative")}
                 role="option"
                 aria-selected={isActive}
+                data-active={isActive ? "true" : undefined}
               >
-                {content}
-              </a>
+                {rowChrome}
+                <a
+                  className="flex min-w-0 flex-1 items-center gap-3 self-stretch"
+                  href={suggestion.bookmark.url}
+                  target="_parent"
+                  rel="noreferrer"
+                >
+                  {content}
+                </a>
+                <button
+                  type="button"
+                  className="pointer-events-none absolute right-3 grid size-7 place-items-center rounded-full border border-slate-300/70 bg-white/65 text-slate-500 opacity-0 outline-none transition-[background-color,border-color,color,opacity] duration-150 hover:border-blue-500/70 hover:bg-blue-600 hover:text-white focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-blue-500/60 group-hover:pointer-events-auto group-hover:opacity-100 motion-reduce:transition-none"
+                  aria-label={t("search.locateBookmark", {
+                    name: suggestion.bookmark.title,
+                  })}
+                  title={t("search.locateBookmark", {
+                    name: suggestion.bookmark.title,
+                  })}
+                  onClick={() => onLocateBookmark(suggestion.bookmark.id)}
+                >
+                  <LocateFixed aria-hidden="true" className="size-3.5" />
+                </button>
+              </div>
             );
           }
 
@@ -220,8 +245,10 @@ export function SearchSuggestion({
               type="button"
               role="option"
               aria-selected={isActive}
+              data-active={isActive ? "true" : undefined}
               onClick={() => onAccept(suggestion)}
             >
+              {rowChrome}
               {content}
             </button>
           );

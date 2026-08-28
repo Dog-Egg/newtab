@@ -1,7 +1,6 @@
 import { useCallback, useState, type FormEvent } from "react";
 import { ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { importBrowserBookmarksWithToast } from "../browserBookmarks";
 import { normalizeImageUrl } from "./wallpaper";
 import {
   DEFAULT_LAUNCHER_NODE_SCALE,
@@ -27,38 +26,6 @@ function preloadImage(url: string) {
   });
 }
 
-function BrowserBookmarksImportSettings() {
-  const { t } = useTranslation();
-  const [isImportingBookmarks, setIsImportingBookmarks] = useState(false);
-
-  const handleImportBrowserBookmarks = useCallback(async () => {
-    setIsImportingBookmarks(true);
-    try {
-      await importBrowserBookmarksWithToast();
-    } finally {
-      setIsImportingBookmarks(false);
-    }
-  }, []);
-
-  return (
-    <section className="border-b border-glass-border px-2 py-3.5">
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="min-w-0 text-sm font-medium text-glass-strong">
-          {t("settings.importBookmarks")}
-        </h3>
-        <button
-          className="h-8 shrink-0 rounded-lg bg-glass-selected px-3 text-sm font-medium text-glass-selected-content outline-none transition hover:bg-glass-strong/90 focus-visible:ring-2 focus-visible:ring-glass-focus disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
-          type="button"
-          onClick={handleImportBrowserBookmarks}
-          disabled={isImportingBookmarks}
-        >
-          {t(isImportingBookmarks ? "settings.importing" : "settings.import")}
-        </button>
-      </div>
-    </section>
-  );
-}
-
 function LauncherSizeSettings({
   settings,
   onPreview,
@@ -76,7 +43,7 @@ function LauncherSizeSettings({
           className="text-sm font-medium text-glass-strong"
           htmlFor="launcher-node-size"
         >
-          {t("settings.shortcutSize")}
+          {t("settings.iconSize")}
         </label>
       </div>
       <SettingsRange
@@ -85,7 +52,7 @@ function LauncherSizeSettings({
         max={MAX_LAUNCHER_NODE_SCALE}
         step={LAUNCHER_NODE_SCALE_STEP}
         value={settings.nodeScale}
-        ariaLabel={t("settings.shortcutSize")}
+        ariaLabel={t("settings.iconSize")}
         minLabel={t("settings.small")}
         maxLabel={t("settings.large")}
         defaultValue={DEFAULT_LAUNCHER_NODE_SCALE}
@@ -275,7 +242,6 @@ export function SettingsContent() {
           />
         </div>
       </section>
-      <BrowserBookmarksImportSettings />
       <LauncherSizeSettings
         settings={settings}
         onPreview={previewSettings}

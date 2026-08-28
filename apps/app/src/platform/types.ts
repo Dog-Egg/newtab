@@ -1,6 +1,6 @@
 import type { Settings } from "../Settings/settings";
 import type { AppLocale } from "../i18n/locale";
-import type { ShortcutCategory } from "../Launcher/launcher";
+import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
 
 export const SEARCH_ENGINE_SETTINGS_KEY = "search-engine-settings";
 
@@ -16,27 +16,26 @@ export type StoredSearchEngineSettings = {
   }>;
 };
 
-export type BrowserBookmarksImportResult = {
-  importedCount: number;
-  skippedDuplicateCount: number;
-  folderCount: number;
-  unsupported?: boolean;
-};
-
 export type Platform = {
   defaultLocale: AppLocale;
-  launcher: {
-    read: (locale: AppLocale) => Promise<ShortcutCategory[]>;
-    save: (categories: ShortcutCategory[]) => Promise<void>;
-    subscribe: (
-      locale: AppLocale,
-      onChange: (categories: ShortcutCategory[]) => void,
-    ) => StorageUnsubscribe;
-  };
-  activeCategoryId: {
-    read: () => Promise<string>;
-    save: (categoryId: string) => Promise<void>;
-    subscribe: (onChange: (categoryId: string) => void) => StorageUnsubscribe;
+  bookmarks: {
+    read: () => Promise<BrowserBookmarkNode[]>;
+    create: (bookmark: {
+      parentId: string;
+      title: string;
+      url?: string;
+      index?: number;
+    }) => Promise<BrowserBookmarkNode>;
+    update: (
+      id: string,
+      changes: { title?: string; url?: string },
+    ) => Promise<BrowserBookmarkNode>;
+    move: (
+      id: string,
+      destination: { parentId: string; index?: number },
+    ) => Promise<BrowserBookmarkNode>;
+    remove: (id: string) => Promise<void>;
+    subscribe: (onChange: () => void) => StorageUnsubscribe;
   };
   settings: {
     read: () => Promise<Settings>;
@@ -46,8 +45,5 @@ export type Platform = {
   searchEngineSettings: {
     read: () => Promise<StoredSearchEngineSettings>;
     save: (settings: StoredSearchEngineSettings) => Promise<void>;
-  };
-  browserBookmarks: {
-    import: () => Promise<BrowserBookmarksImportResult>;
   };
 };

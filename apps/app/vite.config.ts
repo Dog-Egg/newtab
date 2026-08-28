@@ -54,6 +54,9 @@ export default defineConfig(({ mode, command }) => {
     },
     build: {
       outDir: isExtension ? "dist/extension" : "dist/web",
+      // Chrome extension pages can reject Vite's modulepreload resource
+      // reuse across extension worlds and report it as an unused preload.
+      ...(isExtension ? { modulePreload: false } : {}),
       rollupOptions: {
         input,
         output: {

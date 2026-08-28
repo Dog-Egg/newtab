@@ -1,9 +1,8 @@
+import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
 import {
-  ACTIVE_CATEGORY_ID_STORAGE_KEY,
-  LAUNCHER_STORAGE_KEY,
-  DEFAULT_CATEGORY_ID,
-  type ShortcutCategory,
-} from "../Launcher/launcher";
+  createWebDefaultBookmarkTree,
+  localizeWebDefaultBookmarkTree,
+} from "../Launcher/webDefaultBookmarks";
 import {
   SEARCH_ENGINE_SETTINGS_KEY,
   type Platform,
@@ -14,75 +13,161 @@ import {
   SETTINGS_STORAGE_KEY,
   type Settings,
 } from "../Settings/settings";
+import i18n from "../i18n";
 import { getLocaleFromLanguage } from "../i18n/locale";
-import { normalizeStoredWebLauncher } from "../Launcher/defaultLauncher";
-import type { AppLocale } from "../i18n";
 
+const WEB_BOOKMARKS_STORAGE_KEY = "web-bookmarks";
+const webBookmarkListeners = new Set<() => void>();
 const defaultLocale = getLocaleFromLanguage(
   new URLSearchParams(window.location.search).get("lang") ?? "en",
 );
 
-function logStorageOperation(
-  operation: "read" | "write",
-  key: string,
-  value: unknown,
-) {
-  if (import.meta.env.DEV) {
-    console.debug(`[persistence:${operation}]`, {
-      storage: "sessionStorage",
-      key,
-      value,
-    });
-  }
+function notifyWebBookmarkListeners() {
+  for (const listener of webBookmarkListeners) listener();
 }
+
+i18n.on("languageChanged", notifyWebBookmarkListeners);
 
 function readJsonStorageValue(key: string) {
   const saved = window.sessionStorage.getItem(key);
-  if (saved === null) {
-    logStorageOperation("read", key, undefined);
-    return undefined;
-  }
-
+  if (saved === null) return undefined;
   try {
-    const value: unknown = JSON.parse(saved);
-    logStorageOperation("read", key, value);
-    return value;
+    return JSON.parse(saved) as unknown;
   } catch {
-    logStorageOperation("read", key, saved);
     return saved;
   }
 }
 
 function writeJsonStorageValue(key: string, value: unknown) {
   window.sessionStorage.setItem(key, JSON.stringify(value));
-  logStorageOperation("write", key, value);
+}
+
+function normalizeWebBookmarkNode(value: unknown): BrowserBookmarkNode | null {
+  if (!value || typeof value !== "object") return null;
+  const node = value as Partial<BrowserBookmarkNode>;
+  if (
+    typeof node.id !== "string" ||
+    !node.id ||
+    typeof node.title !== "string"
+  ) {
+    return null;
+  }
+
+  const common = {
+    id: node.id,
+    title: node.title,
+    parentId: typeof node.parentId === "string" ? node.parentId : undefined,
+    index: typeof node.index === "number" ? node.index : undefined,
+    unmodifiable:
+      node.unmodifiable === "managed" ? ("managed" as const) : undefined,
+  };
+  if (node.type === "item" && typeof node.url === "string") {
+    return { ...common, type: "item", url: node.url };
+  }
+  if (node.type !== "folder" || !Array.isArray(node.children)) return null;
+  return {
+    ...common,
+    type: "folder",
+    folderType: node.folderType,
+    children: node.children.flatMap((child) => {
+      const normalized = normalizeWebBookmarkNode(child);
+      return normalized ? [normalized] : [];
+    }),
+  };
+}
+
+function readStoredWebBookmarks() {
+  const value = readJsonStorageValue(WEB_BOOKMARKS_STORAGE_KEY);
+  if (!Array.isArray(value)) return createWebDefaultBookmarkTree();
+  const tree = value.flatMap((node) => {
+    const normalized = normalizeWebBookmarkNode(node);
+    return normalized ? [normalized] : [];
+  });
+  return tree.length > 0
+    ? localizeWebDefaultBookmarkTree(tree)
+    : createWebDefaultBookmarkTree();
+}
+
+function saveStoredWebBookmarks(tree: BrowserBookmarkNode[]) {
+  writeJsonStorageValue(WEB_BOOKMARKS_STORAGE_KEY, tree);
+  // storage 事件不会回发到当前窗口，主动通知当前预览页面。
+  notifyWebBookmarkListeners();
+}
+
+function mapTree(
+  nodes: BrowserBookmarkNode[],
+  update: (node: BrowserBookmarkNode) => BrowserBookmarkNode,
+): BrowserBookmarkNode[] {
+  return nodes.map((node) => {
+    const withChildren =
+      node.type === "folder"
+        ? { ...node, children: mapTree(node.children, update) }
+        : node;
+    return update(withChildren);
+  });
+}
+
+function insertIntoFolder(
+  nodes: BrowserBookmarkNode[],
+  parentId: string,
+  inserted: BrowserBookmarkNode,
+  requestedIndex?: number,
+): BrowserBookmarkNode[] {
+  return mapTree(nodes, (node) => {
+    if (node.type !== "folder" || node.id !== parentId) return node;
+    const index = Math.min(
+      Math.max(requestedIndex ?? node.children.length, 0),
+      node.children.length,
+    );
+    const children = [...node.children];
+    children.splice(index, 0, { ...inserted, parentId, index });
+    return {
+      ...node,
+      children: children.map((child, childIndex) => ({
+        ...child,
+        index: childIndex,
+      })),
+    };
+  });
+}
+
+function removeFromTree(
+  nodes: BrowserBookmarkNode[],
+  id: string,
+): { tree: BrowserBookmarkNode[]; removed: BrowserBookmarkNode | null } {
+  let removed: BrowserBookmarkNode | null = null;
+  const tree = nodes.flatMap<BrowserBookmarkNode>((node) => {
+    if (node.id === id) {
+      removed = node;
+      return [];
+    }
+    if (node.type === "item") return [node];
+    const result = removeFromTree(node.children, id);
+    if (result.removed) removed = result.removed;
+    return [{ ...node, children: result.tree }];
+  });
+  return { tree, removed };
+}
+
+function findNode(
+  nodes: BrowserBookmarkNode[],
+  id: string,
+): BrowserBookmarkNode | null {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    if (node.type === "folder") {
+      const child = findNode(node.children, id);
+      if (child) return child;
+    }
+  }
+  return null;
 }
 
 function readStoredSearchEngineSettings(): StoredSearchEngineSettings {
-  const storedValue = readJsonStorageValue(SEARCH_ENGINE_SETTINGS_KEY);
-  if (!storedValue || typeof storedValue !== "object") {
-    return {};
-  }
-
-  return storedValue as StoredSearchEngineSettings;
-}
-
-function saveStoredSearchEngineSettings(settings: StoredSearchEngineSettings) {
-  writeJsonStorageValue(SEARCH_ENGINE_SETTINGS_KEY, settings);
-}
-
-function readStoredLauncher(locale: AppLocale) {
-  const storedValue = readJsonStorageValue(LAUNCHER_STORAGE_KEY);
-  return normalizeStoredWebLauncher(storedValue, locale);
-}
-
-function saveStoredLauncher(categories: ShortcutCategory[]) {
-  writeJsonStorageValue(LAUNCHER_STORAGE_KEY, categories);
-}
-
-function readStoredActiveCategoryId() {
-  const value = readJsonStorageValue(ACTIVE_CATEGORY_ID_STORAGE_KEY);
-  return typeof value === "string" ? value : DEFAULT_CATEGORY_ID;
+  const value = readJsonStorageValue(SEARCH_ENGINE_SETTINGS_KEY);
+  return value && typeof value === "object"
+    ? (value as StoredSearchEngineSettings)
+    : {};
 }
 
 function readStoredSettings() {
@@ -92,45 +177,72 @@ function readStoredSettings() {
   );
 }
 
-function saveStoredSettings(settings: Settings) {
-  writeJsonStorageValue(SETTINGS_STORAGE_KEY, settings);
-}
-
 export const platform: Platform = {
   defaultLocale,
-  launcher: {
-    read: async (locale) => readStoredLauncher(locale),
-    save: async (categories) => saveStoredLauncher(categories),
-    subscribe: (locale, onChange) => {
-      const handleStorageChange = (event: StorageEvent) => {
-        if (event.key !== LAUNCHER_STORAGE_KEY) {
-          return;
-        }
-
-        onChange(readStoredLauncher(locale));
-      };
-
-      window.addEventListener("storage", handleStorageChange);
-      return () => window.removeEventListener("storage", handleStorageChange);
+  bookmarks: {
+    read: async () => readStoredWebBookmarks(),
+    create: async ({ parentId, title, url, index }) => {
+      const node: BrowserBookmarkNode =
+        typeof url === "string"
+          ? {
+              type: "item",
+              id: `web-bookmark-${window.crypto.randomUUID()}`,
+              title,
+              url,
+              parentId,
+              index,
+            }
+          : {
+              type: "folder",
+              id: `web-folder-${window.crypto.randomUUID()}`,
+              title,
+              parentId,
+              index,
+              children: [],
+            };
+      saveStoredWebBookmarks(
+        insertIntoFolder(readStoredWebBookmarks(), parentId, node, index),
+      );
+      return node;
     },
-  },
-  activeCategoryId: {
-    read: async () => readStoredActiveCategoryId(),
-    save: async (categoryId) =>
-      writeJsonStorageValue(ACTIVE_CATEGORY_ID_STORAGE_KEY, categoryId),
+    update: async (id, changes) => {
+      const tree = readStoredWebBookmarks();
+      const current = findNode(tree, id);
+      if (!current) throw new Error(`Web bookmark not found: ${id}`);
+      const updated = { ...current, ...changes } as BrowserBookmarkNode;
+      saveStoredWebBookmarks(
+        mapTree(tree, (node) => (node.id === id ? updated : node)),
+      );
+      return updated;
+    },
+    move: async (id, { parentId, index }) => {
+      const result = removeFromTree(readStoredWebBookmarks(), id);
+      if (!result.removed) throw new Error(`Web bookmark not found: ${id}`);
+      const moved = { ...result.removed, parentId, index };
+      saveStoredWebBookmarks(
+        insertIntoFolder(result.tree, parentId, moved, index),
+      );
+      return moved;
+    },
+    remove: async (id) => {
+      saveStoredWebBookmarks(removeFromTree(readStoredWebBookmarks(), id).tree);
+    },
     subscribe: (onChange) => {
       const handleStorageChange = (event: StorageEvent) => {
-        if (event.key === ACTIVE_CATEGORY_ID_STORAGE_KEY) {
-          onChange(readStoredActiveCategoryId());
-        }
+        if (event.key === WEB_BOOKMARKS_STORAGE_KEY) onChange();
       };
+      webBookmarkListeners.add(onChange);
       window.addEventListener("storage", handleStorageChange);
-      return () => window.removeEventListener("storage", handleStorageChange);
+      return () => {
+        webBookmarkListeners.delete(onChange);
+        window.removeEventListener("storage", handleStorageChange);
+      };
     },
   },
   settings: {
     read: async () => readStoredSettings(),
-    save: async (settings) => saveStoredSettings(settings),
+    save: async (settings: Settings) =>
+      writeJsonStorageValue(SETTINGS_STORAGE_KEY, settings),
     subscribe: (onChange) => {
       const handleStorageChange = (event: StorageEvent) => {
         if (event.key === SETTINGS_STORAGE_KEY) {
@@ -143,16 +255,7 @@ export const platform: Platform = {
   },
   searchEngineSettings: {
     read: async () => readStoredSearchEngineSettings(),
-    save: async (settings) => saveStoredSearchEngineSettings(settings),
-  },
-  browserBookmarks: {
-    import: async () => {
-      return {
-        importedCount: 0,
-        skippedDuplicateCount: 0,
-        folderCount: 0,
-        unsupported: true,
-      };
-    },
+    save: async (settings) =>
+      writeJsonStorageValue(SEARCH_ENGINE_SETTINGS_KEY, settings),
   },
 };
