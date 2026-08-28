@@ -9,8 +9,6 @@
     "dev:site": "pnpm --filter @project/site dev",
     "dev:store-assets": "pnpm --filter @project/store-assets dev",
     "generate:store-assets": "pnpm --filter @project/store-assets generate",
-    "setup:store-assets-browser": "pnpm --filter @project/store-assets setup:browser",
-    "build:app": "pnpm --filter @project/app build",
     "build:app:web": "pnpm --filter @project/app build:web",
     "build:app:ext": "pnpm --filter @project/app build:ext",
     "build:site": "pnpm --filter @project/site build",
