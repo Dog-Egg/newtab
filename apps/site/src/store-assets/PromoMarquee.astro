@@ -8,20 +8,25 @@ const PRODUCT_NAME = projectConfig.product.name;
 const copy = {
   "zh-CN": {
     description: `${PRODUCT_NAME} 顶部宣传图块`,
-    label: "开源新标签页扩展",
-    headline: "打开新标签，简单又顺手。",
-    supporting:
-      "使用浏览器书签作为网站快捷入口。搜索网页和书签，并整理文件夹。",
+    label: "开源 · 新标签页",
+    headline: {
+      first: "搜索网页，",
+      second: "打开常用网站。",
+    },
+    supporting: "使用浏览器书签作为网站快捷入口。搜索网页和书签。",
     features: ["网页搜索", "书签文件夹", "拖拽整理"],
     previewTitle: `${PRODUCT_NAME} 产品预览`,
     tabTitle: "新标签页",
   },
   en: {
     description: `${PRODUCT_NAME} marquee promotional tile`,
-    label: "Open-source new-tab extension",
-    headline: "Open a new tab, Start with clarity.",
+    label: "Open source · New tab",
+    headline: {
+      first: "Search the web,",
+      second: "open saved sites.",
+    },
     supporting:
-      "Use browser bookmarks as site shortcuts. Search the web and your bookmarks, and organize bookmarks and folders.",
+      "Use browser bookmarks as site shortcuts. Search the web and your bookmarks.",
     features: ["Web search", "Bookmark folders", "Drag and drop"],
     previewTitle: `${PRODUCT_NAME} product preview`,
     tabTitle: "New Tab",
@@ -75,7 +80,7 @@ const copy = {
           </div>
 
           <div
-            class="mt-[58px] inline-flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-[.14em] text-[#716d67]"
+            class="mt-7 flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-[.14em] text-[#716d67]"
           >
             <span
               class="size-1.5 rounded-full bg-brand shadow-[0_0_0_4px_#ffebe4]"
@@ -87,7 +92,12 @@ const copy = {
             data-promotion-headline
             class="mb-0 mt-4 text-[52px] font-semibold leading-[1.02] tracking-[-.055em]"
           >
-            {copy.en.headline}
+            <span data-promotion-headline-first class="block whitespace-nowrap"
+              >{copy.en.headline.first}</span
+            ><span
+              data-promotion-headline-second
+              class="block whitespace-nowrap">{copy.en.headline.second}</span
+            >
           </h1>
           <p
             data-promotion-supporting
@@ -129,7 +139,7 @@ const copy = {
         {
           description: string;
           label: string;
-          headline: string;
+          headline: { first: string; second: string };
           supporting: string;
           features: string[];
           previewTitle: string;
@@ -144,7 +154,12 @@ const copy = {
       const canvas = document.querySelector("[data-store-asset-canvas]");
       const description = document.querySelector('meta[name="description"]');
       const label = document.querySelector("[data-promotion-label]");
-      const headline = document.querySelector("[data-promotion-headline]");
+      const headlineFirst = document.querySelector(
+        "[data-promotion-headline-first]",
+      );
+      const headlineSecond = document.querySelector(
+        "[data-promotion-headline-second]",
+      );
       const supporting = document.querySelector("[data-promotion-supporting]");
       const features = document.querySelector("[data-promotion-features]");
       const iframe = document.querySelector("[data-store-asset-canvas] iframe");
@@ -159,11 +174,12 @@ const copy = {
         if (description)
           description.setAttribute("content", content.description);
         if (label) label.textContent = content.label;
-        if (headline) {
-          headline.textContent = content.headline;
+        if (headlineFirst && headlineSecond) {
+          headlineFirst.textContent = content.headline.first;
+          headlineSecond.textContent = content.headline.second;
           if (locale === "zh-CN") {
-            headline.classList.remove("tracking-[-.055em]");
-            headline.classList.add("tracking-[-.018em]");
+            headlineFirst.parentElement?.classList.remove("tracking-[-.055em]");
+            headlineFirst.parentElement?.classList.add("tracking-[-.018em]");
           }
         }
         if (supporting) supporting.textContent = content.supporting;

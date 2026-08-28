@@ -7,12 +7,18 @@ const PRODUCT_NAME = projectConfig.product.name;
 const copy = {
   "zh-CN": {
     description: `${PRODUCT_NAME} 小型宣传图块`,
-    headline: "打开新标签，简单又顺手。",
+    headline: {
+      first: "搜索网页，",
+      second: "打开常用网站。",
+    },
     searchPlaceholder: "搜索网页或浏览器书签",
   },
   en: {
     description: `${PRODUCT_NAME} small promotional tile`,
-    headline: "Open a new tab, Start with clarity.",
+    headline: {
+      first: "Search the web,",
+      second: "open saved sites.",
+    },
     searchPlaceholder: "Search the web or your bookmarks",
   },
 } as const;
@@ -74,7 +80,12 @@ const copy = {
             data-promotion-headline
             class="mb-0 mt-5 max-w-[360px] text-[30px] font-semibold leading-[1.08] tracking-[-.035em]"
           >
-            {copy.en.headline}
+            <span data-promotion-headline-first class="block whitespace-nowrap"
+              >{copy.en.headline.first}</span
+            ><span
+              data-promotion-headline-second
+              class="block whitespace-nowrap">{copy.en.headline.second}</span
+            >
           </h1>
         </header>
 
@@ -143,7 +154,11 @@ const copy = {
         document.body.dataset.promotionCopy ?? "{}",
       ) as Record<
         string,
-        { description: string; headline: string; searchPlaceholder: string }
+        {
+          description: string;
+          headline: { first: string; second: string };
+          searchPlaceholder: string;
+        }
       >;
       const requestedLocale = new URL(window.location.href).searchParams.get(
         "lang",
@@ -152,7 +167,12 @@ const copy = {
       const content = translations[locale];
       const canvas = document.querySelector("[data-store-asset-canvas]");
       const description = document.querySelector('meta[name="description"]');
-      const headline = document.querySelector("[data-promotion-headline]");
+      const headlineFirst = document.querySelector(
+        "[data-promotion-headline-first]",
+      );
+      const headlineSecond = document.querySelector(
+        "[data-promotion-headline-second]",
+      );
       const search = document.querySelector("[data-promotion-search]");
 
       document.documentElement.lang = locale;
@@ -160,11 +180,12 @@ const copy = {
         if (canvas) canvas.setAttribute("aria-label", content.description);
         if (description)
           description.setAttribute("content", content.description);
-        if (headline) {
-          headline.textContent = content.headline;
+        if (headlineFirst && headlineSecond) {
+          headlineFirst.textContent = content.headline.first;
+          headlineSecond.textContent = content.headline.second;
           if (locale === "zh-CN") {
-            headline.classList.remove("tracking-[-.035em]");
-            headline.classList.add("tracking-[-.015em]");
+            headlineFirst.parentElement?.classList.remove("tracking-[-.035em]");
+            headlineFirst.parentElement?.classList.add("tracking-[-.015em]");
           }
         }
         if (search) search.textContent = content.searchPlaceholder;
