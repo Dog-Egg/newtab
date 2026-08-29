@@ -3,7 +3,6 @@ import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 import projectConfig from "../../project.config.json" with { type: "json" };
 
-const isStoreAssetsBuild = process.env.STORE_ASSETS_BUILD === "true";
 const repositoryRoot = new URL("../../", import.meta.url);
 
 function getSiteLastModified() {
@@ -26,61 +25,13 @@ function getSiteLastModified() {
 
 const siteLastModified = getSiteLastModified();
 
-function storeAssetsRoutes() {
-  return {
-    name: "store-assets-routes",
-    hooks: {
-      "astro:config:setup": ({ injectRoute }) => {
-        if (!isStoreAssetsBuild) return;
-
-        injectRoute({
-          pattern: "/__store-assets/screenshot/zh-CN",
-          entrypoint: new URL(
-            "./src/store-assets/ScreenshotZhPage.astro",
-            import.meta.url,
-          ),
-          prerender: true,
-        });
-        injectRoute({
-          pattern: "/__store-assets/screenshot/en",
-          entrypoint: new URL(
-            "./src/store-assets/ScreenshotEnPage.astro",
-            import.meta.url,
-          ),
-          prerender: true,
-        });
-        injectRoute({
-          pattern: "/__store-assets/promo-small",
-          entrypoint: new URL(
-            "./src/store-assets/PromoSmall.astro",
-            import.meta.url,
-          ),
-          prerender: true,
-        });
-        injectRoute({
-          pattern: "/__store-assets/promo-marquee",
-          entrypoint: new URL(
-            "./src/store-assets/PromoMarquee.astro",
-            import.meta.url,
-          ),
-          prerender: true,
-        });
-      },
-    },
-  };
-}
-
 export default defineConfig({
   site: projectConfig.site.url,
-  outDir: isStoreAssetsBuild ? "./.store-assets-dist" : "./dist",
   integrations: [
-    storeAssetsRoutes(),
     sitemap({
       filter(page) {
         const pathname = new URL(page).pathname;
-        return (
-          !pathname.startsWith("/__store-assets/") && !/\.[^/]+$/.test(pathname)
-        );
+        return !/\.[^/]+$/.test(pathname);
       },
       i18n: {
         defaultLocale: "en",

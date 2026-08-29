@@ -4,83 +4,34 @@ import { createServer } from "node:net";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import {
+  getStoreAssetRoutes,
+  STORE_ASSET_ROUTE_PREFIX,
+} from "../../site/src/store-assets/route-utils.mjs";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const storeAssetsDirectory = resolve(scriptDirectory, "..");
 const workspaceDirectory = resolve(storeAssetsDirectory, "../..");
 const outputDirectory = resolve(storeAssetsDirectory, "output");
 
-const SCREENSHOT_VIEWPORT = { width: 1280, height: 800 };
-const SMALL_PROMO_VIEWPORT = { width: 440, height: 280 };
-const MARQUEE_PROMO_VIEWPORT = { width: 1400, height: 560 };
-const STORE_ASSETS = [
-  {
-    name: "screenshot-1",
-    locale: "zh-CN",
-    route: "/__store-assets/screenshot/zh-CN?scene=quick-access",
-    viewport: SCREENSHOT_VIEWPORT,
-    waitForApp: true,
-    outputPath: resolve(outputDirectory, "screenshot-1-zh-CN.png"),
-  },
-  {
-    name: "screenshot-1",
-    locale: "en",
-    route: "/__store-assets/screenshot/en?scene=quick-access",
-    viewport: SCREENSHOT_VIEWPORT,
-    waitForApp: true,
-    outputPath: resolve(outputDirectory, "screenshot-1-en.png"),
-  },
-  {
-    name: "screenshot-2",
-    locale: "zh-CN",
-    route: "/__store-assets/screenshot/zh-CN?scene=search-suggestions",
-    searchQuery: "b",
-    viewport: SCREENSHOT_VIEWPORT,
-    waitForApp: true,
-    outputPath: resolve(outputDirectory, "screenshot-2-zh-CN.png"),
-  },
-  {
-    name: "screenshot-2",
-    locale: "en",
-    route: "/__store-assets/screenshot/en?scene=search-suggestions",
-    searchQuery: "b",
-    viewport: SCREENSHOT_VIEWPORT,
-    waitForApp: true,
-    outputPath: resolve(outputDirectory, "screenshot-2-en.png"),
-  },
-  {
-    name: "promo-small",
-    locale: "zh-CN",
-    route: "/__store-assets/promo-small?lang=zh-CN",
-    viewport: SMALL_PROMO_VIEWPORT,
-    waitForApp: false,
-    outputPath: resolve(outputDirectory, "promo-small-zh-CN.png"),
-  },
-  {
-    name: "promo-small",
-    locale: "en",
-    route: "/__store-assets/promo-small?lang=en",
-    viewport: SMALL_PROMO_VIEWPORT,
-    waitForApp: false,
-    outputPath: resolve(outputDirectory, "promo-small-en.png"),
-  },
-  {
-    name: "promo-marquee",
-    locale: "zh-CN",
-    route: "/__store-assets/promo-marquee?lang=zh-CN",
-    viewport: MARQUEE_PROMO_VIEWPORT,
-    waitForApp: true,
-    outputPath: resolve(outputDirectory, "promo-marquee-zh-CN.png"),
-  },
-  {
-    name: "promo-marquee",
-    locale: "en",
-    route: "/__store-assets/promo-marquee?lang=en",
-    viewport: MARQUEE_PROMO_VIEWPORT,
-    waitForApp: true,
-    outputPath: resolve(outputDirectory, "promo-marquee-en.png"),
-  },
-];
+function getOutputFile(route) {
+  const relativeRoute = route.startsWith(`${STORE_ASSET_ROUTE_PREFIX}/`)
+    ? route.slice(STORE_ASSET_ROUTE_PREFIX.length + 1)
+    : "index";
+
+  return `${relativeRoute || "index"}.png`;
+}
+
+const STORE_ASSETS = getStoreAssetRoutes().map(({ pattern }) => {
+  const outputFile = getOutputFile(pattern);
+
+  return {
+    route: pattern,
+    outputFile,
+    locale: pattern.includes("/zh-CN/") ? "zh-CN" : "en",
+    outputPath: resolve(outputDirectory, outputFile),
+  };
+});
 const SERVER_TIMEOUT_MS = 30_000;
 
 const packageManager = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
@@ -122,6 +73,8 @@ function startSitePreview(port) {
       "@project/site",
       "exec",
       "astro",
+      "--config",
+      "astro.store-assets.config.mjs",
       "preview",
       "--host",
       "127.0.0.1",
@@ -131,7 +84,6 @@ function startSitePreview(port) {
     {
       cwd: workspaceDirectory,
       detached: process.platform !== "win32",
-      env: { ...process.env, STORE_ASSETS_BUILD: "true" },
       stdio: "inherit",
     },
   );
@@ -245,12 +197,51 @@ async function waitForDocumentAssets(target, label) {
   );
 }
 
-async function captureScreenshot(
-  browser,
-  { locale, url, viewport, waitForApp, searchQuery, outputPath },
-) {
+async function readStoreAssetMetadata(page) {
+  const metadata = await page.evaluate(() => {
+    const getMeta = (name) =>
+      document.querySelector(`meta[name="${name}"]`)?.getAttribute("content") ??
+      "";
+    const [width, height] = getMeta("store-asset-viewport")
+      .split("x")
+      .map(Number);
+
+    return {
+      viewport: { width, height },
+      waitForApp: getMeta("store-asset-wait-for-app") === "true",
+      searchQuery: getMeta("store-asset-search-query") || undefined,
+    };
+  });
+
+  const { width, height } = metadata.viewport;
+  if (![width, height].every(Number.isInteger) || width <= 0 || height <= 0) {
+    throw new Error("物料页面缺少有效的 store-asset-viewport 元数据");
+  }
+
+  return metadata;
+}
+
+async function discoverStoreAssetMetadata(browser, { locale, url }) {
   const context = await browser.newContext({
-    viewport,
+    viewport: null,
+    colorScheme: "light",
+    locale,
+    reducedMotion: "reduce",
+  });
+  const page = await context.newPage();
+
+  try {
+    await page.goto(url, { waitUntil: "domcontentloaded" });
+    return await readStoreAssetMetadata(page);
+  } finally {
+    await context.close();
+  }
+}
+
+async function captureScreenshot(browser, { locale, url, outputPath }) {
+  const metadata = await discoverStoreAssetMetadata(browser, { locale, url });
+  const context = await browser.newContext({
+    viewport: metadata.viewport,
     deviceScaleFactor: 1,
     colorScheme: "light",
     locale,
@@ -265,7 +256,7 @@ async function captureScreenshot(
       .catch(() => log("物料页仍有长连接，继续等待可见资源"));
     await waitForDocumentAssets(page, "物料页");
 
-    if (waitForApp) {
+    if (metadata.waitForApp) {
       const iframe = page.locator("[data-store-asset-canvas] iframe");
       await iframe.waitFor({ state: "visible" });
       const iframeHandle = await iframe.elementHandle();
@@ -282,9 +273,9 @@ async function captureScreenshot(
       );
       await waitForDocumentAssets(appFrame, "应用预览");
 
-      if (searchQuery) {
+      if (metadata.searchQuery) {
         const searchInput = appFrame.getByRole("combobox");
-        await searchInput.fill(searchQuery);
+        await searchInput.fill(metadata.searchQuery);
 
         const suggestions = appFrame.locator("#search-suggestions");
         await suggestions.waitFor({ state: "visible" });
@@ -301,6 +292,8 @@ async function captureScreenshot(
       type: "png",
       omitBackground: false,
     });
+
+    return metadata;
   } finally {
     await context.close();
   }
@@ -333,6 +326,11 @@ async function assertOpaque24BitPng(filePath, expectedViewport) {
 async function main() {
   await rm(outputDirectory, { recursive: true, force: true });
   await mkdir(outputDirectory, { recursive: true });
+  await Promise.all(
+    STORE_ASSETS.map(({ outputPath }) =>
+      mkdir(dirname(outputPath), { recursive: true }),
+    ),
+  );
   log("已清空 output 目录");
 
   let browser;
@@ -351,13 +349,13 @@ async function main() {
 
     browser = await chromium.launch({ headless: true });
     for (const asset of STORE_ASSETS) {
-      const { width, height } = asset.viewport;
-      log(`生成 ${asset.name} ${asset.locale} ${width}x${height}`);
-      await captureScreenshot(browser, {
+      const metadata = await captureScreenshot(browser, {
         ...asset,
         url: `${siteUrl}${asset.route}`,
       });
-      await assertOpaque24BitPng(asset.outputPath, asset.viewport);
+      const { width, height } = metadata.viewport;
+      log(`生成 ${asset.outputFile} ${width}x${height}`);
+      await assertOpaque24BitPng(asset.outputPath, metadata.viewport);
     }
     await stopPreview(sitePreview);
   } finally {

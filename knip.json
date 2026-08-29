@@ -5,6 +5,12 @@
     ".": {},
     "apps/app": {
       "entry": ["src/background/index.ts", "src/platform/web.ts"]
+    },
+    "apps/site": {
+      "entry": [
+        "astro.store-assets.config.mjs",
+        "src/store-assets/routes/**/*.astro"
+      ]
     }
   }
 }

@@ -1,0 +1,29 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  locale: "zh-CN" | "en";
+  viewport: string;
+  waitForApp?: boolean;
+  searchQuery?: string;
+}
+
+const { locale, viewport, waitForApp = false, searchQuery } = Astro.props;
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="store-asset-viewport" content={viewport} />
+    {waitForApp && <meta name="store-asset-wait-for-app" content="true" />}
+    {
+      searchQuery && (
+        <meta name="store-asset-search-query" content={searchQuery} />
+      )
+    }
+  </head>
+  <body class="m-0 font-sans text-ink antialiased">
+    <slot />
+  </body>
+</html>
