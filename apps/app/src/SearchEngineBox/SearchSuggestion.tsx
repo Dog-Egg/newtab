@@ -103,7 +103,7 @@ export function SearchSuggestion({
         className="glass-panel z-20 flex max-h-[min(50rem,var(--radix-popover-content-available-height))] w-[var(--radix-popover-trigger-width)] flex-col gap-1 overflow-y-auto rounded-b-glass rounded-t-none border-t-0 border-white/95 bg-slate-100 p-1.5 pt-2 shadow-none"
         side="bottom"
         align="start"
-        sideOffset={-1}
+        sideOffset={-3 /* Prevent a 1px seam in scaled store-asset iframes. */}
         avoidCollisions={false}
         onOpenAutoFocus={(event) => event.preventDefault()}
         onCloseAutoFocus={(event) => event.preventDefault()}
