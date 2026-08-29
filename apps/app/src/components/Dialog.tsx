@@ -5,7 +5,6 @@ import clsx from "clsx";
 const DIALOG_ANIMATION_MS = 160;
 const MAIN_DIALOG_PORTAL_ID = "main-dialog-portal";
 
-export const DialogClose = RadixDialog.Close;
 export const DialogTitle = RadixDialog.Title;
 
 export function MainDialogPortal() {

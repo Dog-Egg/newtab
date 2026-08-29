@@ -17,17 +17,21 @@
     "test": "pnpm --recursive test",
     "typecheck": "pnpm --recursive typecheck",
     "format": "prettier --write .",
-    "prepare": "husky || true"
+    "prepare": "husky || true",
+    "knip": "knip"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
   },
   "devDependencies": {
+    "@types/node": "^26.1.1",
     "husky": "^9.1.7",
+    "knip": "^6.32.3",
     "lint-staged": "^17.0.8",
     "prettier": "3.9.4",
     "prettier-plugin-astro": "^0.14.1",
-    "prettier-plugin-tailwindcss": "^0.8.0"
+    "prettier-plugin-tailwindcss": "^0.8.0",
+    "typescript": "^5.9.3"
   },
   "packageManager": "pnpm@11.7.0"
 }

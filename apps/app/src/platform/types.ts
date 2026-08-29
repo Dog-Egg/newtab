@@ -4,7 +4,7 @@ import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
 
 export const SEARCH_ENGINE_SETTINGS_KEY = "search-engine-settings";
 
-export type StorageUnsubscribe = () => void;
+type StorageUnsubscribe = () => void;
 
 export type StoredSearchEngineSettings = {
   selectedEngineId?: string;

@@ -1,4 +1,4 @@
-export const APP_LOCALES = ["en", "zh-CN"] as const;
+const APP_LOCALES = ["en", "zh-CN"] as const;
 export type AppLocale = (typeof APP_LOCALES)[number];
 
 export function normalizeLocale(value: unknown): AppLocale {

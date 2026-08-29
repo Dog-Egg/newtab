@@ -39,7 +39,7 @@ export const EMPTY_CUSTOM_ENGINE: CustomEngineDraft = {
   urlFormat: "",
 };
 
-export function normalizeCustomEngines(
+function normalizeCustomEngines(
   customEngines: StoredSearchEngineSettings["customEngines"],
 ): SearchEngine[] {
   if (!Array.isArray(customEngines)) {
@@ -116,27 +116,6 @@ export function getSearchEngineDomain(engine: SearchEngine) {
   }
 }
 
-function getDomainFromInput(input: string) {
-  const value = input.trim().toLowerCase();
-  if (!value || /\s/.test(value)) {
-    return null;
-  }
-
-  try {
-    const url = new URL(value.includes("://") ? value : `https://${value}`);
-    if (url.pathname !== "/" || url.search || url.hash) {
-      return null;
-    }
-    return normalizeHostname(url.hostname);
-  } catch {
-    return null;
-  }
-}
-
-export function findSearchEngines(engines: SearchEngine[], input: string) {
-  return engines.filter((engine) => getSearchEngineMatches(engine, input));
-}
-
 export function getSearchEngineMatches(
   engine: SearchEngine,
   input: string,
@@ -160,18 +139,4 @@ export function getSearchEngineMatches(
   };
 
   return matches.name.length > 0 || matches.domain.length > 0 ? matches : null;
-}
-
-export function findSearchEngineByDomain(
-  engines: SearchEngine[],
-  input: string,
-) {
-  const domain = getDomainFromInput(input);
-  if (!domain || !domain.includes(".")) return null;
-
-  return (
-    findSearchEngines(engines, input).find(
-      (engine) => getSearchEngineDomain(engine) === domain,
-    ) ?? null
-  );
 }

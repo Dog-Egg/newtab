@@ -10,7 +10,7 @@ export type LegacyShortcutItem = {
   createdAt: number;
 };
 
-export type LegacyShortcutFolder = {
+type LegacyShortcutFolder = {
   type: "folder";
   id: string;
   title: string;
@@ -80,7 +80,7 @@ function normalizeLegacyShortcutFolder(
 }
 
 /** 丢弃损坏节点，同时保留可迁移的旧 Launcher 数据。 */
-export function normalizeLegacyShortcuts(value: unknown): LegacyShortcutNode[] {
+function normalizeLegacyShortcuts(value: unknown): LegacyShortcutNode[] {
   if (!Array.isArray(value)) {
     return [];
   }
