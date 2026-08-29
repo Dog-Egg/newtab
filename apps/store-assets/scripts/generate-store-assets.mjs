@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { mkdir, readFile, rm } from "node:fs/promises";
 import { createServer } from "node:net";
 import { dirname, resolve } from "node:path";
+import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import {
@@ -14,15 +15,72 @@ const storeAssetsDirectory = resolve(scriptDirectory, "..");
 const workspaceDirectory = resolve(storeAssetsDirectory, "../..");
 const outputDirectory = resolve(storeAssetsDirectory, "output");
 
+const USAGE = `用法：
+  pnpm run generate:store-assets
+  pnpm run generate:store-assets -- --only <页面路径>
+
+页面路径相对于 /__store-assets，例如 screenshot/en/1。`;
+
+function getRelativeRoute(route) {
+  const normalizedRoute = route
+    .trim()
+    .replaceAll("\\", "/")
+    .replace(/^\/+|\/+$/g, "");
+  const prefix = STORE_ASSET_ROUTE_PREFIX.replace(/^\/+|\/+$/g, "");
+
+  if (normalizedRoute === prefix) return "";
+  if (normalizedRoute.startsWith(`${prefix}/`)) {
+    return normalizedRoute.slice(prefix.length + 1);
+  }
+
+  return normalizedRoute;
+}
+
 function getOutputFile(route) {
-  const relativeRoute = route.startsWith(`${STORE_ASSET_ROUTE_PREFIX}/`)
-    ? route.slice(STORE_ASSET_ROUTE_PREFIX.length + 1)
-    : "index";
+  const relativeRoute = getRelativeRoute(route);
 
   return `${relativeRoute || "index"}.png`;
 }
 
-const STORE_ASSETS = getStoreAssetRoutes().map(({ pattern }) => {
+function parseArguments(args) {
+  const normalizedArgs = args[0] === "--" ? args.slice(1) : args;
+  let values;
+
+  try {
+    ({ values } = parseArgs({
+      args: normalizedArgs,
+      options: {
+        help: { type: "boolean", short: "h" },
+        only: { type: "string", multiple: true },
+      },
+      allowPositionals: false,
+      strict: true,
+    }));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`${message}\n\n${USAGE}`);
+  }
+
+  if (values.help) {
+    console.log(USAGE);
+    process.exit(0);
+  }
+
+  const onlyRoutes = values.only ?? [];
+  if (onlyRoutes.length > 1) {
+    throw new Error(`--only 只能指定一次\n\n${USAGE}`);
+  }
+
+  const onlyRoute = onlyRoutes[0];
+  const normalizedRoute = onlyRoute ? getRelativeRoute(onlyRoute) : undefined;
+  if (onlyRoute && !normalizedRoute) {
+    throw new Error(`--only 需要一个页面路径\n\n${USAGE}`);
+  }
+
+  return normalizedRoute;
+}
+
+const allStoreAssets = getStoreAssetRoutes().map(({ pattern }) => {
   const outputFile = getOutputFile(pattern);
 
   return {
@@ -32,6 +90,26 @@ const STORE_ASSETS = getStoreAssetRoutes().map(({ pattern }) => {
     outputPath: resolve(outputDirectory, outputFile),
   };
 });
+
+function selectStoreAssets(onlyRoute) {
+  const storeAssets = onlyRoute
+    ? allStoreAssets.filter(
+        ({ route }) => getRelativeRoute(route) === onlyRoute,
+      )
+    : allStoreAssets;
+
+  if (onlyRoute && storeAssets.length === 0) {
+    const availableRoutes = allStoreAssets
+      .map(({ route }) => getRelativeRoute(route))
+      .join(", ");
+    throw new Error(
+      `未找到页面：${onlyRoute}\n可用页面：${availableRoutes}\n\n${USAGE}`,
+    );
+  }
+
+  return storeAssets;
+}
+
 const SERVER_TIMEOUT_MS = 30_000;
 
 const packageManager = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
@@ -324,14 +402,22 @@ async function assertOpaque24BitPng(filePath, expectedViewport) {
 }
 
 async function main() {
-  await rm(outputDirectory, { recursive: true, force: true });
+  const onlyRoute = parseArguments(process.argv.slice(2));
+  const storeAssets = selectStoreAssets(onlyRoute);
+
+  if (!onlyRoute) {
+    await rm(outputDirectory, { recursive: true, force: true });
+    log("已清空 output 目录");
+  } else {
+    log(`仅生成 ${onlyRoute}，保留其他已有物料`);
+  }
+
   await mkdir(outputDirectory, { recursive: true });
   await Promise.all(
-    STORE_ASSETS.map(({ outputPath }) =>
+    storeAssets.map(({ outputPath }) =>
       mkdir(dirname(outputPath), { recursive: true }),
     ),
   );
-  log("已清空 output 目录");
 
   let browser;
   try {
@@ -345,10 +431,10 @@ async function main() {
     const sitePort = await findAvailablePort();
     const siteUrl = `http://127.0.0.1:${sitePort}`;
     const sitePreview = startSitePreview(sitePort);
-    await waitForServer(`${siteUrl}${STORE_ASSETS[0].route}`, sitePreview);
+    await waitForServer(`${siteUrl}${storeAssets[0].route}`, sitePreview);
 
     browser = await chromium.launch({ headless: true });
-    for (const asset of STORE_ASSETS) {
+    for (const asset of storeAssets) {
       const metadata = await captureScreenshot(browser, {
         ...asset,
         url: `${siteUrl}${asset.route}`,
@@ -363,7 +449,7 @@ async function main() {
     await stopAllPreviews();
   }
 
-  log(`完成：${STORE_ASSETS.map(({ outputPath }) => outputPath).join(", ")}`);
+  log(`完成：${storeAssets.map(({ outputPath }) => outputPath).join(", ")}`);
 }
 
 for (const signal of ["SIGINT", "SIGTERM"]) {
