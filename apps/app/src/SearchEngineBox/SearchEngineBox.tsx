@@ -262,6 +262,10 @@ export function SearchEngineBox() {
     setActiveSuggestionIndex(nextSuggestionIndex);
     if (nextSuggestion.type === "engine") {
       acceptEngineSuggestion(nextSuggestion.engine, true);
+    } else {
+      // A bookmark selection should not keep showing the previously selected
+      // temporary engine in the search box.
+      setTemporaryEngineId(null);
     }
   }
 
