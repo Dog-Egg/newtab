@@ -31,6 +31,10 @@ export const zhCN = {
   settings: {
     title: "设置",
     close: "关闭设置",
+    sections: "设置分类",
+    general: "通用",
+    about: "关于",
+    currentVersion: "当前版本",
     language: "语言",
     english: "English",
     chinese: "简体中文",
@@ -51,7 +55,6 @@ export const zhCN = {
     dark: "深",
     invalidImageUrl: "请输入有效的 http 或 https 图片 URL",
     imageLoadFailed: "图片加载失败，请检查图片地址是否可访问",
-    version: "版本 {{version}}",
   },
   launcher: {
     defaultCategories: {

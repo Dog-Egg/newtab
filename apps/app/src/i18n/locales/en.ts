@@ -33,6 +33,10 @@ export const en = {
   settings: {
     title: "Settings",
     close: "Close settings",
+    sections: "Settings sections",
+    general: "General",
+    about: "About",
+    currentVersion: "Current version",
     language: "Language",
     english: "English",
     chinese: "简体中文",
@@ -54,7 +58,6 @@ export const en = {
     invalidImageUrl: "Enter a valid http or https image URL",
     imageLoadFailed:
       "The image failed to load. Check that the URL is accessible.",
-    version: "Version {{version}}",
   },
   launcher: {
     defaultCategories: {

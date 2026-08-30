@@ -1,40 +1,15 @@
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Toaster } from "sonner";
 import clsx from "clsx";
-import { Settings } from "lucide-react";
+import { Settings as SettingsIcon } from "lucide-react";
 import { Launcher } from "./Launcher";
 import { SearchEngineBox } from "./SearchEngineBox";
 import { Wallpaper } from "./Wallpaper";
 import { MainDialogPortal } from "./components/Dialog";
 import { Drawer } from "./components/Drawer";
+import { SettingsPanel } from "./Settings/SettingsPanel";
 import { useSettings } from "./Settings/SettingsProvider";
 import { useTranslation } from "react-i18next";
-
-const SettingsContent = lazy(() =>
-  import("./Settings").then(({ SettingsContent }) => ({
-    default: SettingsContent,
-  })),
-);
-
-function SettingsContentSkeleton() {
-  return (
-    <div className="animate-pulse space-y-7 px-2 py-6" aria-hidden="true">
-      {["w-20", "w-28", "w-24"].map((width) => (
-        <div key={width} className="space-y-3">
-          <div className={`h-4 ${width} rounded-full bg-white/15`} />
-          <div className="h-10 w-full rounded-xl bg-white/10" />
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export function App() {
   const { t, i18n } = useTranslation();
@@ -87,7 +62,7 @@ export function App() {
           aria-label={t("app.openSettings")}
           aria-expanded={isSettingsOpen}
         >
-          <Settings aria-hidden="true" className="size-5" />
+          <SettingsIcon aria-hidden="true" className="size-5" />
         </button>
 
         <div className="flex h-screen min-h-0 flex-col pt-16 sm:pt-[clamp(4rem,18vh,12rem)]">
@@ -106,13 +81,8 @@ export function App() {
         titleId="settings-drawer-title"
         closeLabel={t("settings.close")}
         onClose={closeSettings}
-        footer={t("settings.version", { version: __APP_VERSION__ })}
       >
-        {hasOpenedSettings ? (
-          <Suspense fallback={<SettingsContentSkeleton />}>
-            <SettingsContent />
-          </Suspense>
-        ) : null}
+        {hasOpenedSettings ? <SettingsPanel /> : null}
       </Drawer>
     </div>
   );

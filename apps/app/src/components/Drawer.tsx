@@ -1,5 +1,8 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
+import clsx from "clsx";
+
+const DRAWER_WIDTH_CLASS = clsx("w-[min(100vw,32rem)]");
 
 export function Drawer({
   isOpen,
@@ -7,7 +10,6 @@ export function Drawer({
   titleId,
   closeLabel,
   onClose,
-  footer,
   children,
 }: {
   isOpen: boolean;
@@ -15,7 +17,6 @@ export function Drawer({
   titleId: string;
   closeLabel: string;
   onClose: () => void;
-  footer?: ReactNode;
   children: ReactNode;
 }) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -35,16 +36,20 @@ export function Drawer({
 
   return (
     <div
-      className="relative z-[110] shrink-0 transition-[width] duration-300 ease-out motion-reduce:transition-none"
-      style={{ width: isOpen ? "min(100vw, 26rem)" : 0 }}
+      className={clsx(
+        "relative z-[110] shrink-0 transition-[width] duration-300 ease-out motion-reduce:transition-none",
+        isOpen ? DRAWER_WIDTH_CLASS : "w-0",
+      )}
       aria-hidden={!isOpen}
       inert={!isOpen}
     >
       <aside
         data-drawer=""
-        className={`glass-panel settings-panel absolute inset-y-0 right-0 flex w-[min(100vw,26rem)] flex-col overflow-hidden rounded-none transition-transform duration-300 ease-out motion-reduce:transition-none ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={clsx(
+          "glass-panel settings-panel absolute inset-y-0 right-0 flex flex-col overflow-hidden rounded-none transition-transform duration-300 ease-out motion-reduce:transition-none",
+          DRAWER_WIDTH_CLASS,
+          isOpen ? "translate-x-0" : "translate-x-full",
+        )}
         role="dialog"
         aria-modal="false"
         aria-labelledby={titleId}
@@ -67,14 +72,7 @@ export function Drawer({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          {children}
-        </div>
-        {footer ? (
-          <div className="shrink-0 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1 text-right text-[10px] leading-none text-glass-content opacity-50">
-            {footer}
-          </div>
-        ) : null}
+        <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
       </aside>
     </div>
   );
