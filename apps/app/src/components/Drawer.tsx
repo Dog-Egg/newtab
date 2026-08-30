@@ -2,8 +2,6 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 import clsx from "clsx";
 
-const DRAWER_WIDTH_CLASS = clsx("w-[min(100vw,32rem)]");
-
 export function Drawer({
   isOpen,
   title,
@@ -37,8 +35,8 @@ export function Drawer({
   return (
     <div
       className={clsx(
-        "relative z-[110] shrink-0 transition-[width] duration-300 ease-out motion-reduce:transition-none",
-        isOpen ? DRAWER_WIDTH_CLASS : "w-0",
+        "absolute inset-y-0 right-0 z-[110] w-0 shrink-0 transition-[width] duration-300 ease-out motion-reduce:transition-none lg:relative lg:inset-y-auto",
+        isOpen ? "lg:w-[min(100vw,32rem)]" : "lg:w-0",
       )}
       aria-hidden={!isOpen}
       inert={!isOpen}
@@ -46,8 +44,7 @@ export function Drawer({
       <aside
         data-drawer=""
         className={clsx(
-          "glass-panel settings-panel absolute inset-y-0 right-0 flex flex-col overflow-hidden rounded-none transition-transform duration-300 ease-out motion-reduce:transition-none",
-          DRAWER_WIDTH_CLASS,
+          "glass-panel settings-panel absolute inset-y-0 right-0 flex w-[min(100vw,32rem)] flex-col overflow-hidden rounded-none transition-transform duration-300 ease-out motion-reduce:transition-none",
           isOpen ? "translate-x-0" : "translate-x-full",
         )}
         role="dialog"

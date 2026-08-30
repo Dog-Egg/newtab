@@ -1282,11 +1282,11 @@ export function Launcher() {
         </section>
 
         <nav
-          className="z-20 flex shrink-0 justify-center px-4 pb-8 pt-3 sm:pb-12 md:pb-16"
+          className="z-20 flex shrink-0 justify-center pb-8 pt-3 sm:pb-12 md:pb-16"
           aria-label={t("launcher.bookmarkRoots")}
         >
           {/* 每个根目录独立成组，避免额外的外层玻璃容器抢占视觉层级。 */}
-          <span className="flex max-w-[calc(100vw-2rem)] items-center gap-2.5 overflow-x-auto p-1.5 [scrollbar-width:none]">
+          <span className="flex items-center gap-2.5 overflow-x-auto px-4 py-1.5 [scrollbar-width:none]">
             {roots.map((root) => {
               const isActive = root.id === activeRoot.id;
               return (
