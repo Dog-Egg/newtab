@@ -38,7 +38,7 @@ function LauncherSizeSettings({
   const { t } = useTranslation();
 
   return (
-    <section className="space-y-3 rounded-2xl border border-glass-border bg-white/[0.04] p-4 sm:p-5">
+    <section className="space-y-3 py-5 sm:py-6">
       <div className="flex items-center justify-between gap-3">
         <label
           className="text-sm font-medium text-glass-strong"
@@ -115,7 +115,7 @@ function WallpaperSettingsSection({
 
   return (
     <section
-      className="rounded-2xl border border-glass-border bg-white/[0.04] p-4 sm:p-5"
+      className="py-5 sm:py-6"
       aria-labelledby="wallpaper-settings-title"
     >
       <h3
@@ -210,9 +210,9 @@ export function GeneralSettings() {
   const { settings, previewSettings, updateSettings } = useSettings();
 
   return (
-    <div className="space-y-4">
+    <div className="divide-y divide-white/10">
       <section
-        className="rounded-2xl border border-glass-border bg-white/[0.04] p-4 sm:p-5"
+        className="pb-5 sm:pb-6"
         aria-labelledby="language-settings-title"
       >
         <h3
