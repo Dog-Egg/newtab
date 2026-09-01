@@ -153,3 +153,4 @@ apps/site/public/app/
 apps/app/public/icons/*.png
 
 .DS_Store
+stats.html

@@ -1,5 +1,6 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
+import { visualizer } from "rollup-plugin-visualizer";
 import { fileURLToPath, URL } from "node:url";
 import { manifest } from "./manifest.ts";
 import { appVersion } from "./build/version.ts";
@@ -36,6 +37,13 @@ export default defineConfig(({ mode, command }) => {
     publicDir: isExtension ? "public" : false,
     plugins: [
       react(),
+      ...(mode === "analyze"
+        ? [
+            visualizer({
+              open: true,
+            }),
+          ]
+        : []),
       ...(isExtension && command === "build"
         ? [extensionManifestPlugin()]
         : []),
