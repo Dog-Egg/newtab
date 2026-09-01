@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { platform } from "@platform";
-import { normalizeSettings, type Settings } from "./settings";
+import type { Settings } from "./schema";
 import i18n from "../i18n";
 
 type SettingsContextValue = {
@@ -41,14 +41,14 @@ export function SettingsProvider({
     const currentSettings = settingsRef.current;
     const patch =
       typeof update === "function" ? update(currentSettings) : update;
-    const normalizedSettings = normalizeSettings({
+    const nextSettings = {
       ...currentSettings,
       ...patch,
-    });
-    settingsRef.current = normalizedSettings;
-    applyLocale(normalizedSettings.locale);
-    setSettings(normalizedSettings);
-    return normalizedSettings;
+    };
+    settingsRef.current = nextSettings;
+    applyLocale(nextSettings.locale);
+    setSettings(nextSettings);
+    return nextSettings;
   }, []);
 
   useEffect(() => {
@@ -62,12 +62,10 @@ export function SettingsProvider({
 
   const updateSettings = useCallback(
     (update: SettingsUpdate) => {
-      const normalizedSettings = applySettingsUpdate(update);
-      void platform.settings
-        .save(normalizedSettings)
-        .catch((error: unknown) => {
-          console.error("Failed to save settings", error);
-        });
+      const nextSettings = applySettingsUpdate(update);
+      void platform.settings.save(nextSettings).catch((error: unknown) => {
+        console.error("Failed to save settings", error);
+      });
     },
     [applySettingsUpdate],
   );

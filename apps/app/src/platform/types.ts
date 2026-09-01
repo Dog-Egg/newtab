@@ -1,20 +1,9 @@
-import type { Settings } from "../Settings/settings";
+import type { Settings } from "../Settings/schema";
 import type { AppLocale } from "../i18n/locale";
 import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
-
-export const SEARCH_ENGINE_SETTINGS_KEY = "search-engine-settings";
+import type { StoredSearchEngineSettings } from "../SearchEngineBox/schema";
 
 type StorageUnsubscribe = () => void;
-
-export type StoredSearchEngineSettings = {
-  selectedEngineId?: string;
-  hiddenDefaultEngineIds?: string[];
-  customEngines?: Array<{
-    id: string;
-    name: string;
-    urlFormat: string;
-  }>;
-};
 
 export type Platform = {
   defaultLocale: AppLocale;

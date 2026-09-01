@@ -10,7 +10,7 @@ import * as Popover from "@radix-ui/react-popover";
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { platform } from "@platform";
-import type { StoredSearchEngineSettings } from "../platform/types";
+import type { StoredSearchEngineSettings } from "./schema";
 import { useBookmarkNavigation } from "../Launcher/BookmarkNavigationProvider";
 import { useBookmarks } from "../Launcher/BookmarkProvider";
 import { SearchEngineDialogs } from "./SearchEngineDialog";
@@ -102,12 +102,9 @@ export function SearchEngineBox() {
   useEffect(() => {
     let isCurrent = true;
 
-    void platform.searchEngineSettings.read().then(
-      (settings) => {
-        if (isCurrent) setStoredSettings(settings);
-      },
-      () => undefined,
-    );
+    void platform.searchEngineSettings.read().then((settings) => {
+      if (isCurrent) setStoredSettings(settings);
+    });
 
     return () => {
       isCurrent = false;

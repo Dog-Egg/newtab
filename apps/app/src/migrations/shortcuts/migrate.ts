@@ -7,10 +7,7 @@ import type {
   LegacyShortcutItem,
   LegacyShortcutNode,
 } from "./legacyLauncher";
-import {
-  LAUNCHER_STORAGE_KEY,
-  normalizeLegacyLauncher,
-} from "./legacyLauncher";
+import { LAUNCHER_STORAGE_KEY, legacyLauncherSchema } from "./legacyLauncher";
 
 class ShortcutMigrationRollbackError extends Error {
   constructor(
@@ -94,7 +91,9 @@ export async function migrateLegacyShortcutsOnce({
   if (!Object.prototype.hasOwnProperty.call(items, LAUNCHER_STORAGE_KEY))
     return;
 
-  const legacyCategories = normalizeLegacyLauncher(items[LAUNCHER_STORAGE_KEY]);
+  const legacyCategories = legacyLauncherSchema.parse(
+    items[LAUNCHER_STORAGE_KEY],
+  );
   const browserItems = (await readBookmarks()).flatMap(
     function collect(node): BrowserBookmarkItem[] {
       if (node.type === "item") return [node];

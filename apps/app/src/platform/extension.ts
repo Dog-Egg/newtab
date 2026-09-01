@@ -1,10 +1,14 @@
 import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
+import type { Platform } from "./types";
 import {
   SEARCH_ENGINE_SETTINGS_KEY,
-  type Platform,
-  type StoredSearchEngineSettings,
-} from "./types";
-import { normalizeSettings, SETTINGS_STORAGE_KEY } from "../Settings/settings";
+  searchEngineSettingsSchema,
+} from "../SearchEngineBox/schema";
+import {
+  SETTINGS_STORAGE_KEY,
+  settingsSchema,
+  type Settings,
+} from "../Settings/schema";
 import { getLocaleFromLanguage } from "../i18n/locale";
 import {
   createChromeBookmarkNode,
@@ -16,25 +20,24 @@ import { getChromeStorage, setChromeStorage } from "./chromeStorage";
 
 const defaultLocale = getLocaleFromLanguage(chrome.i18n.getUILanguage());
 
-function normalizeSearchEngineSettings(
-  value: unknown,
-): StoredSearchEngineSettings {
-  return value && typeof value === "object"
-    ? (value as StoredSearchEngineSettings)
-    : {};
+function parseStoredSettings(value: unknown): Settings {
+  const storedSettings = settingsSchema.parse(value);
+  return {
+    ...storedSettings,
+    locale: storedSettings.locale ?? defaultLocale,
+  };
 }
 
-function subscribeChromeStorage<T>(
+function subscribeChromeStorage(
   key: string,
-  normalize: (value: unknown) => T,
-  onChange: (value: T) => void,
+  onChange: (value: unknown) => void,
 ) {
   const handleStorageChange = (
     changes: Record<string, { newValue?: unknown }>,
     areaName: string,
   ) => {
     if (areaName === "local" && changes[key]) {
-      onChange(normalize(changes[key].newValue));
+      onChange(changes[key].newValue);
     }
   };
   chrome.storage.onChanged.addListener(handleStorageChange);
@@ -129,24 +132,33 @@ export const platform: Platform = {
     subscribe: subscribeBookmarks,
   },
   settings: {
-    read: () =>
-      getChromeStorage(SETTINGS_STORAGE_KEY, (value) =>
-        normalizeSettings(value, defaultLocale),
-      ),
+    read: async () => {
+      try {
+        return parseStoredSettings(
+          await getChromeStorage(SETTINGS_STORAGE_KEY),
+        );
+      } catch (error: unknown) {
+        console.error("Failed to read settings", error);
+        return parseStoredSettings(undefined);
+      }
+    },
     save: (settings) => setChromeStorage(SETTINGS_STORAGE_KEY, settings),
     subscribe: (onChange) =>
-      subscribeChromeStorage(
-        SETTINGS_STORAGE_KEY,
-        (value) => normalizeSettings(value, defaultLocale),
-        onChange,
+      subscribeChromeStorage(SETTINGS_STORAGE_KEY, (value) =>
+        onChange(parseStoredSettings(value)),
       ),
   },
   searchEngineSettings: {
-    read: () =>
-      getChromeStorage(
-        SEARCH_ENGINE_SETTINGS_KEY,
-        normalizeSearchEngineSettings,
-      ),
+    read: async () => {
+      try {
+        return searchEngineSettingsSchema.parse(
+          await getChromeStorage(SEARCH_ENGINE_SETTINGS_KEY),
+        );
+      } catch (error: unknown) {
+        console.error("Failed to read search engine settings", error);
+        return searchEngineSettingsSchema.parse(undefined);
+      }
+    },
     save: (settings) => setChromeStorage(SEARCH_ENGINE_SETTINGS_KEY, settings),
   },
 };

@@ -1,8 +1,5 @@
 import { getLocaleFromLanguage } from "../../i18n/locale";
-import {
-  normalizeSettings,
-  SETTINGS_STORAGE_KEY,
-} from "../../Settings/settings";
+import { SETTINGS_STORAGE_KEY, settingsSchema } from "../../Settings/schema";
 import { createRefreshScheduler } from "../contextMenuRefresh";
 import { getLocalStorage, removeAllContextMenus } from "./chrome";
 import {
@@ -19,9 +16,8 @@ const defaultLocale = getLocaleFromLanguage(chrome.i18n.getUILanguage());
 
 async function rebuildContextMenus() {
   const items = await getLocalStorage(CONTEXT_MENU_STORAGE_KEYS);
-  const { locale } = normalizeSettings(
+  const { locale = defaultLocale } = settingsSchema.parse(
     items[SETTINGS_STORAGE_KEY],
-    defaultLocale,
   );
 
   await removeAllContextMenus();

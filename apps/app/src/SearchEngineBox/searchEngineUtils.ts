@@ -1,4 +1,4 @@
-import type { StoredSearchEngineSettings } from "../platform/types";
+import type { StoredSearchEngineSettings } from "./schema";
 
 export type SearchEngine = {
   id: string;
@@ -39,29 +39,10 @@ export const EMPTY_CUSTOM_ENGINE: CustomEngineDraft = {
   urlFormat: "",
 };
 
-function normalizeCustomEngines(
-  customEngines: StoredSearchEngineSettings["customEngines"],
-): SearchEngine[] {
-  if (!Array.isArray(customEngines)) {
-    return [];
-  }
-
-  return customEngines.flatMap((engine) => {
-    const name = engine.name?.trim();
-    const urlFormat = engine.urlFormat?.trim();
-
-    if (!engine.id || !name || !urlFormat) {
-      return [];
-    }
-
-    return [{ id: engine.id, name, urlFormat }];
-  });
-}
-
 export function getAvailableSearchEngines(
   settings: StoredSearchEngineSettings,
 ): SearchEngine[] {
-  const customEngines = normalizeCustomEngines(settings.customEngines);
+  const customEngines = settings.customEngines ?? [];
   const customEngineById = new Map(
     customEngines.map((engine) => [engine.id, engine]),
   );

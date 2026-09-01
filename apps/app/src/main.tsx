@@ -5,7 +5,6 @@ import { App } from "./App";
 import { BookmarkNavigationProvider } from "./Launcher/BookmarkNavigationProvider";
 import { BookmarkProvider } from "./Launcher/BookmarkProvider";
 import { SettingsProvider } from "./Settings/SettingsProvider";
-import { normalizeSettings } from "./Settings/settings";
 import i18n from "./i18n";
 import "./styles.css";
 
@@ -14,12 +13,7 @@ async function main() {
   // nor the language selector briefly uses the browser default when the user
   // has explicitly chosen another language. Missing locale values still fall
   // back to the platform default (the browser UI language in extension mode).
-  const initialSettings = await platform.settings
-    .read()
-    .catch((error: unknown) => {
-      console.error("Failed to read initial settings", error);
-      return normalizeSettings(undefined, platform.defaultLocale);
-    });
+  const initialSettings = await platform.settings.read();
 
   document.documentElement.lang = initialSettings.locale;
   try {

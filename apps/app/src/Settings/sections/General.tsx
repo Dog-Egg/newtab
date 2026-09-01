@@ -5,14 +5,12 @@ import { normalizeImageUrl } from "../wallpaper";
 import {
   DEFAULT_LAUNCHER_NODE_SCALE,
   DEFAULT_WALLPAPER_OVERLAY_OPACITY,
-  LAUNCHER_NODE_SCALE_STEP,
   MAX_LAUNCHER_NODE_SCALE,
   MAX_WALLPAPER_OVERLAY_OPACITY,
   MIN_LAUNCHER_NODE_SCALE,
   MIN_WALLPAPER_OVERLAY_OPACITY,
-  WALLPAPER_OVERLAY_OPACITY_STEP,
   type Settings,
-} from "../settings";
+} from "../schema";
 import { useSettings } from "../SettingsProvider";
 import { SettingsRange } from "../SettingsRange";
 
@@ -51,7 +49,7 @@ function LauncherSizeSettings({
         id="launcher-node-size"
         min={MIN_LAUNCHER_NODE_SCALE}
         max={MAX_LAUNCHER_NODE_SCALE}
-        step={LAUNCHER_NODE_SCALE_STEP}
+        step={0.01}
         value={settings.nodeScale}
         ariaLabel={t("settings.iconSize")}
         minLabel={t("settings.small")}
@@ -186,7 +184,7 @@ function WallpaperSettingsSection({
             id="wallpaper-overlay"
             min={MIN_WALLPAPER_OVERLAY_OPACITY}
             max={MAX_WALLPAPER_OVERLAY_OPACITY}
-            step={WALLPAPER_OVERLAY_OPACITY_STEP}
+            step={0.01}
             value={settings.wallpaperOverlayOpacity}
             ariaLabel={t("settings.overlayIntensity")}
             minLabel={t("settings.light")}

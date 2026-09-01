@@ -1,18 +1,19 @@
 import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
+import { browserBookmarkTreeSchema } from "../Launcher/schema";
 import {
   createWebDefaultBookmarkTree,
   localizeWebDefaultBookmarkTree,
 } from "../Launcher/webDefaultBookmarks";
+import type { Platform } from "./types";
 import {
   SEARCH_ENGINE_SETTINGS_KEY,
-  type Platform,
-  type StoredSearchEngineSettings,
-} from "./types";
+  searchEngineSettingsSchema,
+} from "../SearchEngineBox/schema";
 import {
-  normalizeSettings,
   SETTINGS_STORAGE_KEY,
+  settingsSchema,
   type Settings,
-} from "../Settings/settings";
+} from "../Settings/schema";
 import i18n from "../i18n";
 import { getLocaleFromLanguage } from "../i18n/locale";
 
@@ -21,6 +22,14 @@ const webBookmarkListeners = new Set<() => void>();
 const defaultLocale = getLocaleFromLanguage(
   new URLSearchParams(window.location.search).get("lang") ?? "en",
 );
+
+function parseStoredSettings(value: unknown): Settings {
+  const storedSettings = settingsSchema.parse(value);
+  return {
+    ...storedSettings,
+    locale: storedSettings.locale ?? defaultLocale,
+  };
+}
 
 function notifyWebBookmarkListeners() {
   for (const listener of webBookmarkListeners) listener();
@@ -42,47 +51,10 @@ function writeJsonStorageValue(key: string, value: unknown) {
   window.sessionStorage.setItem(key, JSON.stringify(value));
 }
 
-function normalizeWebBookmarkNode(value: unknown): BrowserBookmarkNode | null {
-  if (!value || typeof value !== "object") return null;
-  const node = value as Partial<BrowserBookmarkNode>;
-  if (
-    typeof node.id !== "string" ||
-    !node.id ||
-    typeof node.title !== "string"
-  ) {
-    return null;
-  }
-
-  const common = {
-    id: node.id,
-    title: node.title,
-    parentId: typeof node.parentId === "string" ? node.parentId : undefined,
-    index: typeof node.index === "number" ? node.index : undefined,
-    unmodifiable:
-      node.unmodifiable === "managed" ? ("managed" as const) : undefined,
-  };
-  if (node.type === "item" && typeof node.url === "string") {
-    return { ...common, type: "item", url: node.url };
-  }
-  if (node.type !== "folder" || !Array.isArray(node.children)) return null;
-  return {
-    ...common,
-    type: "folder",
-    folderType: node.folderType,
-    children: node.children.flatMap((child) => {
-      const normalized = normalizeWebBookmarkNode(child);
-      return normalized ? [normalized] : [];
-    }),
-  };
-}
-
 function readStoredWebBookmarks() {
-  const value = readJsonStorageValue(WEB_BOOKMARKS_STORAGE_KEY);
-  if (!Array.isArray(value)) return createWebDefaultBookmarkTree();
-  const tree = value.flatMap((node) => {
-    const normalized = normalizeWebBookmarkNode(node);
-    return normalized ? [normalized] : [];
-  });
+  const tree = browserBookmarkTreeSchema.parse(
+    readJsonStorageValue(WEB_BOOKMARKS_STORAGE_KEY),
+  );
   return tree.length > 0
     ? localizeWebDefaultBookmarkTree(tree)
     : createWebDefaultBookmarkTree();
@@ -163,18 +135,24 @@ function findNode(
   return null;
 }
 
-function readStoredSearchEngineSettings(): StoredSearchEngineSettings {
-  const value = readJsonStorageValue(SEARCH_ENGINE_SETTINGS_KEY);
-  return value && typeof value === "object"
-    ? (value as StoredSearchEngineSettings)
-    : {};
+function readStoredSearchEngineSettings() {
+  try {
+    return searchEngineSettingsSchema.parse(
+      readJsonStorageValue(SEARCH_ENGINE_SETTINGS_KEY),
+    );
+  } catch (error: unknown) {
+    console.error("Failed to read search engine settings", error);
+    return searchEngineSettingsSchema.parse(undefined);
+  }
 }
 
 function readStoredSettings() {
-  return normalizeSettings(
-    readJsonStorageValue(SETTINGS_STORAGE_KEY),
-    defaultLocale,
-  );
+  try {
+    return parseStoredSettings(readJsonStorageValue(SETTINGS_STORAGE_KEY));
+  } catch (error: unknown) {
+    console.error("Failed to read settings", error);
+    return parseStoredSettings(undefined);
+  }
 }
 
 export const platform: Platform = {

@@ -5,8 +5,8 @@ import {
 import type { AppLocale } from "../../i18n/locale";
 import {
   SEARCH_ENGINE_SETTINGS_KEY,
-  type StoredSearchEngineSettings,
-} from "../../platform/types";
+  searchEngineSettingsSchema,
+} from "../../SearchEngineBox/schema";
 import { createContextMenuItem, getLocalStorage } from "./chrome";
 
 const SEARCH_MENU_ID = "search-selected-text";
@@ -16,20 +16,12 @@ export const SELECTED_TEXT_SEARCH_MENU_STORAGE_KEYS = [
   SEARCH_ENGINE_SETTINGS_KEY,
 ] as const;
 
-function normalizeSearchEngineSettings(
-  value: unknown,
-): StoredSearchEngineSettings {
-  return value && typeof value === "object"
-    ? (value as StoredSearchEngineSettings)
-    : {};
-}
-
 export async function createSelectedTextSearchMenu(
   items: Record<string, unknown>,
   locale: AppLocale,
 ) {
   const searchEngines = getAvailableSearchEngines(
-    normalizeSearchEngineSettings(items[SEARCH_ENGINE_SETTINGS_KEY]),
+    searchEngineSettingsSchema.parse(items[SEARCH_ENGINE_SETTINGS_KEY]),
   );
   if (searchEngines.length === 0) return;
 
@@ -52,7 +44,7 @@ export async function createSelectedTextSearchMenu(
 async function searchSelectedText(engineId: string, selectionText: string) {
   const items = await getLocalStorage([SEARCH_ENGINE_SETTINGS_KEY]);
   const engine = getAvailableSearchEngines(
-    normalizeSearchEngineSettings(items[SEARCH_ENGINE_SETTINGS_KEY]),
+    searchEngineSettingsSchema.parse(items[SEARCH_ENGINE_SETTINGS_KEY]),
   ).find((candidate) => candidate.id === engineId);
   const query = selectionText.trim();
   if (!engine || !query) return;
