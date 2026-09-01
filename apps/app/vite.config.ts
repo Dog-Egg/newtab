@@ -1,8 +1,8 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { fileURLToPath, URL } from "node:url";
-import { manifest } from "./manifest";
-import { appVersion } from "./build/version";
+import { manifest } from "./manifest.ts";
+import { appVersion } from "./build/version.ts";
 
 function extensionManifestPlugin(): Plugin {
   return {
@@ -57,6 +57,7 @@ export default defineConfig(({ mode, command }) => {
       // Chrome extension pages can reject Vite's modulepreload resource
       // reuse across extension worlds and report it as an unused preload.
       ...(isExtension ? { modulePreload: false } : {}),
+      chunkSizeWarningLimit: 600,
       rollupOptions: {
         input,
         output: {

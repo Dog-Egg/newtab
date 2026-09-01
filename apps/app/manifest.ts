@@ -1,5 +1,5 @@
-import projectConfig from "../../project.config.json";
-import { appVersion } from "./build/version";
+import projectConfig from "../../project.config.json" with { type: "json" };
+import { appVersion } from "./build/version.ts";
 
 const productName = projectConfig.product.name;
 
