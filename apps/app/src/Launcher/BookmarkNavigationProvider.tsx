@@ -20,6 +20,7 @@ type RevealedBookmark = {
 type BookmarkNavigationContextValue = {
   activeRootId: string;
   openFolderId: string | null;
+  navigationVersion: number;
   revealedBookmark: RevealedBookmark | null;
   selectRoot: (rootId: string) => void;
   navigateToFolder: (folderId: string | null) => void;
@@ -36,22 +37,22 @@ export function BookmarkNavigationProvider({
 }) {
   const { bookmarkTree } = useBookmarks();
   const roots = useMemo(() => getBookmarkRoots(bookmarkTree), [bookmarkTree]);
-  const [activeRootId, setActiveRootId] = useState(() => roots[0]?.id ?? "");
+  const [selectedRootId, setSelectedRootId] = useState(
+    () => roots[0]?.id ?? "",
+  );
   const [openFolderId, setOpenFolderId] = useState<string | null>(null);
+  const [navigationVersion, setNavigationVersion] = useState(0);
   const [revealedBookmark, setRevealedBookmark] =
     useState<RevealedBookmark | null>(null);
   const revealKeyRef = useRef(0);
 
   const activeRoot =
-    roots.find((root) => root.id === activeRootId) ?? roots[0] ?? null;
-
-  useEffect(() => {
-    if (!activeRoot) return;
-    if (activeRootId !== activeRoot.id) setActiveRootId(activeRoot.id);
-    if (openFolderId && !findBookmarkFolder([activeRoot], openFolderId)) {
-      setOpenFolderId(null);
-    }
-  }, [activeRoot, activeRootId, openFolderId]);
+    roots.find((root) => root.id === selectedRootId) ?? roots[0] ?? null;
+  const resolvedActiveRootId = activeRoot?.id ?? "";
+  const resolvedOpenFolderId =
+    activeRoot && openFolderId && findBookmarkFolder([activeRoot], openFolderId)
+      ? openFolderId
+      : null;
 
   useEffect(() => {
     if (!revealedBookmark) return;
@@ -68,14 +69,16 @@ export function BookmarkNavigationProvider({
   }, [revealedBookmark]);
 
   const selectRoot = useCallback((rootId: string) => {
-    setActiveRootId(rootId);
+    setSelectedRootId(rootId);
     setOpenFolderId(null);
     setRevealedBookmark(null);
+    setNavigationVersion((version) => version + 1);
   }, []);
 
   const navigateToFolder = useCallback((folderId: string | null) => {
     setOpenFolderId(folderId);
     setRevealedBookmark(null);
+    setNavigationVersion((version) => version + 1);
   }, []);
 
   const revealBookmark = useCallback(
@@ -84,28 +87,31 @@ export function BookmarkNavigationProvider({
       if (!destination) return;
 
       revealKeyRef.current += 1;
-      setActiveRootId(destination.rootId);
+      setSelectedRootId(destination.rootId);
       setOpenFolderId(destination.folderId);
       setRevealedBookmark({
         bookmarkId,
         revealKey: revealKeyRef.current,
       });
+      setNavigationVersion((version) => version + 1);
     },
     [roots],
   );
 
   const value = useMemo(
     () => ({
-      activeRootId,
-      openFolderId,
+      activeRootId: resolvedActiveRootId,
+      openFolderId: resolvedOpenFolderId,
+      navigationVersion,
       revealedBookmark,
       selectRoot,
       navigateToFolder,
       revealBookmark,
     }),
     [
-      activeRootId,
-      openFolderId,
+      resolvedActiveRootId,
+      resolvedOpenFolderId,
+      navigationVersion,
       revealedBookmark,
       selectRoot,
       navigateToFolder,

@@ -16,15 +16,20 @@
     "preview:site": "pnpm --filter @project/site preview",
     "test": "pnpm --recursive test",
     "typecheck": "pnpm --recursive typecheck",
+    "lint": "eslint .",
     "format": "prettier --write .",
     "prepare": "husky || true",
     "knip": "knip"
   },
   "lint-staged": {
-    "**/*": "prettier --write --ignore-unknown"
+    "**/*": "prettier --write --ignore-unknown",
+    "**/*.{js,mjs,cjs,ts,tsx}": "eslint"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
+    "@typescript-eslint/parser": "^8.69.0",
+    "eslint": "^10.9.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "husky": "^9.1.7",
     "knip": "^6.32.3",
     "lint-staged": "^17.0.8",

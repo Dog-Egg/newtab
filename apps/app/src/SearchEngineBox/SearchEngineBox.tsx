@@ -96,10 +96,6 @@ export function SearchEngineBox() {
   const isSuggestionOpen = visibleSuggestions.length > 0;
 
   useEffect(() => {
-    setActiveSuggestionIndex(null);
-  }, [suggestionQuery]);
-
-  useEffect(() => {
     let isCurrent = true;
 
     void platform.searchEngineSettings.read().then((settings) => {
@@ -217,6 +213,7 @@ export function SearchEngineBox() {
     engine: SearchEngine,
     retainSuggestions = false,
   ) {
+    setActiveSuggestionIndex(null);
     setTemporaryEngineId(engine.id);
     setRetainedSuggestionQuery(retainSuggestions ? suggestionQuery : null);
     setQuery("");
@@ -231,6 +228,7 @@ export function SearchEngineBox() {
 
   function locateBookmarkSuggestion(bookmarkId: string) {
     revealBookmark(bookmarkId);
+    setActiveSuggestionIndex(null);
     setDismissedSuggestionQuery(suggestionQuery);
     setRetainedSuggestionQuery(null);
   }
@@ -288,6 +286,7 @@ export function SearchEngineBox() {
 
     if (event.key === "Escape" && visibleSuggestions.length > 0) {
       event.preventDefault();
+      setActiveSuggestionIndex(null);
       setDismissedSuggestionQuery(suggestionQuery);
       setRetainedSuggestionQuery(null);
       return;
@@ -328,6 +327,7 @@ export function SearchEngineBox() {
         open={visibleSuggestions.length > 0}
         onOpenChange={(isOpen) => {
           if (!isOpen && visibleSuggestions.length > 0) {
+            setActiveSuggestionIndex(null);
             setDismissedSuggestionQuery(suggestionQuery);
             setRetainedSuggestionQuery(null);
           }

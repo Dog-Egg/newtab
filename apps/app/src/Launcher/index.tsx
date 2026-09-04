@@ -255,10 +255,20 @@ function runBookmarkMutation(promise: Promise<unknown>) {
   void promise.catch(console.error);
 }
 
-function getRootIcon(folder: BrowserBookmarkFolder) {
-  if (folder.folderType === "bookmarks-bar") return PanelTop;
-  if (folder.folderType === "mobile") return Smartphone;
-  return Folder;
+function RootIcon({
+  folder,
+  className,
+}: {
+  folder: BrowserBookmarkFolder;
+  className?: string;
+}) {
+  if (folder.folderType === "bookmarks-bar") {
+    return <PanelTop className={className} aria-hidden="true" />;
+  }
+  if (folder.folderType === "mobile") {
+    return <Smartphone className={className} aria-hidden="true" />;
+  }
+  return <Folder className={className} aria-hidden="true" />;
 }
 
 function isModifiableFolder(folder: BrowserBookmarkFolder) {
@@ -274,7 +284,6 @@ function BookmarkRootDropTarget({
   active: boolean;
   onSelect: () => void;
 }) {
-  const Icon = getRootIcon(root);
   const data: BookmarkDndData = {
     node: root,
     container: { type: "root", id: root.id },
@@ -304,7 +313,7 @@ function BookmarkRootDropTarget({
       )}
       onClick={onSelect}
     >
-      <Icon className="size-[18px]" aria-hidden="true" />
+      <RootIcon folder={root} className="size-[18px]" />
       {root.title}
     </button>
   );
@@ -473,13 +482,13 @@ function BookmarkNodeCard({
     });
 
   useEffect(() => {
-    setDraftTitle(node.title);
     if (!isRenaming) return;
-    requestAnimationFrame(() => {
+    const frameId = requestAnimationFrame(() => {
       renameInputRef.current?.focus();
       renameInputRef.current?.select();
     });
-  }, [isRenaming, node.title]);
+    return () => cancelAnimationFrame(frameId);
+  }, [isRenaming]);
 
   useEffect(() => {
     if (!isLocated) return;
@@ -498,6 +507,11 @@ function BookmarkNodeCard({
       return;
     }
     onRename(title);
+  }
+
+  function startEdit() {
+    if (node.type === "folder") setDraftTitle(node.title);
+    onEdit();
   }
 
   const content =
@@ -592,7 +606,7 @@ function BookmarkNodeCard({
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
               <DropdownMenuContent>
-                <DropdownMenuItem onSelect={onEdit}>
+                <DropdownMenuItem onSelect={startEdit}>
                   {t(
                     node.type === "folder" ? "launcher.rename" : "common.edit",
                   )}
@@ -874,16 +888,13 @@ function BookmarkBreadcrumb({
   const titleInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    if (!folder) return;
-    setTitle(folder.title);
-    setIsEditingTitle(editTitleInitially);
-    if (editTitleInitially) {
-      requestAnimationFrame(() => {
-        titleInputRef.current?.focus();
-        titleInputRef.current?.select();
-      });
-    }
-  }, [editTitleInitially, folder.id, folder.title]);
+    if (!editTitleInitially) return;
+    const frameId = requestAnimationFrame(() => {
+      titleInputRef.current?.focus();
+      titleInputRef.current?.select();
+    });
+    return () => cancelAnimationFrame(frameId);
+  }, [editTitleInitially]);
 
   if (!folder) return null;
 
@@ -897,8 +908,6 @@ function BookmarkBreadcrumb({
     setTitle(nextTitle);
     if (nextTitle !== folder.title) onRename(nextTitle);
   }
-
-  const RootIcon = getRootIcon(path[0]);
 
   return (
     <nav
@@ -923,7 +932,7 @@ function BookmarkBreadcrumb({
                   className="flex max-w-56 items-center gap-2 px-2 py-1.5 font-semibold"
                   aria-current="page"
                 >
-                  <RootIcon className="size-4 shrink-0" aria-hidden="true" />
+                  <RootIcon folder={path[0]} className="size-4 shrink-0" />
                   <span className="truncate">{item.title}</span>
                 </span>
               ) : isCurrent ? (
@@ -952,6 +961,7 @@ function BookmarkBreadcrumb({
                     className="max-w-56 truncate rounded-lg px-2 py-1.5 text-left font-bold outline-none transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/60"
                     aria-current="page"
                     onClick={() => {
+                      setTitle(item.title);
                       setIsEditingTitle(true);
                       requestAnimationFrame(() => {
                         titleInputRef.current?.focus();
@@ -1033,6 +1043,7 @@ export function Launcher() {
   const {
     activeRootId,
     openFolderId,
+    navigationVersion,
     revealedBookmark,
     selectRoot,
     navigateToFolder,
@@ -1041,7 +1052,10 @@ export function Launcher() {
     settings: { nodeScale },
   } = useSettings();
   const roots = useMemo(() => getBookmarkRoots(bookmarkTree), [bookmarkTree]);
-  const [renameFolderId, setRenameFolderId] = useState<string | null>(null);
+  const [renameState, setRenameState] = useState<{
+    folderId: string;
+    navigationVersion: number;
+  } | null>(null);
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [pendingDelete, setPendingDelete] =
     useState<BrowserBookmarkNode | null>(null);
@@ -1063,10 +1077,20 @@ export function Launcher() {
   const currentPath = (
     openFolderPath.length > 0 ? openFolderPath : activeRoot ? [activeRoot] : []
   ).filter((node): node is BrowserBookmarkFolder => node.type === "folder");
-
-  useEffect(() => setRenameFolderId(null), [activeRootId, openFolderId]);
+  const renameFolderId =
+    renameState?.navigationVersion === navigationVersion
+      ? renameState.folderId
+      : null;
 
   if (!activeRoot || !currentFolder) return null;
+
+  function clearRename() {
+    setRenameState(null);
+  }
+
+  function startRename(folderId: string) {
+    setRenameState({ folderId, navigationVersion });
+  }
 
   function canMoveInside(draggedNodeId: string, target: BrowserBookmarkFolder) {
     if (draggedNodeId === target.id || !isModifiableFolder(target)) {
@@ -1180,7 +1204,13 @@ export function Launcher() {
   }
 
   function openFolderNode(folder: BrowserBookmarkFolder) {
+    clearRename();
     navigateToFolder(folder.id);
+  }
+
+  function selectRootNode(rootId: string) {
+    clearRename();
+    selectRoot(rootId);
   }
 
   return (
@@ -1201,10 +1231,12 @@ export function Launcher() {
         <section className="relative z-10 mx-auto flex min-h-[15rem] w-full max-w-6xl flex-1 flex-col pt-12 sm:pt-5">
           <div className="shrink-0 px-6 sm:px-10">
             <BookmarkBreadcrumb
+              key={`${currentFolder.id}:${renameFolderId === currentFolder.id ? "editing" : "view"}`}
               path={currentPath}
               editTitleInitially={renameFolderId === currentFolder.id}
               onNavigate={(folder) => {
                 if (folder.id === activeRoot.id) {
+                  clearRename();
                   navigateToFolder(null);
                 } else {
                   openFolderNode(folder);
@@ -1214,7 +1246,7 @@ export function Launcher() {
                 runBookmarkMutation(
                   platform.bookmarks.update(currentFolder.id, { title }),
                 );
-                setRenameFolderId(null);
+                clearRename();
               }}
             />
           </div>
@@ -1251,7 +1283,7 @@ export function Launcher() {
                   }}
                   onEdit={() => {
                     if (node.type === "folder") {
-                      setRenameFolderId(node.id);
+                      startRename(node.id);
                     } else {
                       setEditor({ mode: "edit", node });
                     }
@@ -1260,9 +1292,9 @@ export function Launcher() {
                     runBookmarkMutation(
                       platform.bookmarks.update(node.id, { title }),
                     );
-                    setRenameFolderId(null);
+                    clearRename();
                   }}
-                  onCancelRename={() => setRenameFolderId(null)}
+                  onCancelRename={clearRename}
                   onDelete={() => setPendingDelete(node)}
                 />
               ))}
@@ -1293,7 +1325,7 @@ export function Launcher() {
                   key={root.id}
                   root={root}
                   active={isActive}
-                  onSelect={() => selectRoot(root.id)}
+                  onSelect={() => selectRootNode(root.id)}
                 />
               );
             })}

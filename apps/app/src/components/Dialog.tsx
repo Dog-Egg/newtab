@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import * as RadixDialog from "@radix-ui/react-dialog";
 import clsx from "clsx";
 
@@ -26,49 +26,24 @@ export function Dialog({
   onClose: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(true);
-  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(
-    null,
-  );
-  const onCloseRef = useRef(onClose);
-  const closeTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(
-    null,
+  const [portalContainer] = useState<HTMLElement | null>(() =>
+    typeof document === "undefined"
+      ? null
+      : document.getElementById(MAIN_DIALOG_PORTAL_ID),
   );
 
   useEffect(() => {
-    setPortalContainer(document.getElementById(MAIN_DIALOG_PORTAL_ID));
-  }, []);
-
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  }, [onClose]);
-
-  useEffect(() => {
-    return () => {
-      if (closeTimerRef.current) {
-        window.clearTimeout(closeTimerRef.current);
-      }
-    };
-  }, []);
+    if (isOpen) return;
+    const timeoutId = window.setTimeout(onClose, DIALOG_ANIMATION_MS);
+    return () => window.clearTimeout(timeoutId);
+  }, [isOpen, onClose]);
 
   function handleOpenChange(open: boolean) {
     setIsOpen(open);
-
-    if (!open) {
-      if (closeTimerRef.current) {
-        window.clearTimeout(closeTimerRef.current);
-      }
-
-      closeTimerRef.current = window.setTimeout(
-        () => onCloseRef.current(),
-        DIALOG_ANIMATION_MS,
-      );
-    }
   }
 
-  const content =
-    typeof children === "function"
-      ? children(() => handleOpenChange(false))
-      : children;
+  const close = () => setIsOpen(false);
+  const content = typeof children === "function" ? children(close) : children;
 
   return (
     <RadixDialog.Root
