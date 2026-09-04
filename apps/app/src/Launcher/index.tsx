@@ -47,7 +47,6 @@ import {
   type BrowserBookmarkItem,
   type BrowserBookmarkNode,
 } from "./bookmarkTree";
-import { getBookmarkReorderDestination } from "./bookmarkDrag";
 import { DeleteBookmarkCollectionDialog } from "./DeleteBookmarkCollectionDialog";
 import { deleteFolderKeepingContents } from "./folderDeletion";
 import { useBookmarkNavigation } from "./BookmarkNavigationProvider";
@@ -1169,10 +1168,10 @@ export function Launcher() {
     }
 
     if (!isSortable(source)) return;
-    const destination = getBookmarkReorderDestination(
-      source,
-      sourceData.container.id,
-    );
+    const destination =
+      source.index === source.initialIndex
+        ? null
+        : { parentId: sourceData.container.id, index: source.index };
     if (!destination) return;
     // 排序结果属于 source；结束瞬间 target 可能为空，不能因此跳过 Chrome 写入。
     runBookmarkMutation(
