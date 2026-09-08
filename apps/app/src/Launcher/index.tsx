@@ -695,11 +695,6 @@ function BookmarkEditorDialog({
     state.mode === "edit" && state.node.type === "item" ? state.node.url : "";
   const [title, setTitle] = useState(initialTitle);
   const [url, setUrl] = useState(initialUrl);
-  const titleRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    titleRef.current?.focus();
-  }, []);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -746,7 +741,6 @@ function BookmarkEditorDialog({
               {t("launcher.name")}
             </span>
             <input
-              ref={titleRef}
               className="h-11 w-full rounded-xl border border-white/20 bg-white/15 px-4 text-white outline-none placeholder:text-white/45 focus:border-white/60"
               value={title}
               onChange={(event) => setTitle(event.target.value)}

@@ -26,11 +26,6 @@ export function Dialog({
   onClose: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(true);
-  const [portalContainer] = useState<HTMLElement | null>(() =>
-    typeof document === "undefined"
-      ? null
-      : document.getElementById(MAIN_DIALOG_PORTAL_ID),
-  );
 
   useEffect(() => {
     if (isOpen) return;
@@ -51,36 +46,31 @@ export function Dialog({
       open={isOpen}
       onOpenChange={handleOpenChange}
     >
-      {portalContainer ? (
-        <RadixDialog.Portal container={portalContainer}>
-          <div
-            className={clsx(
-              "pointer-events-auto absolute inset-0 bg-slate-950/40 backdrop-blur-md motion-reduce:animate-none",
-              isOpen
-                ? "animate-dialog-overlay-in"
-                : "animate-dialog-overlay-out",
-            )}
-            aria-hidden="true"
-          />
-          <RadixDialog.Content
-            className={clsx(
-              "pointer-events-auto absolute left-1/2 top-1/2 z-10 max-h-[calc(100%-3rem)] w-[calc(100%-3rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-glass border border-glass-border bg-white/30 text-glass-strong shadow-glass outline-none backdrop-blur-2xl focus-visible:ring-2 focus-visible:ring-glass-focus data-[state=closed]:animate-dialog-content-out data-[state=open]:animate-dialog-content-in motion-reduce:animate-none",
-              className,
-            )}
-            onInteractOutside={(event) => {
-              const target = event.target;
-              if (
-                target instanceof Element &&
-                target.closest("[data-drawer]")
-              ) {
-                event.preventDefault();
-              }
-            }}
-          >
-            {content}
-          </RadixDialog.Content>
-        </RadixDialog.Portal>
-      ) : null}
+      <RadixDialog.Portal
+        container={document.getElementById(MAIN_DIALOG_PORTAL_ID)}
+      >
+        <div
+          className={clsx(
+            "pointer-events-auto absolute inset-0 bg-slate-950/40 backdrop-blur-md motion-reduce:animate-none",
+            isOpen ? "animate-dialog-overlay-in" : "animate-dialog-overlay-out",
+          )}
+          aria-hidden="true"
+        />
+        <RadixDialog.Content
+          className={clsx(
+            "pointer-events-auto absolute left-1/2 top-1/2 z-10 max-h-[calc(100%-3rem)] w-[calc(100%-3rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-glass border border-glass-border bg-white/30 text-glass-strong shadow-glass outline-none backdrop-blur-2xl focus-visible:ring-2 focus-visible:ring-glass-focus data-[state=closed]:animate-dialog-content-out data-[state=open]:animate-dialog-content-in motion-reduce:animate-none",
+            className,
+          )}
+          onInteractOutside={(event) => {
+            const target = event.target;
+            if (target instanceof Element && target.closest("[data-drawer]")) {
+              event.preventDefault();
+            }
+          }}
+        >
+          {content}
+        </RadixDialog.Content>
+      </RadixDialog.Portal>
     </RadixDialog.Root>
   );
 }
