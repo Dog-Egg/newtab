@@ -1,29 +1,14 @@
-import { useCallback, useState, type FormEvent } from "react";
 import { platform } from "@platform";
 import { ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { normalizeImageUrl } from "../wallpaper";
 import {
   DEFAULT_LAUNCHER_NODE_SCALE,
-  DEFAULT_WALLPAPER_OVERLAY_OPACITY,
   MAX_LAUNCHER_NODE_SCALE,
-  MAX_WALLPAPER_OVERLAY_OPACITY,
   MIN_LAUNCHER_NODE_SCALE,
-  MIN_WALLPAPER_OVERLAY_OPACITY,
   type Settings,
 } from "../schema";
 import { useSettingsStore } from "../store";
 import { SettingsRange } from "../SettingsRange";
-
-function preloadImage(url: string) {
-  return new Promise<void>((resolve, reject) => {
-    const image = new Image();
-
-    image.onload = () => resolve();
-    image.onerror = () => reject(new Error("image-load-failed"));
-    image.src = url;
-  });
-}
 
 function LauncherSizeSettings() {
   const { t } = useTranslation();
@@ -52,135 +37,6 @@ function LauncherSizeSettings() {
         defaultValue={DEFAULT_LAUNCHER_NODE_SCALE}
         onChange={(nodeScale) => updateSettings({ nodeScale })}
       />
-    </section>
-  );
-}
-
-function WallpaperSettingsSection() {
-  const { t } = useTranslation();
-  const wallpaperUrl = useSettingsStore((state) => state.wallpaperUrl);
-  const wallpaperOverlayOpacity = useSettingsStore(
-    (state) => state.wallpaperOverlayOpacity,
-  );
-  const updateSettings = useSettingsStore((state) => state.updateSettings);
-  const [customImageUrl, setCustomImageUrl] = useState("");
-  const [customImageError, setCustomImageError] = useState("");
-  const [isApplyingCustomImage, setIsApplyingCustomImage] = useState(false);
-
-  const applyCustomWallpaper = useCallback(
-    async (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-
-      let imageUrl: string;
-
-      try {
-        imageUrl = normalizeImageUrl(customImageUrl);
-      } catch {
-        setCustomImageError(t("settings.invalidImageUrl"));
-        return;
-      }
-
-      setIsApplyingCustomImage(true);
-      setCustomImageError("");
-
-      try {
-        await preloadImage(imageUrl);
-        updateSettings({ wallpaperUrl: imageUrl });
-        setCustomImageUrl("");
-      } catch {
-        setCustomImageError(t("settings.imageLoadFailed"));
-      } finally {
-        setIsApplyingCustomImage(false);
-      }
-    },
-    [customImageUrl, t, updateSettings],
-  );
-
-  return (
-    <section
-      className="py-5 sm:py-6"
-      aria-labelledby="wallpaper-settings-title"
-    >
-      <h3
-        id="wallpaper-settings-title"
-        className="text-sm font-medium text-glass-strong"
-      >
-        {t("settings.wallpaper")}
-      </h3>
-
-      <div className="mt-4 space-y-4">
-        <form className="space-y-2" onSubmit={applyCustomWallpaper}>
-          <div className="flex items-center justify-between gap-3">
-            <label
-              className="text-xs font-semibold text-glass-content"
-              htmlFor="wallpaper-url"
-            >
-              {t("settings.imageUrl")}
-            </label>
-            {wallpaperUrl && (
-              <button
-                className="shrink-0 rounded px-1 text-xs font-medium text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-white/70 motion-reduce:transition-none"
-                type="button"
-                onClick={() => updateSettings({ wallpaperUrl: null })}
-              >
-                {t("settings.restoreDefault")}
-              </button>
-            )}
-          </div>
-          <div className="flex flex-col gap-2 min-[480px]:flex-row">
-            <input
-              className="h-9 min-w-0 flex-1 rounded-lg border border-glass-border bg-white/60 px-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-500 focus:bg-white/80 focus-visible:ring-2 focus-visible:ring-white/70 motion-reduce:transition-none"
-              id="wallpaper-url"
-              type="url"
-              inputMode="url"
-              value={customImageUrl}
-              onChange={(event) => {
-                setCustomImageUrl(event.target.value);
-                setCustomImageError("");
-              }}
-            />
-            <button
-              className="h-9 shrink-0 rounded-lg bg-glass-selected px-3 text-sm font-semibold text-glass-selected-content outline-none transition hover:bg-glass-strong/90 focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-75 motion-reduce:transition-none"
-              type="submit"
-              disabled={
-                isApplyingCustomImage || customImageUrl.trim().length === 0
-              }
-            >
-              {t(
-                isApplyingCustomImage ? "settings.applying" : "settings.apply",
-              )}
-            </button>
-          </div>
-          {customImageError ? (
-            <p className="text-xs font-semibold text-rose-700">
-              {customImageError}
-            </p>
-          ) : null}
-        </form>
-
-        <div className="space-y-2.5">
-          <label
-            className="block text-xs font-semibold text-glass-content"
-            htmlFor="wallpaper-overlay"
-          >
-            {t("settings.wallpaperOverlay")}
-          </label>
-          <SettingsRange
-            id="wallpaper-overlay"
-            min={MIN_WALLPAPER_OVERLAY_OPACITY}
-            max={MAX_WALLPAPER_OVERLAY_OPACITY}
-            step={0.01}
-            value={wallpaperOverlayOpacity}
-            ariaLabel={t("settings.overlayIntensity")}
-            minLabel={t("settings.light")}
-            maxLabel={t("settings.dark")}
-            defaultValue={DEFAULT_WALLPAPER_OVERLAY_OPACITY}
-            onChange={(wallpaperOverlayOpacity) =>
-              updateSettings({ wallpaperOverlayOpacity })
-            }
-          />
-        </div>
-      </div>
     </section>
   );
 }
@@ -225,7 +81,6 @@ export function GeneralSettings() {
       </section>
 
       <LauncherSizeSettings />
-      <WallpaperSettingsSection />
     </div>
   );
 }

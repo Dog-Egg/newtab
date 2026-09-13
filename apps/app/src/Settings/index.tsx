@@ -1,8 +1,8 @@
 import { useState } from "react";
 import clsx from "clsx";
-import { Info, SlidersHorizontal } from "lucide-react";
+import { Image, Info, SlidersHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { AboutSettings, GeneralSettings } from "./sections";
+import { AboutSettings, GeneralSettings, WallpaperSettings } from "./sections";
 
 export function Settings() {
   const { t } = useTranslation();
@@ -12,6 +12,12 @@ export function Settings() {
       label: t("settings.general"),
       icon: SlidersHorizontal,
       component: GeneralSettings,
+    },
+    {
+      id: "wallpaper",
+      label: t("settings.wallpaper"),
+      icon: Image,
+      component: WallpaperSettings,
     },
     {
       id: "about",

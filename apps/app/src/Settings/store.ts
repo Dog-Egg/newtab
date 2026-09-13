@@ -13,10 +13,22 @@ type SettingsStore = Settings & {
 function getSettings({
   locale,
   wallpaperUrl,
+  wallpaperColor,
   nodeScale,
   wallpaperOverlayOpacity,
 }: SettingsStore): Settings {
-  return { locale, wallpaperUrl, nodeScale, wallpaperOverlayOpacity };
+  return {
+    locale,
+    wallpaperUrl,
+    wallpaperColor,
+    nodeScale,
+    wallpaperOverlayOpacity,
+  };
+}
+
+function getNextSettings(current: Settings, update: SettingsUpdate): Settings {
+  const patch = typeof update === "function" ? update(current) : update;
+  return { ...current, ...patch };
 }
 
 async function applyLocale(locale: Settings["locale"]) {
@@ -35,20 +47,26 @@ async function createSettingsStore() {
   const initialSettings = await platform.settings.read();
   await applyLocale(initialSettings.locale);
 
-  const store = create<SettingsStore>()((set, get) => ({
-    ...initialSettings,
-    updateSettings: (update) => {
+  const store = create<SettingsStore>()((set, get) => {
+    const applySettingsUpdate = (update: SettingsUpdate) => {
       const current = getSettings(get());
-      const patch = typeof update === "function" ? update(current) : update;
-      const next = { ...current, ...patch };
+      const next = getNextSettings(current, update);
 
       if (next.locale !== current.locale) void applyLocale(next.locale);
       set(next);
-      void platform.settings.save(next).catch((error: unknown) => {
-        console.error("Failed to save settings", error);
-      });
-    },
-  }));
+      return next;
+    };
+
+    return {
+      ...initialSettings,
+      updateSettings: (update) => {
+        const next = applySettingsUpdate(update);
+        void platform.settings.save(next).catch((error: unknown) => {
+          console.error("Failed to save settings", error);
+        });
+      },
+    };
+  });
 
   platform.settings.subscribe((settings) => {
     const current = getSettings(store.getState());

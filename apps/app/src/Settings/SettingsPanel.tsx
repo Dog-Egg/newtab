@@ -12,6 +12,7 @@ function SettingsSkeleton() {
       <div className="w-16 shrink-0 space-y-3 border-r border-white/10 px-2 py-5">
         <div className="h-10 rounded-xl bg-white/10" />
         <div className="h-10 rounded-xl bg-white/10" />
+        <div className="h-10 rounded-xl bg-white/10" />
       </div>
       <div className="min-w-0 flex-1 px-4 py-6 sm:px-6">
         <div className="divide-y divide-white/10">

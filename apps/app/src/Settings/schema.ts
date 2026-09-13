@@ -1,5 +1,3 @@
-import { normalizeStoredWallpaperUrl } from "./wallpaper";
-
 import * as z from "zod/mini";
 
 export const DEFAULT_LAUNCHER_NODE_SCALE = 1;
@@ -10,19 +8,24 @@ export const MIN_WALLPAPER_OVERLAY_OPACITY = 0;
 export const MAX_WALLPAPER_OVERLAY_OPACITY = 0.8;
 export const SETTINGS_STORAGE_KEY = "settings";
 
+export const wallpaperUrlSchema = z.pipe(
+  z.string().check(z.trim(), z.httpUrl()),
+  z.transform((value) => new URL(value).toString()),
+);
+
+export const wallpaperColorSchema = z.pipe(
+  z.string().check(z.trim(), z.regex(/^#[\da-f]{6}$/i)),
+  z.transform((value) => value.toUpperCase()),
+);
+
 export const settingsSchema = z.pipe(
   z.transform((value) =>
     value && typeof value === "object" && !Array.isArray(value) ? value : {},
   ),
   z.object({
     locale: z.catch(z.optional(z.enum(["en", "zh-CN"])), undefined),
-    wallpaperUrl: z.catch(
-      z.pipe(
-        z.string(),
-        z.transform((value) => normalizeStoredWallpaperUrl(value)),
-      ),
-      null,
-    ),
+    wallpaperUrl: z.catch(z.optional(wallpaperUrlSchema), undefined),
+    wallpaperColor: z.catch(z.optional(wallpaperColorSchema), undefined),
     nodeScale: z.catch(
       z
         .number()

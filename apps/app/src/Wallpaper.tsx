@@ -27,9 +27,11 @@ function getWallpaperLayerStyle(wallpaperUrl: string): CSSProperties {
 
 export function Wallpaper() {
   const selectedWallpaperUrl = useSettingsStore((state) => state.wallpaperUrl);
+  const wallpaperColor = useSettingsStore((state) => state.wallpaperColor);
   const overlayOpacity = useSettingsStore(
     (state) => state.wallpaperOverlayOpacity,
   );
+  const usesSolidColor = wallpaperColor !== undefined;
   const wallpaperUrl = selectedWallpaperUrl ?? DEFAULT_WALLPAPER_URL;
   const wallpaperRequest = useMemo<WallpaperRequest>(
     () => ({ url: wallpaperUrl }),
@@ -47,7 +49,7 @@ export function Wallpaper() {
     const requestId = wallpaperRequestIdRef.current + 1;
     wallpaperRequestIdRef.current = requestId;
 
-    if (activeWallpaperUrl === wallpaperUrl) return;
+    if (usesSolidColor || activeWallpaperUrl === wallpaperUrl) return;
 
     const image = new Image();
     image.decoding = "async";
@@ -64,7 +66,7 @@ export function Wallpaper() {
       image.onload = null;
       image.onerror = null;
     };
-  }, [activeWallpaperUrl, wallpaperRequest, wallpaperUrl]);
+  }, [activeWallpaperUrl, usesSolidColor, wallpaperRequest, wallpaperUrl]);
 
   const completeWallpaperFade = useCallback(() => {
     if (
@@ -83,14 +85,19 @@ export function Wallpaper() {
 
   return (
     <div className="pointer-events-none fixed inset-0 overflow-hidden">
-      {activeWallpaperUrl ? (
+      {usesSolidColor ? (
+        <div
+          className="absolute inset-0 transition-colors duration-200 motion-reduce:transition-none"
+          style={{ backgroundColor: wallpaperColor }}
+        />
+      ) : activeWallpaperUrl ? (
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={getWallpaperLayerStyle(activeWallpaperUrl)}
         />
       ) : null}
 
-      {pendingWallpaperUrl ? (
+      {!usesSolidColor && pendingWallpaperUrl ? (
         <div
           key={pendingWallpaperUrl}
           className="wallpaper-fade-in absolute inset-0 bg-cover bg-center"
@@ -102,13 +109,15 @@ export function Wallpaper() {
         />
       ) : null}
 
-      {activeWallpaperUrl || pendingWallpaperUrl ? (
+      {!usesSolidColor && (activeWallpaperUrl || pendingWallpaperUrl) ? (
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.2),transparent_28%)]" />
       ) : null}
-      <div
-        className="absolute inset-0 bg-black transition-opacity duration-200"
-        style={{ opacity: overlayOpacity }}
-      />
+      {!usesSolidColor ? (
+        <div
+          className="absolute inset-0 bg-black transition-opacity duration-200"
+          style={{ opacity: overlayOpacity }}
+        />
+      ) : null}
     </div>
   );
 }

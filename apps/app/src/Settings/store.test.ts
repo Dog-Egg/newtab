@@ -18,7 +18,8 @@ vi.mock("../i18n", () => ({
 
 const settings: Settings = {
   locale: "en",
-  wallpaperUrl: null,
+  wallpaperUrl: undefined,
+  wallpaperColor: undefined,
   nodeScale: 1,
   wallpaperOverlayOpacity: 0.35,
 };
