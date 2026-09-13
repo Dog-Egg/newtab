@@ -11,7 +11,7 @@ import {
   MIN_WALLPAPER_OVERLAY_OPACITY,
   type Settings,
 } from "../schema";
-import { useSettings } from "../SettingsProvider";
+import { useSettingsStore } from "../store";
 import { SettingsRange } from "../SettingsRange";
 
 function preloadImage(url: string) {
@@ -24,16 +24,10 @@ function preloadImage(url: string) {
   });
 }
 
-function LauncherSizeSettings({
-  settings,
-  onPreview,
-  onChange,
-}: {
-  settings: Settings;
-  onPreview: (settings: Partial<Settings>) => void;
-  onChange: (settings: Partial<Settings>) => void;
-}) {
+function LauncherSizeSettings() {
   const { t } = useTranslation();
+  const nodeScale = useSettingsStore((state) => state.nodeScale);
+  const updateSettings = useSettingsStore((state) => state.updateSettings);
 
   return (
     <section className="space-y-3 py-5 sm:py-6">
@@ -50,34 +44,24 @@ function LauncherSizeSettings({
         min={MIN_LAUNCHER_NODE_SCALE}
         max={MAX_LAUNCHER_NODE_SCALE}
         step={0.01}
-        value={settings.nodeScale}
+        value={nodeScale}
         ariaLabel={t("settings.iconSize")}
         minLabel={t("settings.small")}
         maxLabel={t("settings.large")}
         defaultValue={DEFAULT_LAUNCHER_NODE_SCALE}
-        onPreview={(nodeScale) => onPreview({ nodeScale })}
-        onCommit={(nodeScale) => onChange({ nodeScale })}
+        onChange={(nodeScale) => updateSettings({ nodeScale })}
       />
     </section>
   );
 }
 
-function WallpaperSettingsSection({
-  selectedWallpaperUrl,
-  settings,
-  onSelectWallpaper,
-  onClearWallpaper,
-  onPreviewSettings,
-  onChangeSettings,
-}: {
-  selectedWallpaperUrl: string | null;
-  settings: Settings;
-  onSelectWallpaper: (wallpaperUrl: string) => void;
-  onClearWallpaper: () => void;
-  onPreviewSettings: (settings: Partial<Settings>) => void;
-  onChangeSettings: (settings: Partial<Settings>) => void;
-}) {
+function WallpaperSettingsSection() {
   const { t } = useTranslation();
+  const wallpaperUrl = useSettingsStore((state) => state.wallpaperUrl);
+  const wallpaperOverlayOpacity = useSettingsStore(
+    (state) => state.wallpaperOverlayOpacity,
+  );
+  const updateSettings = useSettingsStore((state) => state.updateSettings);
   const [customImageUrl, setCustomImageUrl] = useState("");
   const [customImageError, setCustomImageError] = useState("");
   const [isApplyingCustomImage, setIsApplyingCustomImage] = useState(false);
@@ -100,7 +84,7 @@ function WallpaperSettingsSection({
 
       try {
         await preloadImage(imageUrl);
-        onSelectWallpaper(imageUrl);
+        updateSettings({ wallpaperUrl: imageUrl });
         setCustomImageUrl("");
       } catch {
         setCustomImageError(t("settings.imageLoadFailed"));
@@ -108,7 +92,7 @@ function WallpaperSettingsSection({
         setIsApplyingCustomImage(false);
       }
     },
-    [customImageUrl, onSelectWallpaper, t],
+    [customImageUrl, t, updateSettings],
   );
 
   return (
@@ -132,11 +116,11 @@ function WallpaperSettingsSection({
             >
               {t("settings.imageUrl")}
             </label>
-            {selectedWallpaperUrl && (
+            {wallpaperUrl && (
               <button
                 className="shrink-0 rounded px-1 text-xs font-medium text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-white/70 motion-reduce:transition-none"
                 type="button"
-                onClick={onClearWallpaper}
+                onClick={() => updateSettings({ wallpaperUrl: null })}
               >
                 {t("settings.restoreDefault")}
               </button>
@@ -185,16 +169,13 @@ function WallpaperSettingsSection({
             min={MIN_WALLPAPER_OVERLAY_OPACITY}
             max={MAX_WALLPAPER_OVERLAY_OPACITY}
             step={0.01}
-            value={settings.wallpaperOverlayOpacity}
+            value={wallpaperOverlayOpacity}
             ariaLabel={t("settings.overlayIntensity")}
             minLabel={t("settings.light")}
             maxLabel={t("settings.dark")}
             defaultValue={DEFAULT_WALLPAPER_OVERLAY_OPACITY}
-            onPreview={(wallpaperOverlayOpacity) =>
-              onPreviewSettings({ wallpaperOverlayOpacity })
-            }
-            onCommit={(wallpaperOverlayOpacity) =>
-              onChangeSettings({ wallpaperOverlayOpacity })
+            onChange={(wallpaperOverlayOpacity) =>
+              updateSettings({ wallpaperOverlayOpacity })
             }
           />
         </div>
@@ -205,7 +186,8 @@ function WallpaperSettingsSection({
 
 export function GeneralSettings() {
   const { t } = useTranslation();
-  const { settings, previewSettings, updateSettings } = useSettings();
+  const locale = useSettingsStore((state) => state.locale);
+  const updateSettings = useSettingsStore((state) => state.updateSettings);
 
   return (
     <div className="divide-y divide-white/10">
@@ -223,7 +205,7 @@ export function GeneralSettings() {
           <select
             id="settings-language"
             className="h-10 w-full appearance-none rounded-xl border border-glass-border bg-white/10 py-0 pl-3 pr-11 text-sm font-medium text-glass-strong outline-none transition hover:bg-glass-hover focus-visible:border-glass-focus focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
-            value={settings.locale}
+            value={locale}
             aria-labelledby="language-settings-title"
             onChange={(event) =>
               updateSettings({
@@ -241,19 +223,8 @@ export function GeneralSettings() {
         </div>
       </section>
 
-      <LauncherSizeSettings
-        settings={settings}
-        onPreview={previewSettings}
-        onChange={updateSettings}
-      />
-      <WallpaperSettingsSection
-        selectedWallpaperUrl={settings.wallpaperUrl}
-        settings={settings}
-        onSelectWallpaper={(wallpaperUrl) => updateSettings({ wallpaperUrl })}
-        onClearWallpaper={() => updateSettings({ wallpaperUrl: null })}
-        onPreviewSettings={previewSettings}
-        onChangeSettings={updateSettings}
-      />
+      <LauncherSizeSettings />
+      <WallpaperSettingsSection />
     </div>
   );
 }

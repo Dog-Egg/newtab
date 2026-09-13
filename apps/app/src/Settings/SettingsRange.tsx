@@ -26,8 +26,7 @@ export function SettingsRange({
   minLabel,
   maxLabel,
   ariaLabel,
-  onPreview,
-  onCommit,
+  onChange,
 }: {
   id: string;
   value: number;
@@ -38,8 +37,7 @@ export function SettingsRange({
   minLabel: string;
   maxLabel: string;
   ariaLabel: string;
-  onPreview: (value: number) => void;
-  onCommit: (value: number) => void;
+  onChange: (value: number) => void;
 }) {
   const { t } = useTranslation();
   const labelButtonClass =
@@ -56,15 +54,13 @@ export function SettingsRange({
         step={step}
         value={value}
         aria-label={ariaLabel}
-        onChange={(event) => onPreview(Number(event.currentTarget.value))}
-        onPointerUp={(event) => onCommit(Number(event.currentTarget.value))}
-        onKeyUp={(event) => onCommit(Number(event.currentTarget.value))}
+        onChange={(event) => onChange(Number(event.currentTarget.value))}
       />
       <div className="relative mt-0.5 h-5 text-xs font-medium text-white/[0.85]">
         <button
           className={`${labelButtonClass} left-0`}
           type="button"
-          onClick={() => onCommit(adjustRangeValue(value, -1, step, min, max))}
+          onClick={() => onChange(adjustRangeValue(value, -1, step, min, max))}
           aria-label={t("settings.decrease", { label: minLabel })}
         >
           {minLabel}
@@ -73,7 +69,7 @@ export function SettingsRange({
           className={`${labelButtonClass} -translate-x-1/2`}
           style={{ left: getRangePosition(defaultValue, min, max) }}
           type="button"
-          onClick={() => onCommit(defaultValue)}
+          onClick={() => onChange(defaultValue)}
           aria-label={t("settings.resetDefault", { value: defaultValue })}
         >
           {t("common.default")}
@@ -81,7 +77,7 @@ export function SettingsRange({
         <button
           className={`${labelButtonClass} right-0`}
           type="button"
-          onClick={() => onCommit(adjustRangeValue(value, 1, step, min, max))}
+          onClick={() => onChange(adjustRangeValue(value, 1, step, min, max))}
           aria-label={t("settings.increase", { label: maxLabel })}
         >
           {maxLabel}

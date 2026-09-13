@@ -4,11 +4,7 @@ import {
   SEARCH_ENGINE_SETTINGS_KEY,
   searchEngineSettingsSchema,
 } from "../SearchEngineBox/schema";
-import {
-  SETTINGS_STORAGE_KEY,
-  settingsSchema,
-  type Settings,
-} from "../Settings/schema";
+import { SETTINGS_STORAGE_KEY, settingsSchema } from "../Settings/schema";
 import { getLocaleFromLanguage } from "../i18n/locale";
 import {
   createChromeBookmarkNode,
@@ -19,14 +15,6 @@ import {
 import { getChromeStorage, setChromeStorage } from "./chromeStorage";
 
 const defaultLocale = getLocaleFromLanguage(chrome.i18n.getUILanguage());
-
-function parseStoredSettings(value: unknown): Settings {
-  const storedSettings = settingsSchema.parse(value);
-  return {
-    ...storedSettings,
-    locale: storedSettings.locale ?? defaultLocale,
-  };
-}
 
 function subscribeChromeStorage(
   key: string,
@@ -134,18 +122,18 @@ export const platform: Platform = {
   settings: {
     read: async () => {
       try {
-        return parseStoredSettings(
+        return settingsSchema.parse(
           await getChromeStorage(SETTINGS_STORAGE_KEY),
         );
       } catch (error: unknown) {
         console.error("Failed to read settings", error);
-        return parseStoredSettings(undefined);
+        return settingsSchema.parse(undefined);
       }
     },
     save: (settings) => setChromeStorage(SETTINGS_STORAGE_KEY, settings),
     subscribe: (onChange) =>
       subscribeChromeStorage(SETTINGS_STORAGE_KEY, (value) =>
-        onChange(parseStoredSettings(value)),
+        onChange(settingsSchema.parse(value)),
       ),
   },
   searchEngineSettings: {

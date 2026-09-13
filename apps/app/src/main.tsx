@@ -4,25 +4,9 @@ import { platform } from "@platform";
 import { App } from "./App";
 import { BookmarkNavigationProvider } from "./Launcher/BookmarkNavigationProvider";
 import { BookmarkProvider } from "./Launcher/BookmarkProvider";
-import { SettingsProvider } from "./Settings/SettingsProvider";
-import i18n from "./i18n";
 import "./styles.css";
 
 async function main() {
-  // Resolve persisted settings before React's first render so neither the UI
-  // nor the language selector briefly uses the browser default when the user
-  // has explicitly chosen another language. Missing locale values still fall
-  // back to the platform default (the browser UI language in extension mode).
-  const initialSettings = await platform.settings.read();
-  const initialLocale = initialSettings.locale ?? platform.defaultLocale;
-
-  document.documentElement.lang = initialLocale;
-  try {
-    await i18n.changeLanguage(initialLocale);
-  } catch (error: unknown) {
-    console.error("Failed to apply the initial locale", error);
-  }
-
   // Extension 首次读取书签树时会先完成旧 Launcher 的一次性导出。
   const initialBookmarks = await platform.bookmarks
     .read()
@@ -33,13 +17,11 @@ async function main() {
 
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
-      <SettingsProvider initialSettings={initialSettings}>
-        <BookmarkProvider initialBookmarks={initialBookmarks}>
-          <BookmarkNavigationProvider>
-            <App />
-          </BookmarkNavigationProvider>
-        </BookmarkProvider>
-      </SettingsProvider>
+      <BookmarkProvider initialBookmarks={initialBookmarks}>
+        <BookmarkNavigationProvider>
+          <App />
+        </BookmarkNavigationProvider>
+      </BookmarkProvider>
     </StrictMode>,
   );
 }

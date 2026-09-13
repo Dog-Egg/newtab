@@ -23,14 +23,6 @@ const defaultLocale = getLocaleFromLanguage(
   new URLSearchParams(window.location.search).get("lang") ?? "en",
 );
 
-function parseStoredSettings(value: unknown): Settings {
-  const storedSettings = settingsSchema.parse(value);
-  return {
-    ...storedSettings,
-    locale: storedSettings.locale ?? defaultLocale,
-  };
-}
-
 function notifyWebBookmarkListeners() {
   for (const listener of webBookmarkListeners) listener();
 }
@@ -148,10 +140,10 @@ function readStoredSearchEngineSettings() {
 
 function readStoredSettings() {
   try {
-    return parseStoredSettings(readJsonStorageValue(SETTINGS_STORAGE_KEY));
+    return settingsSchema.parse(readJsonStorageValue(SETTINGS_STORAGE_KEY));
   } catch (error: unknown) {
     console.error("Failed to read settings", error);
-    return parseStoredSettings(undefined);
+    return settingsSchema.parse(undefined);
   }
 }
 

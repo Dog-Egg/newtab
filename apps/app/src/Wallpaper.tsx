@@ -6,6 +6,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import { useSettingsStore } from "./Settings/store";
 
 const WALLPAPER_FADE_DURATION_MS = 520;
 const DEFAULT_WALLPAPER_URL =
@@ -24,13 +25,11 @@ function getWallpaperLayerStyle(wallpaperUrl: string): CSSProperties {
   };
 }
 
-export function Wallpaper({
-  wallpaperUrl: selectedWallpaperUrl,
-  overlayOpacity,
-}: {
-  wallpaperUrl: string | null;
-  overlayOpacity: number;
-}) {
+export function Wallpaper() {
+  const selectedWallpaperUrl = useSettingsStore((state) => state.wallpaperUrl);
+  const overlayOpacity = useSettingsStore(
+    (state) => state.wallpaperOverlayOpacity,
+  );
   const wallpaperUrl = selectedWallpaperUrl ?? DEFAULT_WALLPAPER_URL;
   const wallpaperRequest = useMemo<WallpaperRequest>(
     () => ({ url: wallpaperUrl }),

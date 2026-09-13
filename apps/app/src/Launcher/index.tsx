@@ -37,7 +37,7 @@ import {
   DropdownMenuItem,
 } from "../components/DropdownMenu";
 import { SiteIcon } from "../components/SiteIcon";
-import { useSettings } from "../Settings/SettingsProvider";
+import { useSettingsStore } from "../Settings/store";
 import {
   findBookmarkFolder,
   findBookmarkPath,
@@ -326,9 +326,7 @@ function MergeTargetFrame({
   active: boolean;
   children: ReactNode;
 }) {
-  const {
-    settings: { nodeScale },
-  } = useSettings();
+  const nodeScale = useSettingsStore((state) => state.nodeScale);
   return (
     <span
       className="relative shrink-0"
@@ -358,9 +356,7 @@ function FolderPreview({
   folder: BrowserBookmarkFolder;
   isMergeTarget?: boolean;
 }) {
-  const {
-    settings: { nodeScale },
-  } = useSettings();
+  const nodeScale = useSettingsStore((state) => state.nodeScale);
   const previewItems = flattenBookmarkItems(folder.children).slice(0, 4);
 
   return (
@@ -408,9 +404,7 @@ function BookmarkPreview({
   bookmark: BrowserBookmarkItem;
   isMergeTarget?: boolean;
 }) {
-  const {
-    settings: { nodeScale },
-  } = useSettings();
+  const nodeScale = useSettingsStore((state) => state.nodeScale);
   return (
     <MergeTargetFrame active={isMergeTarget}>
       <SiteIcon
@@ -455,9 +449,7 @@ function BookmarkNodeCard({
   onDelete: () => void;
 }) {
   const { t } = useTranslation();
-  const {
-    settings: { nodeScale },
-  } = useSettings();
+  const nodeScale = useSettingsStore((state) => state.nodeScale);
   const isModifiable = node.unmodifiable !== "managed";
   const [draftTitle, setDraftTitle] = useState(node.title);
   const renameInputRef = useRef<HTMLInputElement>(null);
@@ -636,9 +628,7 @@ function NodeLabel({
   node: BrowserBookmarkNode;
   hidden?: boolean;
 }) {
-  const {
-    settings: { nodeScale },
-  } = useSettings();
+  const nodeScale = useSettingsStore((state) => state.nodeScale);
   return (
     <span
       className={clsx(
@@ -661,9 +651,7 @@ function NodeLabel({
 }
 
 function DraggedNodePreview({ node }: { node: BrowserBookmarkNode }) {
-  const {
-    settings: { nodeScale },
-  } = useSettings();
+  const nodeScale = useSettingsStore((state) => state.nodeScale);
   return (
     <div
       className="flex rotate-1 scale-105 flex-col items-center gap-2 drop-shadow-2xl"
@@ -835,9 +823,7 @@ function DeleteBookmarkDialog({
 
 function AddBookmarkButton({ onClick }: { onClick: () => void }) {
   const { t } = useTranslation();
-  const {
-    settings: { nodeScale },
-  } = useSettings();
+  const nodeScale = useSettingsStore((state) => state.nodeScale);
 
   return (
     <button
@@ -1042,9 +1028,7 @@ export function Launcher() {
     selectRoot,
     navigateToFolder,
   } = useBookmarkNavigation();
-  const {
-    settings: { nodeScale },
-  } = useSettings();
+  const nodeScale = useSettingsStore((state) => state.nodeScale);
   const roots = useMemo(() => getBookmarkRoots(bookmarkTree), [bookmarkTree]);
   const [renameState, setRenameState] = useState<{
     folderId: string;

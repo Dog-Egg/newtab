@@ -8,7 +8,6 @@ import { Wallpaper } from "./Wallpaper";
 import { MainDialogPortal } from "./components/Dialog";
 import { Drawer } from "./components/Drawer";
 import { SettingsPanel } from "./Settings/SettingsPanel";
-import { useSettings } from "./Settings/SettingsProvider";
 import { useTranslation } from "react-i18next";
 
 export function App() {
@@ -16,8 +15,6 @@ export function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [hasOpenedSettings, setHasOpenedSettings] = useState(false);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
-  const { settings } = useSettings();
-
   useEffect(() => {
     document.title = t("app.title");
   }, [i18n.resolvedLanguage, t]);
@@ -29,10 +26,7 @@ export function App() {
 
   return (
     <div className="relative flex min-h-screen min-w-80 overflow-hidden font-sans text-white">
-      <Wallpaper
-        wallpaperUrl={settings.wallpaperUrl}
-        overlayOpacity={settings.wallpaperOverlayOpacity}
-      />
+      <Wallpaper />
 
       <main className="relative min-h-screen min-w-0 flex-1 overflow-hidden">
         <Toaster
