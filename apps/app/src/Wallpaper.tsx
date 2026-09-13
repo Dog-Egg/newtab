@@ -8,7 +8,6 @@ import {
 } from "react";
 import { useSettingsStore } from "./Settings/store";
 
-const WALLPAPER_FADE_DURATION_MS = 520;
 const DEFAULT_WALLPAPER_URL =
   import.meta.env.VITE_DEFAULT_WALLPAPER_URL?.trim() ||
   "https://images.unsplash.com/photo-1515268064940-5150b7c29f35";
@@ -100,11 +99,8 @@ export function Wallpaper() {
       {!usesSolidColor && pendingWallpaperUrl ? (
         <div
           key={pendingWallpaperUrl}
-          className="wallpaper-fade-in absolute inset-0 bg-cover bg-center"
-          style={{
-            ...getWallpaperLayerStyle(pendingWallpaperUrl),
-            animationDuration: `${WALLPAPER_FADE_DURATION_MS}ms`,
-          }}
+          className="absolute inset-0 animate-fade-in bg-cover bg-center motion-reduce:animate-[fade-in_0.01ms_ease-out_forwards]"
+          style={getWallpaperLayerStyle(pendingWallpaperUrl)}
           onAnimationEnd={completeWallpaperFade}
         />
       ) : null}

@@ -1,3 +1,7 @@
 {
-  "tailwindCSS.classFunctions": ["tw", "clsx"]
+  "tailwindCSS.classFunctions": ["tw", "clsx"],
+  "tailwindCSS.experimental.configFile": {
+    "apps/app/tailwind.config.js": "apps/app/src/**",
+    "apps/site/tailwind.config.mjs": "apps/site/src/**"
+  }
 }

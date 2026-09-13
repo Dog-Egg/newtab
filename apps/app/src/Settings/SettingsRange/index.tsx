@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import "./styles.css";
 
 function getRangePosition(value: number, min: number, max: number) {
   return `${((value - min) / (max - min)) * 100}%`;
@@ -47,7 +48,7 @@ export function SettingsRange({
     <div>
       <input
         id={id}
-        className="settings-range"
+        className="settings-range h-5 w-full cursor-pointer appearance-none bg-transparent outline-none"
         type="range"
         min={min}
         max={max}

@@ -44,7 +44,7 @@ export function Drawer({
       <aside
         data-drawer=""
         className={clsx(
-          "glass-panel settings-panel absolute inset-y-0 right-0 flex w-[min(100vw,32rem)] flex-col overflow-hidden rounded-none transition-transform duration-300 ease-out motion-reduce:transition-none",
+          "glass-panel absolute inset-y-0 right-0 flex w-[min(100vw,32rem)] flex-col overflow-hidden rounded-none bg-slate-900/[0.68] transition-transform duration-300 ease-out motion-reduce:transition-none",
           isOpen ? "translate-x-0" : "translate-x-full",
         )}
         role="dialog"

@@ -613,7 +613,10 @@ function BookmarkNodeCard({
       ) : null}
       <div
         ref={locatedCardRef}
-        className={clsx(isLocated && "bookmark-locate-shake")}
+        className={clsx(
+          isLocated &&
+            "animate-shake motion-reduce:animate-highlight motion-reduce:rounded-[1.875rem]",
+        )}
       >
         {content}
       </div>
