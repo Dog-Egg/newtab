@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -71,6 +72,13 @@ const interactiveBookmarkNodeClassName = clsx(
   bookmarkNodeClassName,
   "outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70",
 );
+
+const LAUNCHER_NODE_SCALE_VARIABLE = "--node-scale";
+const LAUNCHER_NODE_COLUMN_WIDTH_VARIABLE = "--node-column-width";
+
+function scaledPixels(pixels: number) {
+  return `calc(${pixels}px * var(${LAUNCHER_NODE_SCALE_VARIABLE}, 1))`;
+}
 
 type BookmarkContainer =
   { type: "root"; id: string } | { type: "folder"; id: string };
@@ -326,11 +334,10 @@ function MergeTargetFrame({
   active: boolean;
   children: ReactNode;
 }) {
-  const nodeScale = useSettingsStore((state) => state.nodeScale);
   return (
     <span
       className="relative shrink-0"
-      style={{ width: 64 * nodeScale, height: 64 * nodeScale }}
+      style={{ width: scaledPixels(64), height: scaledPixels(64) }}
     >
       <span
         aria-hidden="true"
@@ -339,7 +346,7 @@ function MergeTargetFrame({
           width: active ? 72 : 64,
           height: active ? 72 : 64,
           borderRadius: active ? 22 : 18,
-          transform: `translate(-50%, -50%) scale(${nodeScale})`,
+          transform: `translate(-50%, -50%) scale(var(${LAUNCHER_NODE_SCALE_VARIABLE}, 1))`,
         }}
       />
       <span className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
@@ -356,7 +363,6 @@ function FolderPreview({
   folder: BrowserBookmarkFolder;
   isMergeTarget?: boolean;
 }) {
-  const nodeScale = useSettingsStore((state) => state.nodeScale);
   const previewItems = flattenBookmarkItems(folder.children).slice(0, 4);
 
   return (
@@ -364,11 +370,11 @@ function FolderPreview({
       <span
         className="grid grid-cols-2 grid-rows-2"
         style={{
-          width: 64 * nodeScale,
-          height: 64 * nodeScale,
-          borderRadius: 18 * nodeScale,
-          padding: 8 * nodeScale,
-          gap: 4 * nodeScale,
+          width: scaledPixels(64),
+          height: scaledPixels(64),
+          borderRadius: scaledPixels(18),
+          padding: scaledPixels(8),
+          gap: scaledPixels(4),
         }}
       >
         {previewItems.length > 0 ? (
@@ -380,15 +386,15 @@ function FolderPreview({
               seed={item.id}
               className="size-full min-h-0 min-w-0 font-bold shadow-sm"
               style={{
-                borderRadius: 7 * nodeScale,
-                fontSize: 10 * nodeScale,
+                borderRadius: scaledPixels(7),
+                fontSize: scaledPixels(10),
               }}
             />
           ))
         ) : (
           <Folder
             className="col-span-2 row-span-2 m-auto text-white/80"
-            style={{ width: 28 * nodeScale, height: 28 * nodeScale }}
+            style={{ width: scaledPixels(28), height: scaledPixels(28) }}
             aria-hidden="true"
           />
         )}
@@ -404,7 +410,6 @@ function BookmarkPreview({
   bookmark: BrowserBookmarkItem;
   isMergeTarget?: boolean;
 }) {
-  const nodeScale = useSettingsStore((state) => state.nodeScale);
   return (
     <MergeTargetFrame active={isMergeTarget}>
       <SiteIcon
@@ -413,10 +418,10 @@ function BookmarkPreview({
         seed={bookmark.id}
         className="font-bold shadow-[0_18px_35px_rgba(15,23,42,0.22)]"
         style={{
-          width: 64 * nodeScale,
-          height: 64 * nodeScale,
-          borderRadius: 18 * nodeScale,
-          fontSize: 24 * nodeScale,
+          width: scaledPixels(64),
+          height: scaledPixels(64),
+          borderRadius: scaledPixels(18),
+          fontSize: scaledPixels(24),
         }}
       />
     </MergeTargetFrame>
@@ -449,7 +454,6 @@ function BookmarkNodeCard({
   onDelete: () => void;
 }) {
   const { t } = useTranslation();
-  const nodeScale = useSettingsStore((state) => state.nodeScale);
   const isModifiable = node.unmodifiable !== "managed";
   const [draftTitle, setDraftTitle] = useState(node.title);
   const renameInputRef = useRef<HTMLInputElement>(null);
@@ -511,7 +515,7 @@ function BookmarkNodeCard({
       <a
         ref={handleRef as Ref<HTMLAnchorElement>}
         className={interactiveBookmarkNodeClassName}
-        style={{ width: 80 * nodeScale }}
+        style={{ width: scaledPixels(80) }}
         href={node.url}
         target="_parent"
         rel="noreferrer"
@@ -520,18 +524,21 @@ function BookmarkNodeCard({
         <NodeLabel node={node} hidden={isDragging} />
       </a>
     ) : isRenaming ? (
-      <div className={bookmarkNodeClassName} style={{ width: 80 * nodeScale }}>
+      <div
+        className={bookmarkNodeClassName}
+        style={{ width: scaledPixels(80) }}
+      >
         <FolderPreview folder={node} />
         <span
           className="flex w-full items-start justify-center"
-          style={{ minHeight: 40 * nodeScale }}
+          style={{ minHeight: scaledPixels(40) }}
         >
           <input
             ref={renameInputRef}
             className="w-full rounded-lg bg-white/20 px-1.5 py-1 text-center font-semibold text-white shadow-sm outline-none ring-2 ring-white/70 backdrop-blur-md"
             style={{
-              fontSize: 14 * nodeScale,
-              lineHeight: `${20 * nodeScale}px`,
+              fontSize: scaledPixels(14),
+              lineHeight: scaledPixels(20),
             }}
             value={draftTitle}
             aria-label={t("launcher.renameFolder")}
@@ -557,7 +564,7 @@ function BookmarkNodeCard({
         ref={handleRef as Ref<HTMLButtonElement>}
         type="button"
         className={interactiveBookmarkNodeClassName}
-        style={{ width: 80 * nodeScale }}
+        style={{ width: scaledPixels(80) }}
         onClick={onOpen}
       >
         <FolderPreview folder={node} isMergeTarget={isMergeTarget} />
@@ -581,7 +588,7 @@ function BookmarkNodeCard({
       {isModifiable ? (
         <div
           className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2"
-          style={{ width: 64 * nodeScale, height: 64 * nodeScale }}
+          style={{ width: scaledPixels(64), height: scaledPixels(64) }}
         >
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
@@ -631,7 +638,6 @@ function NodeLabel({
   node: BrowserBookmarkNode;
   hidden?: boolean;
 }) {
-  const nodeScale = useSettingsStore((state) => state.nodeScale);
   return (
     <span
       className={clsx(
@@ -642,9 +648,9 @@ function NodeLabel({
       <span
         className="line-clamp-2 w-full text-balance font-semibold text-white drop-shadow-[0_1px_2px_rgba(15,23,42,0.45)]"
         style={{
-          minHeight: 40 * nodeScale,
-          fontSize: 12 * nodeScale,
-          lineHeight: `${20 * nodeScale}px`,
+          minHeight: scaledPixels(40),
+          fontSize: scaledPixels(12),
+          lineHeight: scaledPixels(20),
         }}
       >
         {node.title}
@@ -654,11 +660,10 @@ function NodeLabel({
 }
 
 function DraggedNodePreview({ node }: { node: BrowserBookmarkNode }) {
-  const nodeScale = useSettingsStore((state) => state.nodeScale);
   return (
     <div
       className="flex rotate-1 scale-105 flex-col items-center gap-2 drop-shadow-2xl"
-      style={{ width: 80 * nodeScale }}
+      style={{ width: scaledPixels(80) }}
     >
       {node.type === "item" ? (
         <BookmarkPreview bookmark={node} />
@@ -826,7 +831,6 @@ function DeleteBookmarkDialog({
 
 function AddBookmarkButton({ onClick }: { onClick: () => void }) {
   const { t } = useTranslation();
-  const nodeScale = useSettingsStore((state) => state.nodeScale);
 
   return (
     <button
@@ -834,19 +838,19 @@ function AddBookmarkButton({ onClick }: { onClick: () => void }) {
       aria-label={t("launcher.addBookmark")}
       onClick={onClick}
       className="group flex w-full flex-col items-center rounded-[30px] text-center text-white outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70"
-      style={{ width: 88 * nodeScale, gap: 8 * nodeScale }}
+      style={{ width: scaledPixels(88), gap: scaledPixels(8) }}
     >
       <span
         className="grid place-items-center border border-dashed border-white/55 bg-white/10 text-white/85 shadow-[0_18px_35px_rgba(15,23,42,0.16)] backdrop-blur-md transition duration-200 group-hover:border-white/80 group-hover:bg-white/20 group-hover:text-white"
         style={{
-          width: 64 * nodeScale,
-          height: 64 * nodeScale,
-          borderRadius: 18 * nodeScale,
+          width: scaledPixels(64),
+          height: scaledPixels(64),
+          borderRadius: scaledPixels(18),
         }}
       >
         <Plus
           strokeWidth={1.75}
-          style={{ width: 30 * nodeScale, height: 30 * nodeScale }}
+          style={{ width: scaledPixels(30), height: scaledPixels(30) }}
         />
       </span>
     </button>
@@ -1031,7 +1035,7 @@ export function Launcher() {
     selectRoot,
     navigateToFolder,
   } = useBookmarkNavigation();
-  const nodeScale = useSettingsStore((state) => state.nodeScale);
+  const rootRef = useRef<HTMLDivElement>(null);
   const roots = useMemo(() => getBookmarkRoots(bookmarkTree), [bookmarkTree]);
   const [renameState, setRenameState] = useState<{
     folderId: string;
@@ -1062,6 +1066,26 @@ export function Launcher() {
     renameState?.navigationVersion === navigationVersion
       ? renameState.folderId
       : null;
+
+  useLayoutEffect(() => {
+    const applyScale = (nodeScale: number) => {
+      const root = rootRef.current;
+      if (!root) return;
+
+      root.style.setProperty(LAUNCHER_NODE_SCALE_VARIABLE, String(nodeScale));
+      root.style.setProperty(
+        LAUNCHER_NODE_COLUMN_WIDTH_VARIABLE,
+        `${Math.round(88 * nodeScale)}px`,
+      );
+    };
+
+    applyScale(useSettingsStore.getState().nodeScale);
+    return useSettingsStore.subscribe((state, previousState) => {
+      if (state.nodeScale !== previousState.nodeScale) {
+        applyScale(state.nodeScale);
+      }
+    });
+  }, []);
 
   if (!activeRoot || !currentFolder) return null;
 
@@ -1208,7 +1232,10 @@ export function Launcher() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div
+        ref={rootRef}
+        className="flex min-h-0 flex-1 flex-col overflow-hidden"
+      >
         <section className="relative z-10 mx-auto flex min-h-[15rem] w-full max-w-6xl flex-1 flex-col pt-12 sm:pt-5">
           <div className="shrink-0 px-6 sm:px-10">
             <BookmarkBreadcrumb
@@ -1236,10 +1263,8 @@ export function Launcher() {
             <ul
               className="grid justify-center gap-x-3 gap-y-5 sm:gap-x-4"
               style={{
-                gridTemplateColumns: `repeat(auto-fit, ${Math.round(
-                  // 与旧网格使用同一个节点缩放值，避免列宽变化影响拖拽阈值。
-                  88 * nodeScale,
-                )}px)`,
+                // 与旧网格使用同一个节点缩放值，避免列宽变化影响拖拽阈值。
+                gridTemplateColumns: `repeat(auto-fit, var(${LAUNCHER_NODE_COLUMN_WIDTH_VARIABLE}, 88px))`,
               }}
             >
               {currentFolder.children.map((node, index) => (
