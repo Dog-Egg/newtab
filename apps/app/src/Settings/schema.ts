@@ -1,5 +1,4 @@
 import { normalizeStoredWallpaperUrl } from "./wallpaper";
-import type { AppLocale } from "../i18n/locale";
 
 import * as z from "zod/mini";
 
@@ -45,6 +44,4 @@ export const settingsSchema = z.pipe(
   }),
 );
 
-type StoredSettings = z.infer<typeof settingsSchema>;
-
-export type Settings = Omit<StoredSettings, "locale"> & { locale: AppLocale };
+export type Settings = z.infer<typeof settingsSchema>;

@@ -14,10 +14,11 @@ async function main() {
   // has explicitly chosen another language. Missing locale values still fall
   // back to the platform default (the browser UI language in extension mode).
   const initialSettings = await platform.settings.read();
+  const initialLocale = initialSettings.locale ?? platform.defaultLocale;
 
-  document.documentElement.lang = initialSettings.locale;
+  document.documentElement.lang = initialLocale;
   try {
-    await i18n.changeLanguage(initialSettings.locale);
+    await i18n.changeLanguage(initialLocale);
   } catch (error: unknown) {
     console.error("Failed to apply the initial locale", error);
   }

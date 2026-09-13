@@ -23,8 +23,9 @@ type SettingsUpdate =
 const SettingsContext = createContext<SettingsContextValue | null>(null);
 
 function applyLocale(locale: Settings["locale"]) {
-  document.documentElement.lang = locale;
-  void i18n.changeLanguage(locale);
+  const resolvedLocale = locale ?? platform.defaultLocale;
+  document.documentElement.lang = resolvedLocale;
+  void i18n.changeLanguage(resolvedLocale);
 }
 
 export function SettingsProvider({
