@@ -171,7 +171,7 @@ export function WallpaperSettings() {
           <form className="space-y-2" onSubmit={applyCustomWallpaper}>
             <div className="flex gap-2">
               <input
-                className="h-10 min-w-0 flex-1 rounded-xl border border-glass-border bg-white/10 px-3 text-sm font-medium text-glass-strong outline-none transition placeholder:text-glass-content focus:bg-glass-hover focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
+                className="h-10 min-w-0 flex-1 rounded-xl border border-glass-border bg-white/10 px-3 text-sm font-medium text-glass-strong outline-none transition placeholder:text-white/45 focus:bg-glass-hover focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
                 id="wallpaper-url"
                 type="url"
                 inputMode="url"

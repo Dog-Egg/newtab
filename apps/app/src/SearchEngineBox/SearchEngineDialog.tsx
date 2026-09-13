@@ -48,7 +48,7 @@ export function SearchEngineDialogs({
               <label className="mt-6 block text-sm font-semibold text-glass-content">
                 {t("search.name")}
                 <input
-                  className="mt-2 h-11 w-full rounded-xl border border-glass-border bg-white/15 px-4 text-base font-semibold text-glass-strong outline-none transition placeholder:text-white/70 focus:border-glass-focus focus:bg-white/20 focus:ring-2 focus:ring-glass-focus motion-reduce:transition-none"
+                  className="mt-2 h-11 w-full rounded-xl border border-glass-border bg-white/15 px-4 text-base font-semibold text-glass-strong outline-none transition placeholder:text-white/45 focus:border-glass-focus focus:bg-white/20 focus:ring-2 focus:ring-glass-focus motion-reduce:transition-none"
                   value={draft.name}
                   onChange={(event) =>
                     onDraftChange({ ...draft, name: event.target.value })
@@ -59,7 +59,7 @@ export function SearchEngineDialogs({
               <label className="mt-5 block text-sm font-semibold text-glass-content">
                 {t("search.urlFormat")}
                 <input
-                  className="mt-2 h-11 w-full rounded-xl border border-glass-border bg-white/15 px-4 text-sm font-semibold text-glass-strong outline-none transition placeholder:text-white/70 focus:border-glass-focus focus:bg-white/20 focus:ring-2 focus:ring-glass-focus motion-reduce:transition-none"
+                  className="mt-2 h-11 w-full rounded-xl border border-glass-border bg-white/15 px-4 text-sm font-semibold text-glass-strong outline-none transition placeholder:text-white/45 focus:border-glass-focus focus:bg-white/20 focus:ring-2 focus:ring-glass-focus motion-reduce:transition-none"
                   value={draft.urlFormat}
                   onChange={(event) =>
                     onDraftChange({ ...draft, urlFormat: event.target.value })
