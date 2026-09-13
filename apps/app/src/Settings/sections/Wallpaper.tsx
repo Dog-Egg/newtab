@@ -19,18 +19,17 @@ import { SettingsRange } from "../SettingsRange";
 
 const DEFAULT_SOLID_COLOR = "#0F766E";
 const WALLPAPER_COLORS = [
-  "#334155",
-  "#172554",
-  "#2563EB",
-  "#4F46E5",
-  "#7C3AED",
-  "#DB2777",
-  "#E11D48",
-  "#F97316",
-  "#F59E0B",
-  "#16A34A",
-  "#0F766E",
   "#0F172A",
+  "#334155",
+  "#1E3A8A",
+  "#1D4ED8",
+  "#4338CA",
+  "#6D28D9",
+  "#BE123C",
+  "#C2410C",
+  "#166534",
+  "#0F766E",
+  "#78350F",
 ] as const;
 
 type WallpaperMode = "image" | "color";
