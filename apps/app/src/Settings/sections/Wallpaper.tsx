@@ -129,7 +129,7 @@ export function WallpaperSettings() {
   );
 
   return (
-    <section className="space-y-5 px-1 py-1" aria-labelledby="wallpaper-title">
+    <section className="space-y-5" aria-labelledby="wallpaper-title">
       <h3
         id="wallpaper-title"
         className="text-sm font-medium text-glass-strong"
