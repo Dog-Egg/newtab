@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from "react";
 import clsx from "clsx";
+import * as z from "zod/mini";
 
 const SITE_ICON_GRADIENTS = [
   "linear-gradient(145deg, #2563eb, #0ea5e9)",
@@ -32,11 +33,11 @@ function getSeedIndex(seed: string) {
   return total % SITE_ICON_GRADIENTS.length;
 }
 
-function getSiteHostLabel(url: string) {
+function getSiteDomain(url: string) {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
   } catch {
-    return url;
+    return "";
   }
 }
 
@@ -44,8 +45,8 @@ function getSiteIconBackground(seed: string) {
   return SITE_ICON_GRADIENTS[getSeedIndex(seed)];
 }
 
-function getSiteIconImageUrl(url: string, format?: string) {
-  if (!LOGO_DEV_API_TOKEN) {
+function getSiteIconImageUrl(domain: string, format?: string) {
+  if (!LOGO_DEV_API_TOKEN || !domain) {
     return null;
   }
 
@@ -57,19 +58,100 @@ function getSiteIconImageUrl(url: string, format?: string) {
     params.append("format", format);
   }
 
-  try {
-    const domain = new URL(url).hostname;
-    return (
-      `https://img.logo.dev/${encodeURIComponent(domain)}?` + params.toString()
-    );
-  } catch {
-    return null;
-  }
+  return (
+    `https://img.logo.dev/${encodeURIComponent(domain)}?` + params.toString()
+  );
 }
 
 function getSiteIconText({ title, url }: { title: string; url: string }) {
-  const source = title.trim() || getSiteHostLabel(url);
+  const source = title.trim() || getSiteDomain(url) || url;
   return source.slice(0, 1).toUpperCase();
+}
+
+class SiteIconFailureCache {
+  // 存储格式为 { 域名: 失败记录时间 }，有效期统一由 ttl 决定。
+  private readonly schema = z.record(z.string(), z.number());
+  private readonly storageKey = "site-icon:failed";
+  private readonly ttl = 60 * 60 * 1000;
+  private readonly failedDomains = new Map<string, number>();
+
+  constructor() {
+    this.read();
+    window.addEventListener("storage", (event) => {
+      if (
+        event.storageArea === localStorage &&
+        (event.key === this.storageKey || event.key === null)
+      ) {
+        this.failedDomains.clear();
+        this.read();
+      }
+    });
+  }
+
+  private read() {
+    try {
+      const stored = this.schema.parse(
+        JSON.parse(localStorage.getItem(this.storageKey) ?? "{}"),
+      );
+      for (const [domain, failedAt] of Object.entries(stored)) {
+        if (!this.isExpired(failedAt)) {
+          this.failedDomains.set(domain, failedAt);
+        }
+      }
+    } catch {
+      // Invalid or unavailable storage leaves the in-memory cache usable.
+    }
+  }
+
+  private isExpired(failedAt: number, now = Date.now()) {
+    return failedAt > now || now - failedAt >= this.ttl;
+  }
+
+  has(domain: string) {
+    const failedAt = this.failedDomains.get(domain);
+    if (failedAt !== undefined && !this.isExpired(failedAt)) {
+      return true;
+    }
+    this.failedDomains.delete(domain);
+    return false;
+  }
+
+  add(domain: string) {
+    this.read();
+    if (this.has(domain)) {
+      return;
+    }
+    const now = Date.now();
+    for (const [cachedDomain, failedAt] of this.failedDomains) {
+      if (this.isExpired(failedAt, now)) {
+        this.failedDomains.delete(cachedDomain);
+      }
+    }
+    this.failedDomains.set(domain, now);
+
+    try {
+      localStorage.setItem(
+        this.storageKey,
+        JSON.stringify(Object.fromEntries(this.failedDomains)),
+      );
+    } catch {
+      // The in-memory cache still prevents retries when storage is unavailable.
+    }
+  }
+}
+
+const siteIconFailureCache = new SiteIconFailureCache();
+
+function useSiteIconFailure(domain: string) {
+  const [, setFailureCount] = useState(0);
+
+  return {
+    hasFailed: siteIconFailureCache.has(domain),
+    markFailed: () => {
+      siteIconFailureCache.add(domain);
+      setFailureCount((count) => count + 1);
+    },
+  };
 }
 
 export function SiteIcon({
@@ -80,10 +162,11 @@ export function SiteIcon({
   style,
   format,
 }: SiteIconProps) {
-  const imageUrl = getSiteIconImageUrl(url, format);
+  const domain = getSiteDomain(url);
+  const imageUrl = getSiteIconImageUrl(domain, format);
   const iconText = getSiteIconText({ title, url });
-  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
-  const hasImageError = failedImageUrl === imageUrl;
+  const { hasFailed, markFailed } = useSiteIconFailure(domain);
+  const hasImageError = !imageUrl || hasFailed;
 
   return (
     <span
@@ -99,17 +182,12 @@ export function SiteIcon({
       }}
     >
       {!hasImageError ? null : iconText}
-      {imageUrl ? (
+      {imageUrl && !hasImageError ? (
         <img
           alt=""
-          className={clsx(
-            "absolute inset-0 size-full object-cover",
-            hasImageError && "hidden",
-          )}
+          className="absolute inset-0 size-full object-cover"
           src={imageUrl}
-          onError={() => {
-            setFailedImageUrl(imageUrl);
-          }}
+          onError={markFailed}
         />
       ) : null}
     </span>
