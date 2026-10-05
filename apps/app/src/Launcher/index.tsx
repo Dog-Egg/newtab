@@ -31,16 +31,12 @@ import {
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { platform } from "@platform";
-import { Dialog, DialogTitle } from "../components/Dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "../components/DropdownMenu";
+import { Dialog, DialogClose, DialogTitle } from "../components/Dialog";
+import { Menu, MenuItem, MenuPopup } from "../components/Menu";
 import {
   ContextMenu,
-  ContextMenuContent,
   ContextMenuItem,
+  ContextMenuPopup,
 } from "../components/ContextMenu";
 import { SiteIcon } from "../components/SiteIcon";
 import { useSettingsStore } from "../Settings/store";
@@ -515,6 +511,21 @@ function BookmarkNodeCard({
     onEdit();
   }
 
+  const editActionLabel = t(
+    node.type === "folder" ? "launcher.rename" : "common.edit",
+  );
+  const deleteActionLabel = t("common.delete");
+  const renderBookmarkMenuItems = (
+    Item: typeof MenuItem | typeof ContextMenuItem,
+  ) => (
+    <>
+      <Item onClick={startEdit}>{editActionLabel}</Item>
+      <Item variant="danger" onClick={onDelete}>
+        {deleteActionLabel}
+      </Item>
+    </>
+  );
+
   const content =
     node.type === "item" ? (
       <a
@@ -595,59 +606,59 @@ function BookmarkNodeCard({
           className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2"
           style={{ width: scaledPixels(64), height: scaledPixels(64) }}
         >
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger asChild>
-              <button
-                type="button"
-                aria-label={t("search.moreActionsFor", { name: node.title })}
-                title={t("search.moreActions")}
-                className="pointer-events-auto invisible absolute right-0 top-0 grid size-6 -translate-y-1/3 translate-x-1/3 place-items-center rounded-full bg-slate-900/60 text-glass-content opacity-0 shadow-[0_8px_24px_rgba(15,23,42,0.24)] outline-none backdrop-blur-2xl transition-[color,background-color,opacity,visibility] delay-0 duration-200 hover:bg-slate-900/70 hover:text-glass-strong focus-visible:visible focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-glass-focus focus-visible:delay-0 group-hover:visible group-hover:opacity-100 group-hover:delay-500 data-[state=open]:visible data-[state=open]:bg-slate-900/70 data-[state=open]:text-glass-strong data-[state=open]:opacity-100 data-[state=open]:delay-0 motion-reduce:transition-none motion-reduce:delay-0"
-                onClick={(event) => event.stopPropagation()}
-                onPointerDown={(event) => event.stopPropagation()}
-              >
-                <EllipsisVertical className="size-4" aria-hidden="true" />
-              </button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenuContent>
-                <DropdownMenuItem onSelect={startEdit}>
-                  {t(
-                    node.type === "folder" ? "launcher.rename" : "common.edit",
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuItem variant="danger" onSelect={onDelete}>
-                  {t("common.delete")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
+          <Menu.Root>
+            <Menu.Trigger
+              render={
+                <button
+                  type="button"
+                  aria-label={t("search.moreActionsFor", { name: node.title })}
+                  title={t("search.moreActions")}
+                  className="pointer-events-auto invisible absolute right-0 top-0 grid size-6 -translate-y-1/3 translate-x-1/3 place-items-center rounded-full bg-slate-900/60 text-glass-content opacity-0 shadow-[0_8px_24px_rgba(15,23,42,0.24)] outline-none backdrop-blur-2xl transition-[color,background-color,opacity,visibility] delay-0 duration-200 hover:bg-slate-900/70 hover:text-glass-strong focus-visible:visible focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-glass-focus focus-visible:delay-0 group-hover:visible group-hover:opacity-100 group-hover:delay-500 data-[popup-open]:visible data-[popup-open]:bg-slate-900/70 data-[popup-open]:text-glass-strong data-[popup-open]:opacity-100 data-[popup-open]:delay-0 motion-reduce:transition-none motion-reduce:delay-0"
+                  onClick={(event) => event.stopPropagation()}
+                  onPointerDown={(event) => event.stopPropagation()}
+                >
+                  <EllipsisVertical className="size-4" aria-hidden="true" />
+                </button>
+              }
+            />
+            <Menu.Portal>
+              <MenuPopup>{renderBookmarkMenuItems(MenuItem)}</MenuPopup>
+            </Menu.Portal>
+          </Menu.Root>
         </div>
       ) : null}
-      <ContextMenu.Root>
-        <ContextMenu.Trigger asChild disabled={!isModifiable || isRenaming}>
-          <div
-            ref={locatedCardRef}
-            className={clsx(
-              isLocated &&
-                "animate-shake motion-reduce:animate-highlight motion-reduce:rounded-[1.875rem]",
-            )}
-          >
-            {content}
-          </div>
-        </ContextMenu.Trigger>
-        {isModifiable && !isRenaming ? (
+      {isModifiable && !isRenaming ? (
+        <ContextMenu.Root>
+          <ContextMenu.Trigger
+            render={
+              <div
+                ref={locatedCardRef}
+                className={clsx(
+                  isLocated &&
+                    "animate-shake motion-reduce:animate-highlight motion-reduce:rounded-[1.875rem]",
+                )}
+              >
+                {content}
+              </div>
+            }
+          />
           <ContextMenu.Portal>
-            <ContextMenuContent>
-              <ContextMenuItem onSelect={startEdit}>
-                {t(node.type === "folder" ? "launcher.rename" : "common.edit")}
-              </ContextMenuItem>
-              <ContextMenuItem variant="danger" onSelect={onDelete}>
-                {t("common.delete")}
-              </ContextMenuItem>
-            </ContextMenuContent>
+            <ContextMenuPopup>
+              {renderBookmarkMenuItems(ContextMenuItem)}
+            </ContextMenuPopup>
           </ContextMenu.Portal>
-        ) : null}
-      </ContextMenu.Root>
+        </ContextMenu.Root>
+      ) : (
+        <div
+          ref={locatedCardRef}
+          className={clsx(
+            isLocated &&
+              "animate-shake motion-reduce:animate-highlight motion-reduce:rounded-[1.875rem]",
+          )}
+        >
+          {content}
+        </div>
+      )}
     </li>
   );
 }
@@ -713,7 +724,7 @@ function BookmarkEditorDialog({
   const [title, setTitle] = useState(initialTitle);
   const [url, setUrl] = useState(initialUrl);
 
-  function submit(event: FormEvent) {
+  function submit(event: FormEvent, close: () => void) {
     event.preventDefault();
     const normalizedTitle = title.trim();
     const normalizedUrl = url.trim();
@@ -737,13 +748,13 @@ function BookmarkEditorDialog({
         }),
       );
     }
-    onClose();
+    close();
   }
 
   return (
     <Dialog className="max-w-md p-7" onClose={onClose}>
       {(close) => (
-        <form className="space-y-5" onSubmit={submit}>
+        <form className="space-y-5" onSubmit={(event) => submit(event, close)}>
           <DialogTitle className="text-xl font-bold text-white">
             {state.mode === "edit"
               ? isFolder
@@ -779,13 +790,12 @@ function BookmarkEditorDialog({
             </label>
           ) : null}
           <div className="flex justify-end gap-3">
-            <button
+            <DialogClose
               type="button"
               className="rounded-xl px-4 py-2 text-sm font-semibold text-white/75 hover:bg-white/10"
-              onClick={close}
             >
               {t("common.cancel")}
-            </button>
+            </DialogClose>
             <button
               type="submit"
               className="rounded-xl bg-white px-5 py-2 text-sm font-semibold text-slate-900 hover:bg-white/90"
@@ -811,41 +821,38 @@ function DeleteBookmarkDialog({
   const { t } = useTranslation();
   return (
     <Dialog className="max-w-md p-7" onClose={onClose}>
-      {(close) => (
-        <div className="space-y-5">
-          <DialogTitle className="text-xl font-bold text-white">
-            {t(
-              node.type === "folder"
-                ? "launcher.deleteFolder"
-                : "launcher.deleteBookmark",
-            )}
-          </DialogTitle>
-          <p className="leading-7 text-white/75">
-            {t(
-              node.type === "folder"
-                ? "launcher.deleteFolderConfirm"
-                : "launcher.deleteBookmarkConfirm",
-              { name: node.title },
-            )}
-          </p>
-          <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              className="rounded-xl px-4 py-2 text-sm font-semibold text-white/75 hover:bg-white/10"
-              onClick={close}
-            >
-              {t("common.cancel")}
-            </button>
-            <button
-              type="button"
-              className="rounded-xl bg-red-500/90 px-5 py-2 text-sm font-semibold text-white hover:bg-red-500"
-              onClick={onConfirm}
-            >
-              {t("common.delete")}
-            </button>
-          </div>
+      <div className="space-y-5">
+        <DialogTitle className="text-xl font-bold text-white">
+          {t(
+            node.type === "folder"
+              ? "launcher.deleteFolder"
+              : "launcher.deleteBookmark",
+          )}
+        </DialogTitle>
+        <p className="leading-7 text-white/75">
+          {t(
+            node.type === "folder"
+              ? "launcher.deleteFolderConfirm"
+              : "launcher.deleteBookmarkConfirm",
+            { name: node.title },
+          )}
+        </p>
+        <div className="flex justify-end gap-3">
+          <DialogClose
+            type="button"
+            className="rounded-xl px-4 py-2 text-sm font-semibold text-white/75 hover:bg-white/10"
+          >
+            {t("common.cancel")}
+          </DialogClose>
+          <DialogClose
+            type="button"
+            className="rounded-xl bg-red-500/90 px-5 py-2 text-sm font-semibold text-white hover:bg-red-500"
+            onClick={onConfirm}
+          >
+            {t("common.delete")}
+          </DialogClose>
         </div>
-      )}
+      </div>
     </Dialog>
   );
 }
@@ -1381,11 +1388,9 @@ export function Launcher() {
               runBookmarkMutation(
                 deleteFolderKeepingContents(platform.bookmarks, pendingDelete),
               );
-              setPendingDelete(null);
             }}
             onDeleteAll={() => {
               runBookmarkMutation(platform.bookmarks.remove(pendingDelete.id));
-              setPendingDelete(null);
             }}
           />
         ) : (
@@ -1394,7 +1399,6 @@ export function Launcher() {
             onClose={() => setPendingDelete(null)}
             onConfirm={() => {
               runBookmarkMutation(platform.bookmarks.remove(pendingDelete.id));
-              setPendingDelete(null);
             }}
           />
         )

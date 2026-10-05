@@ -1,30 +1,32 @@
 import { forwardRef, type ComponentPropsWithoutRef } from "react";
-import * as ContextMenuPrimitive from "@radix-ui/react-context-menu";
+import { ContextMenu as BaseContextMenu } from "@base-ui/react/context-menu";
 import clsx from "clsx";
-import { menuContentClassName, menuItemClassName } from "./menuStyles";
+import { menuItemClassName, menuPopupClassName } from "./menuStyles";
 
-export const ContextMenu = ContextMenuPrimitive;
+export const ContextMenu = BaseContextMenu;
 
-export const ContextMenuContent = forwardRef<
+export const ContextMenuPopup = forwardRef<
   HTMLDivElement,
-  ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Content>
->(function ContextMenuContent({ className, ...props }, ref) {
+  ComponentPropsWithoutRef<typeof BaseContextMenu.Popup>
+>(function ContextMenuPopup({ className, ...props }, ref) {
   return (
-    <ContextMenuPrimitive.Content
-      ref={ref}
-      onCloseAutoFocus={(event) => event.preventDefault()}
-      className={clsx(
-        menuContentClassName,
-        "origin-[var(--radix-context-menu-content-transform-origin)]",
-        className,
-      )}
-      {...props}
-    />
+    <BaseContextMenu.Positioner style={{ zIndex: 80 }}>
+      <BaseContextMenu.Popup
+        ref={ref}
+        finalFocus={false}
+        className={clsx(
+          menuPopupClassName,
+          "origin-[var(--transform-origin)]",
+          className,
+        )}
+        {...props}
+      />
+    </BaseContextMenu.Positioner>
   );
 });
 
 type ContextMenuItemProps = ComponentPropsWithoutRef<
-  typeof ContextMenuPrimitive.Item
+  typeof BaseContextMenu.Item
 > & {
   variant?: "default" | "danger";
 };
@@ -32,7 +34,7 @@ type ContextMenuItemProps = ComponentPropsWithoutRef<
 export const ContextMenuItem = forwardRef<HTMLDivElement, ContextMenuItemProps>(
   function ContextMenuItem({ className, variant = "default", ...props }, ref) {
     return (
-      <ContextMenuPrimitive.Item
+      <BaseContextMenu.Item
         ref={ref}
         className={clsx(menuItemClassName(variant), className)}
         {...props}

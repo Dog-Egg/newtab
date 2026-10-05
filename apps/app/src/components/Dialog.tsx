@@ -1,11 +1,11 @@
-import { useEffect, useState, type ReactNode } from "react";
-import * as RadixDialog from "@radix-ui/react-dialog";
+import { Dialog as BaseDialog } from "@base-ui/react/dialog";
+import { useState, type ReactNode } from "react";
 import clsx from "clsx";
 
-const DIALOG_ANIMATION_MS = 160;
 const MAIN_DIALOG_PORTAL_ID = "main-dialog-portal";
 
-export const DialogTitle = RadixDialog.Title;
+export const DialogTitle = BaseDialog.Title;
+export const DialogClose = BaseDialog.Close;
 
 export function MainDialogPortal() {
   return (
@@ -27,50 +27,46 @@ export function Dialog({
 }) {
   const [isOpen, setIsOpen] = useState(true);
 
-  useEffect(() => {
-    if (isOpen) return;
-    const timeoutId = window.setTimeout(onClose, DIALOG_ANIMATION_MS);
-    return () => window.clearTimeout(timeoutId);
-  }, [isOpen, onClose]);
-
-  function handleOpenChange(open: boolean) {
-    setIsOpen(open);
-  }
-
   const close = () => setIsOpen(false);
   const content = typeof children === "function" ? children(close) : children;
 
   return (
-    <RadixDialog.Root
+    <BaseDialog.Root
       modal={false}
       open={isOpen}
-      onOpenChange={handleOpenChange}
+      onOpenChange={(open, eventDetails) => {
+        const target = eventDetails.event.target;
+        if (
+          !open &&
+          target instanceof Element &&
+          target.closest("[data-drawer]")
+        ) {
+          eventDetails.cancel();
+          return;
+        }
+
+        setIsOpen(open);
+      }}
+      onOpenChangeComplete={(open) => {
+        if (!open) onClose();
+      }}
     >
-      <RadixDialog.Portal
+      <BaseDialog.Portal
         container={document.getElementById(MAIN_DIALOG_PORTAL_ID)}
       >
-        <div
-          className={clsx(
-            "pointer-events-auto absolute inset-0 bg-slate-950/40 backdrop-blur-md motion-reduce:animate-none",
-            isOpen ? "animate-dialog-overlay-in" : "animate-dialog-overlay-out",
-          )}
+        <BaseDialog.Backdrop
+          className="pointer-events-auto absolute inset-0 animate-dialog-overlay-in bg-slate-950/40 backdrop-blur-md data-[ending-style]:animate-dialog-overlay-out motion-reduce:!animate-none"
           aria-hidden="true"
         />
-        <RadixDialog.Content
+        <BaseDialog.Popup
           className={clsx(
-            "pointer-events-auto absolute left-1/2 top-1/2 z-10 max-h-[calc(100%-3rem)] w-[calc(100%-3rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-glass border border-glass-border bg-white/30 text-glass-strong shadow-glass outline-none backdrop-blur-2xl focus-visible:ring-2 focus-visible:ring-glass-focus data-[state=closed]:animate-dialog-content-out data-[state=open]:animate-dialog-content-in motion-reduce:animate-none",
+            "pointer-events-auto absolute left-1/2 top-1/2 z-10 max-h-[calc(100%-3rem)] w-[calc(100%-3rem)] -translate-x-1/2 -translate-y-1/2 animate-dialog-content-in overflow-y-auto rounded-glass border border-glass-border bg-white/30 text-glass-strong shadow-glass outline-none backdrop-blur-2xl focus-visible:ring-2 focus-visible:ring-glass-focus data-[ending-style]:animate-dialog-content-out motion-reduce:!animate-none",
             className,
           )}
-          onInteractOutside={(event) => {
-            const target = event.target;
-            if (target instanceof Element && target.closest("[data-drawer]")) {
-              event.preventDefault();
-            }
-          }}
         >
           {content}
-        </RadixDialog.Content>
-      </RadixDialog.Portal>
-    </RadixDialog.Root>
+        </BaseDialog.Popup>
+      </BaseDialog.Portal>
+    </BaseDialog.Root>
   );
 }

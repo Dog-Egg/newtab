@@ -1,13 +1,8 @@
-import * as Popover from "@radix-ui/react-popover";
+import { Popover } from "@base-ui/react/popover";
 import clsx from "clsx";
 import { EllipsisVertical, Plus, X } from "lucide-react";
-import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "../components/DropdownMenu";
+import { Menu, MenuItem, MenuPopup } from "../components/Menu";
 import { SiteIcon } from "../components/SiteIcon";
 import {
   getSearchEngineIconSource,
@@ -92,94 +87,100 @@ export function SearchEngineSelector({
   }
 
   return (
-    <Popover.Root open={isOpen} onOpenChange={onOpenChange}>
-      <Popover.Anchor
-        virtualRef={{ current: anchorElement } as RefObject<HTMLDivElement>}
+    <Popover.Root open={isOpen} onOpenChange={onOpenChange} modal={false}>
+      <Popover.Trigger
+        render={
+          <button
+            className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-2 text-slate-700 outline-none transition hover:bg-white/45 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
+            type="button"
+            aria-label={t("search.selectEngine", { name: selectedEngine.name })}
+            title={selectedEngine.name}
+          >
+            <SearchEngineGlyph engine={selectedEngine} size="small" />
+          </button>
+        }
       />
 
-      <Popover.Trigger asChild>
-        <button
-          className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-2 text-slate-700 outline-none transition hover:bg-white/45 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
-          type="button"
-          aria-label={t("search.selectEngine", { name: selectedEngine.name })}
-          title={selectedEngine.name}
-        >
-          <SearchEngineGlyph engine={selectedEngine} size="small" />
-        </button>
-      </Popover.Trigger>
-
       <Popover.Portal>
-        <Popover.Content
-          className="glass-panel z-30 w-[var(--radix-popover-trigger-width)] overflow-hidden p-2"
+        <Popover.Positioner
+          anchor={anchorElement}
           sideOffset={6}
           align="start"
+          className="z-30"
         >
-          <div
-            className="flex items-center gap-2 overflow-x-auto p-1"
-            role="group"
-            aria-label={t("search.engines")}
-          >
-            {engines.map((engine) => (
-              <div key={engine.id} className="group relative shrink-0">
-                <button
-                  className={clsx(
-                    "flex h-16 min-w-[88px] flex-col items-center justify-center gap-1 rounded-xl px-3 text-center text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none",
-                    engine.id === selectedEngine.id &&
-                      "bg-glass-selected text-glass-selected-content shadow-sm",
-                  )}
-                  type="button"
-                  aria-pressed={engine.id === selectedEngine.id}
-                  onClick={() => onSelect(engine.id)}
-                >
-                  <SearchEngineGlyph engine={engine} />
-                  <span className="w-full truncate text-xs font-semibold">
-                    {engine.name}
-                  </span>
-                </button>
-                <DropdownMenu.Root>
-                  <DropdownMenu.Trigger asChild>
-                    <button
-                      className="absolute right-0.5 top-0.5 grid size-6 place-items-center rounded-full bg-slate-800/80 text-white/80 shadow-sm outline-none transition hover:bg-slate-800 hover:text-white focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-glass-focus data-[state=open]:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-                      type="button"
-                      aria-label={t("search.moreActionsFor", {
-                        name: engine.name,
-                      })}
-                      title={t("search.moreActions")}
-                    >
-                      <EllipsisVertical
-                        aria-hidden="true"
-                        className="size-3.5"
-                      />
-                    </button>
-                  </DropdownMenu.Trigger>
-                  <DropdownMenu.Portal>
-                    <DropdownMenuContent className="z-50 text-sm text-glass-content">
-                      <DropdownMenuItem onSelect={() => onEdit(engine)}>
-                        {t("common.edit")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        variant="danger"
-                        disabled={engines.length === 1}
-                        onSelect={() => onRequestDelete(engine)}
-                      >
-                        {t("common.delete")}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu.Portal>
-                </DropdownMenu.Root>
-              </div>
-            ))}
-            <button
-              className="grid h-16 min-w-[88px] shrink-0 place-items-center rounded-xl border border-dashed border-glass-border text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
-              type="button"
-              onClick={onAdd}
-              aria-label={t("search.addEngine")}
-              title={t("search.addEngine")}
+          <Popover.Popup className="glass-panel w-[var(--anchor-width)] overflow-hidden p-2">
+            <div
+              className="flex items-center gap-2 overflow-x-auto p-1"
+              role="group"
+              aria-label={t("search.engines")}
             >
-              <Plus aria-hidden="true" className="size-5" />
-            </button>
-          </div>
-        </Popover.Content>
+              {engines.map((engine) => (
+                <div key={engine.id} className="group relative shrink-0">
+                  <button
+                    className={clsx(
+                      "flex h-16 min-w-[88px] flex-col items-center justify-center gap-1 rounded-xl px-3 text-center text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none",
+                      engine.id === selectedEngine.id &&
+                        "bg-glass-selected text-glass-selected-content shadow-sm",
+                    )}
+                    type="button"
+                    aria-pressed={engine.id === selectedEngine.id}
+                    onClick={() => onSelect(engine.id)}
+                  >
+                    <SearchEngineGlyph engine={engine} />
+                    <span className="w-full truncate text-xs font-semibold">
+                      {engine.name}
+                    </span>
+                  </button>
+                  <Menu.Root>
+                    <Menu.Trigger
+                      render={
+                        <button
+                          className="absolute right-0.5 top-0.5 grid size-6 place-items-center rounded-full bg-slate-800/80 text-white/80 shadow-sm outline-none transition hover:bg-slate-800 hover:text-white focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-glass-focus data-[popup-open]:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                          type="button"
+                          aria-label={t("search.moreActionsFor", {
+                            name: engine.name,
+                          })}
+                          title={t("search.moreActions")}
+                        >
+                          <EllipsisVertical
+                            aria-hidden="true"
+                            className="size-3.5"
+                          />
+                        </button>
+                      }
+                    />
+                    <Menu.Portal>
+                      <MenuPopup
+                        positionerZIndex={50}
+                        className="text-sm text-glass-content"
+                      >
+                        <MenuItem onClick={() => onEdit(engine)}>
+                          {t("common.edit")}
+                        </MenuItem>
+                        <MenuItem
+                          variant="danger"
+                          disabled={engines.length === 1}
+                          onClick={() => onRequestDelete(engine)}
+                        >
+                          {t("common.delete")}
+                        </MenuItem>
+                      </MenuPopup>
+                    </Menu.Portal>
+                  </Menu.Root>
+                </div>
+              ))}
+              <button
+                className="grid h-16 min-w-[88px] shrink-0 place-items-center rounded-xl border border-dashed border-glass-border text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
+                type="button"
+                onClick={onAdd}
+                aria-label={t("search.addEngine")}
+                title={t("search.addEngine")}
+              >
+                <Plus aria-hidden="true" className="size-5" />
+              </button>
+            </div>
+          </Popover.Popup>
+        </Popover.Positioner>
       </Popover.Portal>
     </Popover.Root>
   );

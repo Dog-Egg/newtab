@@ -6,7 +6,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
-import * as Popover from "@radix-ui/react-popover";
+import { Popover } from "@base-ui/react/popover";
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { platform } from "@platform";
@@ -48,7 +48,7 @@ export function SearchEngineBox() {
   const [temporaryEngineId, setTemporaryEngineId] = useState<string | null>(
     null,
   );
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isEngineSelectorOpen, setEngineSelectorOpen] = useState(false);
   const [dismissedSuggestionQuery, setDismissedSuggestionQuery] = useState<
     string | null
   >(null);
@@ -126,20 +126,20 @@ export function SearchEngineBox() {
         : { ...currentSettings, selectedEngineId: engineId },
     );
     setTemporaryEngineId(null);
-    setIsDropdownOpen(false);
+    setEngineSelectorOpen(false);
   }
 
   function openAddDialog() {
     setEditingEngineId(null);
     setCustomEngineDraft(EMPTY_CUSTOM_ENGINE);
-    setIsDropdownOpen(false);
+    setEngineSelectorOpen(false);
     window.setTimeout(() => setIsEditorDialogOpen(true), 0);
   }
 
   function openEditDialog(engine: SearchEngine) {
     setEditingEngineId(engine.id);
     setCustomEngineDraft({ name: engine.name, urlFormat: engine.urlFormat });
-    setIsDropdownOpen(false);
+    setEngineSelectorOpen(false);
     window.setTimeout(() => setIsEditorDialogOpen(true), 0);
   }
 
@@ -213,7 +213,7 @@ export function SearchEngineBox() {
     engine: SearchEngine,
     retainSuggestions = false,
   ) {
-    setActiveSuggestionIndex(null);
+    if (!retainSuggestions) setActiveSuggestionIndex(null);
     setTemporaryEngineId(engine.id);
     setRetainedSuggestionQuery(retainSuggestions ? suggestionQuery : null);
     setQuery("");
@@ -332,89 +332,86 @@ export function SearchEngineBox() {
             setRetainedSuggestionQuery(null);
           }
         }}
+        modal={false}
       >
-        <div
-          ref={setSearchBoxAnchor}
-          className="relative mx-auto w-full max-w-[526px]"
-          role="search"
-        >
-          <Popover.Anchor asChild>
-            <div
-              className={clsx(
-                "flex h-12 cursor-text items-center border border-white/50 px-3.5 text-slate-800 shadow-[0_16px_42px_rgba(15,23,42,0.2)] backdrop-blur-2xl transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-white/95 focus-within:shadow-[0_22px_58px_rgba(15,23,42,0.32)] motion-reduce:transition-none sm:h-[52px] [&_button]:cursor-pointer",
-                isSuggestionOpen
-                  ? "rounded-b-none rounded-t-glass border-b-slate-400/20 bg-slate-100"
-                  : "rounded-glass bg-white/55 focus-within:bg-white/80",
-              )}
-              onClick={(event) => {
-                const target = event.target;
-                if (
-                  target instanceof Element &&
-                  target.closest("button, a, input")
-                ) {
-                  return;
-                }
+        <div className="relative mx-auto w-full max-w-[526px]" role="search">
+          <div
+            ref={setSearchBoxAnchor}
+            className={clsx(
+              "flex h-12 cursor-text items-center border border-white/50 px-3.5 text-slate-800 shadow-[0_16px_42px_rgba(15,23,42,0.2)] backdrop-blur-2xl transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-white/95 focus-within:shadow-[0_22px_58px_rgba(15,23,42,0.32)] motion-reduce:transition-none sm:h-[52px] [&_button]:cursor-pointer",
+              isSuggestionOpen
+                ? "rounded-b-none rounded-t-glass border-b-slate-400/20 bg-slate-100"
+                : "rounded-glass bg-white/55 focus-within:bg-white/80",
+            )}
+            onClick={(event) => {
+              const target = event.target;
+              if (
+                target instanceof Element &&
+                target.closest("button, a, input")
+              ) {
+                return;
+              }
 
-                inputRef.current?.focus();
+              inputRef.current?.focus();
+            }}
+          >
+            <SearchEngineSelector
+              anchorElement={searchBoxAnchor}
+              engines={searchEngines}
+              selectedEngine={selectedEngine}
+              temporaryEngine={temporaryEngine}
+              isOpen={isEngineSelectorOpen}
+              onOpenChange={setEngineSelectorOpen}
+              onSelect={selectSearchEngine}
+              onClearTemporary={() => setTemporaryEngineId(null)}
+              onAdd={openAddDialog}
+              onEdit={openEditDialog}
+              onRequestDelete={(engine) => {
+                setEngineSelectorOpen(false);
+                window.setTimeout(() => setEnginePendingDeletion(engine), 0);
               }}
+            />
+
+            <div className="mx-3 h-6 w-px shrink-0 bg-slate-500/30" />
+
+            <form
+              className="flex min-w-0 flex-1 items-center"
+              onSubmit={handleSearchSubmit}
             >
-              <SearchEngineSelector
-                anchorElement={searchBoxAnchor}
-                engines={searchEngines}
-                selectedEngine={selectedEngine}
-                temporaryEngine={temporaryEngine}
-                isOpen={isDropdownOpen}
-                onOpenChange={setIsDropdownOpen}
-                onSelect={selectSearchEngine}
-                onClearTemporary={() => setTemporaryEngineId(null)}
-                onAdd={openAddDialog}
-                onEdit={openEditDialog}
-                onRequestDelete={(engine) => {
-                  setIsDropdownOpen(false);
-                  window.setTimeout(() => setEnginePendingDeletion(engine), 0);
+              <input
+                ref={inputRef}
+                className="min-w-0 flex-1 bg-transparent text-[15px] text-slate-800 outline-none placeholder:text-slate-600/75 sm:text-base [&::-webkit-search-cancel-button]:appearance-none"
+                type="search"
+                role="combobox"
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setActiveSuggestionIndex(null);
+                  setRetainedSuggestionQuery(null);
+                  setDismissedSuggestionQuery(null);
                 }}
+                onKeyDown={handleInputKeyDown}
+                placeholder={t("search.placeholder")}
+                aria-label={t("search.placeholder")}
+                aria-autocomplete="list"
+                aria-expanded={visibleSuggestions.length > 0}
+                aria-controls={
+                  visibleSuggestions.length > 0
+                    ? SEARCH_SUGGESTIONS_ID
+                    : undefined
+                }
+                aria-activedescendant={
+                  activeSuggestion
+                    ? getSearchSuggestionId(activeSuggestion)
+                    : undefined
+                }
               />
-
-              <div className="mx-3 h-6 w-px shrink-0 bg-slate-500/30" />
-
-              <form
-                className="flex min-w-0 flex-1 items-center"
-                onSubmit={handleSearchSubmit}
-              >
-                <input
-                  ref={inputRef}
-                  className="min-w-0 flex-1 bg-transparent text-[15px] text-slate-800 outline-none placeholder:text-slate-600/75 sm:text-base [&::-webkit-search-cancel-button]:appearance-none"
-                  type="search"
-                  role="combobox"
-                  value={query}
-                  onChange={(event) => {
-                    setQuery(event.target.value);
-                    setActiveSuggestionIndex(null);
-                    setRetainedSuggestionQuery(null);
-                    setDismissedSuggestionQuery(null);
-                  }}
-                  onKeyDown={handleInputKeyDown}
-                  placeholder={t("search.placeholder")}
-                  aria-label={t("search.placeholder")}
-                  aria-autocomplete="list"
-                  aria-expanded={visibleSuggestions.length > 0}
-                  aria-controls={
-                    visibleSuggestions.length > 0
-                      ? SEARCH_SUGGESTIONS_ID
-                      : undefined
-                  }
-                  aria-activedescendant={
-                    activeSuggestion
-                      ? getSearchSuggestionId(activeSuggestion)
-                      : undefined
-                  }
-                />
-              </form>
-            </div>
-          </Popover.Anchor>
+            </form>
+          </div>
 
           {visibleSuggestions.length > 0 ? (
             <SearchSuggestion
+              anchorElement={searchBoxAnchor}
               suggestions={visibleSuggestions}
               activeSuggestionKey={
                 activeSuggestion

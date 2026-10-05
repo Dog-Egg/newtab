@@ -1,6 +1,6 @@
 import type { FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Dialog, DialogTitle } from "../components/Dialog";
+import { Dialog, DialogClose, DialogTitle } from "../components/Dialog";
 import type { CustomEngineDraft, SearchEngine } from "./searchEngineUtils";
 
 export function SearchEngineDialogs({
@@ -68,13 +68,12 @@ export function SearchEngineDialogs({
               </label>
 
               <div className="mt-8 flex justify-end gap-3">
-                <button
+                <DialogClose
                   className="h-10 rounded-xl px-6 text-sm font-semibold text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
                   type="button"
-                  onClick={close}
                 >
                   {t("common.cancel")}
-                </button>
+                </DialogClose>
                 <button
                   className="h-10 rounded-xl bg-action px-7 text-sm font-semibold text-white outline-none transition hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-glass-focus disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none"
                   type="submit"
@@ -90,37 +89,29 @@ export function SearchEngineDialogs({
 
       {enginePendingDeletion ? (
         <Dialog className="max-w-md p-7" onClose={onCloseDeletion}>
-          {(close) => (
-            <>
-              <DialogTitle className="text-xl font-semibold">
-                {t("search.deleteEngine")}
-              </DialogTitle>
-              <p className="mt-3 text-sm leading-6 text-glass-content">
-                {t("search.deleteConfirm", {
-                  name: enginePendingDeletion.name,
-                })}
-              </p>
-              <div className="mt-7 flex justify-end gap-3">
-                <button
-                  className="h-10 rounded-xl px-6 text-sm font-semibold text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus"
-                  type="button"
-                  onClick={close}
-                >
-                  {t("common.cancel")}
-                </button>
-                <button
-                  className="h-10 rounded-xl bg-red-500 px-6 text-sm font-semibold text-white outline-none transition hover:bg-red-600 focus-visible:ring-2 focus-visible:ring-glass-focus"
-                  type="button"
-                  onClick={() => {
-                    onDelete(enginePendingDeletion);
-                    close();
-                  }}
-                >
-                  {t("common.delete")}
-                </button>
-              </div>
-            </>
-          )}
+          <DialogTitle className="text-xl font-semibold">
+            {t("search.deleteEngine")}
+          </DialogTitle>
+          <p className="mt-3 text-sm leading-6 text-glass-content">
+            {t("search.deleteConfirm", {
+              name: enginePendingDeletion.name,
+            })}
+          </p>
+          <div className="mt-7 flex justify-end gap-3">
+            <DialogClose
+              className="h-10 rounded-xl px-6 text-sm font-semibold text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus"
+              type="button"
+            >
+              {t("common.cancel")}
+            </DialogClose>
+            <DialogClose
+              className="h-10 rounded-xl bg-red-500 px-6 text-sm font-semibold text-white outline-none transition hover:bg-red-600 focus-visible:ring-2 focus-visible:ring-glass-focus"
+              type="button"
+              onClick={() => onDelete(enginePendingDeletion)}
+            >
+              {t("common.delete")}
+            </DialogClose>
+          </div>
         </Dialog>
       ) : null}
     </>
