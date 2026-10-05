@@ -77,15 +77,17 @@ class SiteIconFailureCache {
 
   constructor() {
     this.read();
-    window.addEventListener("storage", (event) => {
-      if (
-        event.storageArea === localStorage &&
-        (event.key === this.storageKey || event.key === null)
-      ) {
-        this.failedDomains.clear();
-        this.read();
-      }
-    });
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", (event) => {
+        if (
+          event.storageArea === localStorage &&
+          (event.key === this.storageKey || event.key === null)
+        ) {
+          this.failedDomains.clear();
+          this.read();
+        }
+      });
+    }
   }
 
   private read() {
