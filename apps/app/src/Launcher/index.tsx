@@ -37,6 +37,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "../components/DropdownMenu";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+} from "../components/ContextMenu";
 import { SiteIcon } from "../components/SiteIcon";
 import { useSettingsStore } from "../Settings/store";
 import {
@@ -618,15 +623,31 @@ function BookmarkNodeCard({
           </DropdownMenu.Root>
         </div>
       ) : null}
-      <div
-        ref={locatedCardRef}
-        className={clsx(
-          isLocated &&
-            "animate-shake motion-reduce:animate-highlight motion-reduce:rounded-[1.875rem]",
-        )}
-      >
-        {content}
-      </div>
+      <ContextMenu.Root>
+        <ContextMenu.Trigger asChild disabled={!isModifiable || isRenaming}>
+          <div
+            ref={locatedCardRef}
+            className={clsx(
+              isLocated &&
+                "animate-shake motion-reduce:animate-highlight motion-reduce:rounded-[1.875rem]",
+            )}
+          >
+            {content}
+          </div>
+        </ContextMenu.Trigger>
+        {isModifiable && !isRenaming ? (
+          <ContextMenu.Portal>
+            <ContextMenuContent>
+              <ContextMenuItem onSelect={startEdit}>
+                {t(node.type === "folder" ? "launcher.rename" : "common.edit")}
+              </ContextMenuItem>
+              <ContextMenuItem variant="danger" onSelect={onDelete}>
+                {t("common.delete")}
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu.Portal>
+        ) : null}
+      </ContextMenu.Root>
     </li>
   );
 }
