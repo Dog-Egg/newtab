@@ -4,7 +4,7 @@ import {
   useMemo,
   useRef,
   useState,
-  type FormEvent,
+  type SubmitEvent,
   type ReactNode,
   type Ref,
 } from "react";
@@ -724,7 +724,7 @@ function BookmarkEditorDialog({
   const [title, setTitle] = useState(initialTitle);
   const [url, setUrl] = useState(initialUrl);
 
-  function submit(event: FormEvent, close: () => void) {
+  function submit(event: SubmitEvent<HTMLFormElement>, close: () => void) {
     event.preventDefault();
     const normalizedTitle = title.trim();
     const normalizedUrl = url.trim();

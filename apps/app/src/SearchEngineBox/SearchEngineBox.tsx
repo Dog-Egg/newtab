@@ -3,7 +3,7 @@ import {
   useMemo,
   useRef,
   useState,
-  type FormEvent,
+  type SubmitEvent,
   type KeyboardEvent,
 } from "react";
 import { Popover } from "@base-ui/react/popover";
@@ -143,7 +143,7 @@ export function SearchEngineBox() {
     window.setTimeout(() => setIsEditorDialogOpen(true), 0);
   }
 
-  function handleSaveCustomEngine(event: FormEvent<HTMLFormElement>) {
+  function handleSaveCustomEngine(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const name = customEngineDraft.name.trim();
     const urlFormat = customEngineDraft.urlFormat.trim();
@@ -304,7 +304,7 @@ export function SearchEngineBox() {
     }
   }
 
-  function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSearchSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (activeSuggestion?.type === "bookmark") {
       openBookmarkSuggestion(activeSuggestion);

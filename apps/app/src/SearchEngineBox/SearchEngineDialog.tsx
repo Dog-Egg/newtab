@@ -1,4 +1,4 @@
-import type { FormEvent } from "react";
+import type { SubmitEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Dialog, DialogClose, DialogTitle } from "../components/Dialog";
 import type { CustomEngineDraft, SearchEngine } from "./searchEngineUtils";
@@ -19,7 +19,7 @@ export function SearchEngineDialogs({
   draft: CustomEngineDraft;
   onDraftChange: (draft: CustomEngineDraft) => void;
   onCloseEditor: () => void;
-  onSave: (event: FormEvent<HTMLFormElement>) => void;
+  onSave: (event: SubmitEvent<HTMLFormElement>) => void;
   enginePendingDeletion: SearchEngine | null;
   onCloseDeletion: () => void;
   onDelete: (engine: SearchEngine) => void;

@@ -3,7 +3,7 @@ import {
   useEffect,
   useRef,
   useState,
-  type FormEvent,
+  type SubmitEvent,
 } from "react";
 import clsx from "clsx";
 import { Check } from "lucide-react";
@@ -99,7 +99,7 @@ export function WallpaperSettings() {
   useEffect(() => flushCustomColorUpdate, [flushCustomColorUpdate]);
 
   const applyCustomWallpaper = useCallback(
-    async (event: FormEvent<HTMLFormElement>) => {
+    async (event: SubmitEvent<HTMLFormElement>) => {
       event.preventDefault();
 
       const parsedImageUrl = wallpaperUrlSchema.safeParse(customImageUrl);
