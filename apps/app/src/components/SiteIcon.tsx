@@ -77,13 +77,19 @@ export function SiteIcon({
   format,
 }: SiteIconProps) {
   const domain = getSiteDomain(url);
-  const logoUrl = getSiteIconImageUrl(domain, format);
-  const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
-  const [failedFaviconUrl, setFailedFaviconUrl] = useState<string | null>(null);
-  const useLogo = !!logoUrl && logoUrl !== failedLogoUrl;
-  const faviconUrl = useLogo ? null : getFaviconUrl(url);
-  const fallbackUrl = faviconUrl === failedFaviconUrl ? null : faviconUrl;
-  const imageUrl = useLogo ? logoUrl : fallbackUrl;
+  const [failedUrls, setFailedUrls] = useState<string[]>([]);
+  const sources = [
+    {
+      src: getSiteIconImageUrl(domain, format),
+      className: clsx("object-cover"),
+    },
+    {
+      src: getFaviconUrl(url),
+      className: clsx("bg-white object-contain p-[15%]"),
+    },
+  ];
+  const image = sources.find(({ src }) => src && !failedUrls.includes(src));
+  const imageUrl = image?.src;
 
   return (
     <span
@@ -100,15 +106,9 @@ export function SiteIcon({
         <img
           key={imageUrl}
           alt=""
-          className={clsx(
-            "absolute inset-0 size-full",
-            useLogo ? "object-cover" : "bg-white object-contain p-[15%]",
-          )}
+          className={clsx("absolute inset-0 size-full", image?.className)}
           src={imageUrl}
-          onError={() => {
-            if (useLogo) setFailedLogoUrl(imageUrl);
-            else setFailedFaviconUrl(imageUrl);
-          }}
+          onError={() => setFailedUrls((failed) => [...failed, imageUrl])}
         />
       ) : (
         getSiteIconText({ title, url })
