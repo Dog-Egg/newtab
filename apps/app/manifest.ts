@@ -16,7 +16,7 @@ export const manifest = {
     "48": "icons/logo-48.png",
     "128": "icons/logo-128.png",
   },
-  permissions: ["bookmarks", "contextMenus", "storage"],
+  permissions: ["bookmarks", "contextMenus", "storage", "favicon"],
   background: {
     service_worker: "background.js",
     type: "module",

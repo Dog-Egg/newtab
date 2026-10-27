@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from "react";
 import clsx from "clsx";
 import * as z from "zod/mini";
+import { getFaviconUrl } from "../platform/favicon";
 
 const SITE_ICON_GRADIENTS = [
   "linear-gradient(145deg, #2563eb, #0ea5e9)",
@@ -165,10 +166,13 @@ export function SiteIcon({
   format,
 }: SiteIconProps) {
   const domain = getSiteDomain(url);
-  const imageUrl = getSiteIconImageUrl(domain, format);
-  const iconText = getSiteIconText({ title, url });
+  const logoUrl = getSiteIconImageUrl(domain, format);
+  const [failedFaviconUrl, setFailedFaviconUrl] = useState<string | null>(null);
   const { hasFailed, markFailed } = useSiteIconFailure(domain);
-  const hasImageError = !imageUrl || hasFailed;
+  const useLogo = !!logoUrl && !hasFailed;
+  const faviconUrl = useLogo ? null : getFaviconUrl(url);
+  const fallbackUrl = faviconUrl === failedFaviconUrl ? null : faviconUrl;
+  const imageUrl = useLogo ? logoUrl : fallbackUrl;
 
   return (
     <span
@@ -178,20 +182,23 @@ export function SiteIcon({
       )}
       style={{
         ...style,
-        background: !hasImageError
-          ? "transparent"
-          : getSiteIconBackground(seed),
+        background: imageUrl ? "transparent" : getSiteIconBackground(seed),
       }}
     >
-      {!hasImageError ? null : iconText}
-      {imageUrl && !hasImageError ? (
+      {imageUrl ? (
         <img
+          key={imageUrl}
           alt=""
-          className="absolute inset-0 size-full object-cover"
+          className={clsx(
+            "absolute inset-0 size-full",
+            useLogo ? "object-cover" : "bg-white object-contain p-[15%]",
+          )}
           src={imageUrl}
-          onError={markFailed}
+          onError={useLogo ? markFailed : () => setFailedFaviconUrl(faviconUrl)}
         />
-      ) : null}
+      ) : (
+        getSiteIconText({ title, url })
+      )}
     </span>
   );
 }
