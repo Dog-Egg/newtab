@@ -69,9 +69,10 @@ const ROOT_TARGET_PREFIX = "root:";
 const bookmarkNodeClassName = clsx(
   "flex flex-col items-center gap-2 rounded-2xl text-center",
 );
+// 悬停状态通过命名 group 传给图标，仅缩放图标，避免底部文字跟随放大或位移。
 const interactiveBookmarkNodeClassName = clsx(
   bookmarkNodeClassName,
-  "outline-none transition hover:scale-[1.03] focus-visible:ring-4 focus-visible:ring-white/70",
+  "group/bookmark outline-none transition focus-visible:ring-4 focus-visible:ring-white/70",
 );
 
 const LAUNCHER_NODE_SCALE_VARIABLE = "--node-scale";
@@ -337,7 +338,7 @@ function MergeTargetFrame({
 }) {
   return (
     <span
-      className="relative shrink-0"
+      className="relative shrink-0 transition-transform group-hover/bookmark:scale-[1.03]"
       style={{ width: scaledPixels(64), height: scaledPixels(64) }}
     >
       <span
