@@ -1,6 +1,5 @@
 import { useState, type CSSProperties } from "react";
 import clsx from "clsx";
-import * as z from "zod/mini";
 import { getFaviconUrl } from "../platform/favicon";
 
 const SITE_ICON_GRADIENTS = [
@@ -69,94 +68,6 @@ function getSiteIconText({ title, url }: { title: string; url: string }) {
   return source.slice(0, 1).toUpperCase();
 }
 
-class SiteIconFailureCache {
-  // 存储格式为 { 域名: 失败记录时间 }，有效期统一由 ttl 决定。
-  private readonly schema = z.record(z.string(), z.number());
-  private readonly storageKey = "site-icon:failed";
-  private readonly ttl = 60 * 60 * 1000;
-  private readonly failedDomains = new Map<string, number>();
-
-  constructor() {
-    this.read();
-    if (typeof window !== "undefined") {
-      window.addEventListener("storage", (event) => {
-        if (
-          event.storageArea === localStorage &&
-          (event.key === this.storageKey || event.key === null)
-        ) {
-          this.failedDomains.clear();
-          this.read();
-        }
-      });
-    }
-  }
-
-  private read() {
-    try {
-      const stored = this.schema.parse(
-        JSON.parse(localStorage.getItem(this.storageKey) ?? "{}"),
-      );
-      for (const [domain, failedAt] of Object.entries(stored)) {
-        if (!this.isExpired(failedAt)) {
-          this.failedDomains.set(domain, failedAt);
-        }
-      }
-    } catch {
-      // Invalid or unavailable storage leaves the in-memory cache usable.
-    }
-  }
-
-  private isExpired(failedAt: number, now = Date.now()) {
-    return failedAt > now || now - failedAt >= this.ttl;
-  }
-
-  has(domain: string) {
-    const failedAt = this.failedDomains.get(domain);
-    if (failedAt !== undefined && !this.isExpired(failedAt)) {
-      return true;
-    }
-    this.failedDomains.delete(domain);
-    return false;
-  }
-
-  add(domain: string) {
-    this.read();
-    if (this.has(domain)) {
-      return;
-    }
-    const now = Date.now();
-    for (const [cachedDomain, failedAt] of this.failedDomains) {
-      if (this.isExpired(failedAt, now)) {
-        this.failedDomains.delete(cachedDomain);
-      }
-    }
-    this.failedDomains.set(domain, now);
-
-    try {
-      localStorage.setItem(
-        this.storageKey,
-        JSON.stringify(Object.fromEntries(this.failedDomains)),
-      );
-    } catch {
-      // The in-memory cache still prevents retries when storage is unavailable.
-    }
-  }
-}
-
-const siteIconFailureCache = new SiteIconFailureCache();
-
-function useSiteIconFailure(domain: string) {
-  const [, setFailureCount] = useState(0);
-
-  return {
-    hasFailed: siteIconFailureCache.has(domain),
-    markFailed: () => {
-      siteIconFailureCache.add(domain);
-      setFailureCount((count) => count + 1);
-    },
-  };
-}
-
 export function SiteIcon({
   title,
   url,
@@ -167,9 +78,9 @@ export function SiteIcon({
 }: SiteIconProps) {
   const domain = getSiteDomain(url);
   const logoUrl = getSiteIconImageUrl(domain, format);
+  const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
   const [failedFaviconUrl, setFailedFaviconUrl] = useState<string | null>(null);
-  const { hasFailed, markFailed } = useSiteIconFailure(domain);
-  const useLogo = !!logoUrl && !hasFailed;
+  const useLogo = !!logoUrl && logoUrl !== failedLogoUrl;
   const faviconUrl = useLogo ? null : getFaviconUrl(url);
   const fallbackUrl = faviconUrl === failedFaviconUrl ? null : faviconUrl;
   const imageUrl = useLogo ? logoUrl : fallbackUrl;
@@ -194,7 +105,10 @@ export function SiteIcon({
             useLogo ? "object-cover" : "bg-white object-contain p-[15%]",
           )}
           src={imageUrl}
-          onError={useLogo ? markFailed : () => setFailedFaviconUrl(faviconUrl)}
+          onError={() => {
+            if (useLogo) setFailedLogoUrl(imageUrl);
+            else setFailedFaviconUrl(imageUrl);
+          }}
         />
       ) : (
         getSiteIconText({ title, url })
