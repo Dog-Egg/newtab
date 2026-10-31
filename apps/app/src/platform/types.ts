@@ -1,7 +1,7 @@
-import type { StoredSearchEngineSettings } from "../SearchEngineBox/schema";
-import type { Settings } from "../Settings/schema";
+import type { StoredSearchEngineSettings } from "../search-engine-box/schema";
+import type { Settings } from "../settings/schema";
 import type { AppLocale } from "../i18n/locale";
-import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
+import type { BrowserBookmarkNode } from "../launcher/bookmark-tree";
 
 type StorageUnsubscribe = () => void;
 

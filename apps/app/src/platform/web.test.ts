@@ -2,7 +2,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import {
   getAvailableSearchEngines,
   submitSearch,
-} from "../SearchEngineBox/searchEngineUtils";
+} from "../search-engine-box/search-engine-utils";
 
 vi.mock("../i18n", () => ({
   default: { on: vi.fn(), addResourceBundle: vi.fn(), language: "en" },

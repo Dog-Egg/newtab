@@ -2,7 +2,7 @@ import {
   handleContextMenuClick,
   refreshContextMenus,
   shouldRefreshContextMenus,
-} from "./contextMenus";
+} from "./context-menus";
 
 chrome.runtime.onInstalled.addListener(refreshContextMenus);
 chrome.runtime.onStartup.addListener(refreshContextMenus);

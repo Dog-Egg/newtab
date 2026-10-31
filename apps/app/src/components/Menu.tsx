@@ -1,7 +1,7 @@
 import { forwardRef, type ComponentPropsWithoutRef } from "react";
 import { Menu as BaseMenu } from "@base-ui/react/menu";
 import clsx from "clsx";
-import { menuItemClassName, menuPopupClassName } from "./menuStyles";
+import { menuItemClassName, menuPopupClassName } from "./menu-styles";
 
 export const Menu = BaseMenu;
 

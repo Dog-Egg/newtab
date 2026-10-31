@@ -2,18 +2,18 @@ import {
   BROWSER_DEFAULT_ENGINE_ID,
   SEARCH_ENGINE_SETTINGS_KEY,
   searchEngineSettingsSchema,
-} from "../SearchEngineBox/schema";
-import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
+} from "../search-engine-box/schema";
+import type { BrowserBookmarkNode } from "../launcher/bookmark-tree";
 import type { Platform } from "./types";
-import { SETTINGS_STORAGE_KEY, settingsSchema } from "../Settings/schema";
+import { SETTINGS_STORAGE_KEY, settingsSchema } from "../settings/schema";
 import { getLocaleFromLanguage } from "../i18n/locale";
 import {
   createChromeBookmarkNode,
   getBookmarkTree,
   toBrowserBookmarkNode,
   toChromeMoveDestination,
-} from "./chromeBookmarks";
-import { getChromeStorage, setChromeStorage } from "./chromeStorage";
+} from "./chrome-bookmarks";
+import { getChromeStorage, setChromeStorage } from "./chrome-storage";
 
 const defaultLocale = getLocaleFromLanguage(chrome.i18n.getUILanguage());
 

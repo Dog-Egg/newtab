@@ -1,19 +1,19 @@
-import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
-import { browserBookmarkTreeSchema } from "../Launcher/schema";
+import type { BrowserBookmarkNode } from "../launcher/bookmark-tree";
+import { browserBookmarkTreeSchema } from "../launcher/schema";
 import {
   createWebDefaultBookmarkTree,
   localizeWebDefaultBookmarkTree,
-} from "../Launcher/webDefaultBookmarks";
+} from "../launcher/web-default-bookmarks";
 import type { Platform } from "./types";
 import {
   SEARCH_ENGINE_SETTINGS_KEY,
   searchEngineSettingsSchema,
-} from "../SearchEngineBox/schema";
+} from "../search-engine-box/schema";
 import {
   SETTINGS_STORAGE_KEY,
   settingsSchema,
   type Settings,
-} from "../Settings/schema";
+} from "../settings/schema";
 import i18n from "../i18n";
 import { getLocaleFromLanguage } from "../i18n/locale";
 

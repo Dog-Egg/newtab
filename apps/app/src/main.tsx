@@ -2,8 +2,8 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { platform } from "@platform";
 import { App } from "./App";
-import { BookmarkNavigationProvider } from "./Launcher/BookmarkNavigationProvider";
-import { BookmarkProvider } from "./Launcher/BookmarkProvider";
+import { BookmarkNavigationProvider } from "./launcher/BookmarkNavigationProvider";
+import { BookmarkProvider } from "./launcher/BookmarkProvider";
 import "./styles.css";
 
 async function main() {

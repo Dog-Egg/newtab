@@ -2,12 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Toaster } from "sonner";
 import clsx from "clsx";
 import { Settings as SettingsIcon } from "lucide-react";
-import { Launcher } from "./Launcher";
-import { SearchEngineBox } from "./SearchEngineBox";
+import { Launcher } from "./launcher/Launcher";
+import { SearchEngineBox } from "./search-engine-box";
 import { Wallpaper } from "./Wallpaper";
 import { MainDialogPortal } from "./components/Dialog";
 import { Drawer } from "./components/Drawer";
-import { SettingsPanel } from "./Settings/SettingsPanel";
+import { SettingsPanel } from "./settings/SettingsPanel";
 import { useTranslation } from "react-i18next";
 
 export function App() {
