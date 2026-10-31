@@ -77,7 +77,7 @@ function createChromeMock(
 }
 
 describe("extension bookmark reads", () => {
-  it("reads the native tree without checking or running legacy migration", async () => {
+  it("reads the native tree without accessing extension storage", async () => {
     const tree: chrome.bookmarks.BookmarkTreeNode[] = [
       {
         id: "root",
