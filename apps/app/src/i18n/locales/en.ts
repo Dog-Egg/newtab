@@ -10,6 +10,13 @@ export const en = {
   },
   app: { title: "New Tab", openSettings: "Open settings" },
   search: {
+    browserDefault: "Enter search keywords",
+    google: "Search with Google",
+    failed: "Search failed. Please try again.",
+    loadFailed: "Could not load search engines. Using defaults.",
+    saveFailed: "Failed to save search settings. Please try again.",
+    browserDefaultShort: "Default",
+    browserDefaultName: "Browser default search engine",
     selectEngine: "Select search engine, currently {{name}}",
     engines: "Search engines",
     moreActionsFor: "More actions for {{name}}",
@@ -19,6 +26,7 @@ export const en = {
     placeholder: "Search the web",
     name: "Name",
     urlFormat: "URL format (use “%s” for the search term)",
+    invalidUrl: "Enter a valid URL starting with http:// or https://.",
     deleteEngine: "Delete search engine",
     deleteConfirm:
       "Are you sure you want to delete “{{name}}”? This action cannot be undone.",

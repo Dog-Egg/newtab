@@ -1,13 +1,12 @@
 import { Popover } from "@base-ui/react/popover";
+import { useRef } from "react";
+import type { SearchEngine, UrlSearchEngine } from "./schema";
 import clsx from "clsx";
-import { EllipsisVertical, Plus, X } from "lucide-react";
+import { EllipsisVertical, Plus, Search, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Menu, MenuItem, MenuPopup } from "../components/Menu";
 import { SiteIcon } from "../components/SiteIcon";
-import {
-  getSearchEngineIconSource,
-  type SearchEngine,
-} from "./searchEngineUtils";
+import { getSearchEngineIconSource } from "./searchEngineUtils";
 
 function SearchEngineGlyph({
   engine,
@@ -16,6 +15,14 @@ function SearchEngineGlyph({
   engine: SearchEngine;
   size?: "normal" | "small";
 }) {
+  if (engine.kind === "browser") {
+    return (
+      <Search
+        aria-hidden="true"
+        className={size === "small" ? "size-6 shrink-0" : "size-7 shrink-0"}
+      />
+    );
+  }
   return (
     <SiteIcon
       title={engine.name}
@@ -36,6 +43,7 @@ export function SearchEngineSelector({
   selectedEngine,
   temporaryEngine,
   isOpen,
+  disabled = false,
   onOpenChange,
   onSelect,
   onClearTemporary,
@@ -48,14 +56,20 @@ export function SearchEngineSelector({
   selectedEngine: SearchEngine;
   temporaryEngine?: SearchEngine | null;
   isOpen: boolean;
+  disabled?: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onSelect: (engineId: string) => void;
   onClearTemporary: () => void;
   onAdd: () => void;
-  onEdit: (engine: SearchEngine) => void;
-  onRequestDelete: (engine: SearchEngine) => void;
+  onEdit: (engine: UrlSearchEngine) => void;
+  onRequestDelete: (engine: UrlSearchEngine) => void;
 }) {
   const { t } = useTranslation();
+  const pendingDialog = useRef<(() => void) | null>(null);
+  function closeForDialog(action: () => void) {
+    pendingDialog.current = action;
+    onOpenChange(false);
+  }
 
   if (temporaryEngine) {
     return (
@@ -70,7 +84,7 @@ export function SearchEngineSelector({
           {temporaryEngine.name}
         </span>
         <button
-          className="grid size-7 shrink-0 place-items-center rounded-full text-slate-500 outline-none transition hover:bg-slate-200/75 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
+          className="grid size-7 shrink-0 place-items-center rounded-full text-slate-500 outline-none transition hover:bg-slate-200/75 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-slate-400/70 motion-reduce:transition-none"
           type="button"
           onClick={onClearTemporary}
           aria-label={t("search.clearTemporaryEngine", {
@@ -87,12 +101,24 @@ export function SearchEngineSelector({
   }
 
   return (
-    <Popover.Root open={isOpen} onOpenChange={onOpenChange} modal={false}>
+    <Popover.Root
+      open={isOpen}
+      onOpenChange={onOpenChange}
+      modal={false}
+      onOpenChangeComplete={(open) => {
+        if (!open) {
+          const action = pendingDialog.current;
+          pendingDialog.current = null;
+          action?.();
+        }
+      }}
+    >
       <Popover.Trigger
         render={
           <button
-            className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-2 text-slate-700 outline-none transition hover:bg-white/45 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
+            className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-2 text-slate-700 outline-none transition hover:bg-white/45 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400/70 motion-reduce:transition-none"
             type="button"
+            disabled={disabled}
             aria-label={t("search.selectEngine", { name: selectedEngine.name })}
             title={selectedEngine.name}
           >
@@ -108,9 +134,12 @@ export function SearchEngineSelector({
           align="start"
           className="z-30"
         >
-          <Popover.Popup className="glass-panel w-[var(--anchor-width)] overflow-hidden p-2">
+          <Popover.Popup
+            finalFocus={() => (pendingDialog.current ? false : undefined)}
+            className="glass-panel w-[var(--anchor-width)] overflow-hidden p-2"
+          >
             <div
-              className="flex items-center gap-2 overflow-x-auto p-1"
+              className="flex items-center gap-2 overflow-x-auto p-2"
               role="group"
               aria-label={t("search.engines")}
             >
@@ -118,61 +147,40 @@ export function SearchEngineSelector({
                 <div key={engine.id} className="group relative shrink-0">
                   <button
                     className={clsx(
-                      "flex h-16 min-w-[88px] flex-col items-center justify-center gap-1 rounded-xl px-3 text-center text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none",
-                      engine.id === selectedEngine.id &&
-                        "bg-glass-selected text-glass-selected-content shadow-sm",
+                      "flex h-16 w-[72px] flex-col items-center justify-center gap-1 rounded-xl px-2 text-center outline-none transition-[background-color,color,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-inset motion-reduce:transition-none",
+                      engine.id === selectedEngine.id
+                        ? "bg-white/85 text-slate-800 shadow-sm hover:bg-white/95 focus-visible:bg-white/95 focus-visible:ring-slate-400/80 active:bg-white/75"
+                        : "text-glass-content hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white focus-visible:ring-sky-200/80 active:bg-white/20",
                     )}
                     type="button"
+                    aria-label={engine.name}
+                    title={engine.name}
                     aria-pressed={engine.id === selectedEngine.id}
                     onClick={() => onSelect(engine.id)}
                   >
                     <SearchEngineGlyph engine={engine} />
-                    <span className="w-full truncate text-xs font-semibold">
-                      {engine.name}
+                    <span className="h-4 w-full truncate text-xs font-semibold leading-4">
+                      {engine.kind === "browser"
+                        ? t("search.browserDefaultShort")
+                        : engine.name}
                     </span>
                   </button>
-                  <Menu.Root>
-                    <Menu.Trigger
-                      render={
-                        <button
-                          className="absolute right-0.5 top-0.5 grid size-6 place-items-center rounded-full bg-slate-800/80 text-white/80 shadow-sm outline-none transition hover:bg-slate-800 hover:text-white focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-glass-focus data-[popup-open]:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-                          type="button"
-                          aria-label={t("search.moreActionsFor", {
-                            name: engine.name,
-                          })}
-                          title={t("search.moreActions")}
-                        >
-                          <EllipsisVertical
-                            aria-hidden="true"
-                            className="size-3.5"
-                          />
-                        </button>
+                  {engine.kind === "url" && (
+                    <SearchEngineActions
+                      engine={engine}
+                      canDelete={engines.length > 1}
+                      onEdit={(entry) => closeForDialog(() => onEdit(entry))}
+                      onRequestDelete={(entry) =>
+                        closeForDialog(() => onRequestDelete(entry))
                       }
                     />
-                    <Menu.Portal>
-                      <MenuPopup
-                        positionerZIndex={50}
-                        className="text-sm text-glass-content"
-                      >
-                        <MenuItem onClick={() => onEdit(engine)}>
-                          {t("common.edit")}
-                        </MenuItem>
-                        <MenuItem
-                          variant="danger"
-                          disabled={engines.length === 1}
-                          onClick={() => onRequestDelete(engine)}
-                        >
-                          {t("common.delete")}
-                        </MenuItem>
-                      </MenuPopup>
-                    </Menu.Portal>
-                  </Menu.Root>
+                  )}
                 </div>
               ))}
               <button
-                className="grid h-16 min-w-[88px] shrink-0 place-items-center rounded-xl border border-dashed border-glass-border text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-glass-focus motion-reduce:transition-none"
+                className="grid h-16 w-[72px] shrink-0 place-items-center rounded-xl border border-dashed border-glass-border text-glass-content outline-none transition-[background-color,color,box-shadow] duration-150 hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-200/80 active:bg-white/20 motion-reduce:transition-none"
                 type="button"
-                onClick={onAdd}
+                onClick={() => closeForDialog(onAdd)}
                 aria-label={t("search.addEngine")}
                 title={t("search.addEngine")}
               >
@@ -183,5 +191,70 @@ export function SearchEngineSelector({
         </Popover.Positioner>
       </Popover.Portal>
     </Popover.Root>
+  );
+}
+
+function SearchEngineActions({
+  engine,
+  canDelete,
+  onEdit,
+  onRequestDelete,
+}: {
+  engine: UrlSearchEngine;
+  canDelete: boolean;
+  onEdit: (engine: UrlSearchEngine) => void;
+  onRequestDelete: (engine: UrlSearchEngine) => void;
+}) {
+  const { t } = useTranslation();
+  const pending = useRef<(() => void) | null>(null);
+  return (
+    <Menu.Root
+      onOpenChangeComplete={(open) => {
+        if (!open) {
+          const action = pending.current;
+          pending.current = null;
+          action?.();
+        }
+      }}
+    >
+      <Menu.Trigger
+        render={
+          <button
+            className={clsx(
+              "absolute -right-1.5 -top-1.5 grid size-6 place-items-center rounded-full border border-white/20 bg-slate-800/80 text-white/80 shadow-sm outline-none transition-[background-color,color,box-shadow,opacity] duration-150 motion-reduce:transition-none",
+              "hover:bg-slate-700/90 hover:text-white focus-visible:bg-slate-700/90 focus-visible:text-white focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/50 active:bg-slate-900/90 focus-visible:active:bg-slate-900/90",
+              "data-[popup-open]:bg-slate-700/90 data-[popup-open]:text-white data-[popup-open]:opacity-100 data-[popup-open]:active:bg-slate-900/90 sm:opacity-0 sm:group-hover:opacity-100",
+            )}
+            type="button"
+            aria-label={t("search.moreActionsFor", {
+              name: engine.name,
+            })}
+            title={t("search.moreActions")}
+          >
+            <EllipsisVertical aria-hidden="true" className="size-3.5" />
+          </button>
+        }
+      />
+      <Menu.Portal>
+        <MenuPopup positionerZIndex={50} className="text-sm text-glass-content">
+          <MenuItem
+            onClick={() => {
+              pending.current = () => onEdit(engine);
+            }}
+          >
+            {t("common.edit")}
+          </MenuItem>
+          <MenuItem
+            variant="danger"
+            disabled={!canDelete}
+            onClick={() => {
+              pending.current = () => onRequestDelete(engine);
+            }}
+          >
+            {t("common.delete")}
+          </MenuItem>
+        </MenuPopup>
+      </Menu.Portal>
+    </Menu.Root>
   );
 }

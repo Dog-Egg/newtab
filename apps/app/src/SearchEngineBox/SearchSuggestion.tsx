@@ -9,6 +9,7 @@ import {
   getSearchEngineIconSource,
   type TextMatch,
 } from "./searchEngineUtils";
+import { BROWSER_DEFAULT_ENGINE_ID } from "./schema";
 import {
   getSearchSuggestionKey,
   type SearchSuggestion as SearchSuggestionItem,
@@ -128,7 +129,11 @@ export function SearchSuggestion({
               ? suggestion.engine.name
               : suggestion.bookmark.title;
             const url = isEngine
-              ? getSearchEngineIconSource(suggestion.engine.urlFormat)
+              ? getSearchEngineIconSource(
+                  suggestion.engine.kind === "url"
+                    ? suggestion.engine.urlFormat
+                    : undefined,
+                )
               : suggestion.bookmark.url;
             const domain = isEngine
               ? getSearchEngineDomain(suggestion.engine)
@@ -151,13 +156,18 @@ export function SearchSuggestion({
             ) : null;
             const content = (
               <div className="flex min-w-0 flex-1 items-center gap-3">
-                <SiteIcon
-                  title={title}
-                  url={url}
-                  seed={suggestionKey}
-                  format="png"
-                  className="size-7 rounded-full text-[12px] font-black"
-                />
+                {isEngine &&
+                suggestion.engine.id === BROWSER_DEFAULT_ENGINE_ID ? (
+                  <Search aria-hidden="true" className="size-7" />
+                ) : (
+                  <SiteIcon
+                    title={title}
+                    url={url}
+                    seed={suggestionKey}
+                    format="png"
+                    className="size-7 rounded-full text-[12px] font-black"
+                  />
+                )}
 
                 {isEngine ? (
                   <>

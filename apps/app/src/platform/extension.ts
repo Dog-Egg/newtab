@@ -1,9 +1,10 @@
-import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
-import type { Platform } from "./types";
 import {
+  BROWSER_DEFAULT_ENGINE_ID,
   SEARCH_ENGINE_SETTINGS_KEY,
   searchEngineSettingsSchema,
 } from "../SearchEngineBox/schema";
+import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
+import type { Platform } from "./types";
 import { SETTINGS_STORAGE_KEY, settingsSchema } from "../Settings/schema";
 import { getLocaleFromLanguage } from "../i18n/locale";
 import {
@@ -110,6 +111,11 @@ function subscribeBookmarks(onChange: () => void) {
 
 export const platform: Platform = {
   defaultLocale,
+  search: {
+    defaultEngineId: BROWSER_DEFAULT_ENGINE_ID,
+    browserSearch: (text) =>
+      chrome.search.query({ text, disposition: "CURRENT_TAB" }),
+  },
   bookmarks: {
     read: getBookmarkTree,
     create: async (bookmark) =>
@@ -137,16 +143,10 @@ export const platform: Platform = {
       ),
   },
   searchEngineSettings: {
-    read: async () => {
-      try {
-        return searchEngineSettingsSchema.parse(
-          await getChromeStorage(SEARCH_ENGINE_SETTINGS_KEY),
-        );
-      } catch (error: unknown) {
-        console.error("Failed to read search engine settings", error);
-        return searchEngineSettingsSchema.parse(undefined);
-      }
-    },
+    read: async () =>
+      searchEngineSettingsSchema.parse(
+        await getChromeStorage(SEARCH_ENGINE_SETTINGS_KEY),
+      ),
     save: (settings) => setChromeStorage(SEARCH_ENGINE_SETTINGS_KEY, settings),
   },
 };

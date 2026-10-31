@@ -2,8 +2,10 @@ import {
   buildSearchUrl,
   getAvailableSearchEngines,
 } from "../../SearchEngineBox/searchEngineUtils";
+import { BROWSER_DEFAULT_ENGINE_ID } from "../../SearchEngineBox/schema";
 import type { AppLocale } from "../../i18n/locale";
 import {
+  customEngineDraftSchema,
   SEARCH_ENGINE_SETTINGS_KEY,
   searchEngineSettingsSchema,
 } from "../../SearchEngineBox/schema";
@@ -23,7 +25,6 @@ export async function createSelectedTextSearchMenu(
   const searchEngines = getAvailableSearchEngines(
     searchEngineSettingsSchema.parse(items[SEARCH_ENGINE_SETTINGS_KEY]),
   );
-  if (searchEngines.length === 0) return;
 
   await createContextMenuItem({
     id: SEARCH_MENU_ID,
@@ -35,7 +36,12 @@ export async function createSelectedTextSearchMenu(
     await createContextMenuItem({
       id: `${SEARCH_ENGINE_MENU_ID_PREFIX}${encodeURIComponent(engine.id)}`,
       parentId: SEARCH_MENU_ID,
-      title: engine.name,
+      title:
+        engine.id === BROWSER_DEFAULT_ENGINE_ID
+          ? locale === "zh-CN"
+            ? "浏览器默认搜索引擎"
+            : "Browser default search engine"
+          : engine.name,
       contexts: ["selection"],
     });
   }
@@ -49,6 +55,12 @@ async function searchSelectedText(engineId: string, selectionText: string) {
   const query = selectionText.trim();
   if (!engine || !query) return;
 
+  if (engine.id === BROWSER_DEFAULT_ENGINE_ID) {
+    await chrome.search.query({ text: query, disposition: "NEW_TAB" });
+    return;
+  }
+  if (engine.kind !== "url") return;
+  customEngineDraftSchema.parse(engine);
   await chrome.tabs.create({
     url: buildSearchUrl(engine.urlFormat, query),
   });

@@ -1,19 +1,17 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type SubmitEvent,
-  type KeyboardEvent,
-} from "react";
+import { toast } from "sonner";
+import { useRef, useState, type SubmitEvent, type KeyboardEvent } from "react";
 import { Popover } from "@base-ui/react/popover";
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { platform } from "@platform";
-import type { StoredSearchEngineSettings } from "./schema";
+import type { SearchEngine, UrlSearchEngine } from "./schema";
+import { useSearchEngineSettings } from "./useSearchEngineSettings";
 import { useBookmarkNavigation } from "../Launcher/BookmarkNavigationProvider";
 import { useBookmarks } from "../Launcher/BookmarkProvider";
-import { SearchEngineDialogs } from "./SearchEngineDialog";
+import {
+  SearchEngineEditorDialog,
+  DeleteSearchEngineDialog,
+} from "./SearchEngineDialog";
 import { SearchEngineSelector } from "./SearchEngineSelector";
 import {
   SEARCH_SUGGESTIONS_ID,
@@ -21,12 +19,9 @@ import {
   SearchSuggestion,
 } from "./SearchSuggestion";
 import {
-  buildSearchUrl,
+  submitSearch,
   createCustomEngineId,
-  DEFAULT_SEARCH_ENGINES,
-  EMPTY_CUSTOM_ENGINE,
-  getAvailableSearchEngines,
-  type SearchEngine,
+  InvalidSearchEngineUrlError,
 } from "./searchEngineUtils";
 import {
   findSearchSuggestions,
@@ -42,8 +37,16 @@ export function SearchEngineBox() {
   const [searchBoxAnchor, setSearchBoxAnchor] = useState<HTMLDivElement | null>(
     null,
   );
-  const [storedSettings, setStoredSettings] =
-    useState<StoredSearchEngineSettings>({});
+  const {
+    engines: searchEngines,
+    selectedEngine,
+    isLoaded: isSettingsLoaded,
+    isSaving,
+    select,
+    save,
+    add,
+    remove,
+  } = useSearchEngineSettings();
   const [query, setQuery] = useState("");
   const [temporaryEngineId, setTemporaryEngineId] = useState<string | null>(
     null,
@@ -58,25 +61,21 @@ export function SearchEngineBox() {
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState<
     number | null
   >(null);
-  const [isEditorDialogOpen, setIsEditorDialogOpen] = useState(false);
-  const [editingEngineId, setEditingEngineId] = useState<string | null>(null);
+  const [editor, setEditor] = useState<{
+    engine?: UrlSearchEngine;
+    id: string;
+  } | null>(null);
   const [enginePendingDeletion, setEnginePendingDeletion] =
-    useState<SearchEngine | null>(null);
-  const [customEngineDraft, setCustomEngineDraft] =
-    useState(EMPTY_CUSTOM_ENGINE);
+    useState<UrlSearchEngine | null>(null);
 
-  const searchEngines = useMemo(
-    () => getAvailableSearchEngines(storedSettings),
-    [storedSettings],
-  );
-  const selectedEngine =
-    searchEngines.find(
-      (engine) => engine.id === storedSettings.selectedEngineId,
-    ) ?? searchEngines[0];
   const temporaryEngine = temporaryEngineId
     ? (searchEngines.find((engine) => engine.id === temporaryEngineId) ?? null)
     : null;
   const effectiveEngine = temporaryEngine ?? selectedEngine;
+  const searchLabel =
+    effectiveEngine.kind === "browser"
+      ? t("search.browserDefault")
+      : t("search.useEngine", { name: effectiveEngine.name });
   const suggestionQuery = retainedSuggestionQuery ?? query;
   const suggestions = findSearchSuggestions({
     engines: searchEngines,
@@ -95,118 +94,10 @@ export function SearchEngineBox() {
         ] ?? null);
   const isSuggestionOpen = visibleSuggestions.length > 0;
 
-  useEffect(() => {
-    let isCurrent = true;
-
-    void platform.searchEngineSettings.read().then((settings) => {
-      if (isCurrent) setStoredSettings(settings);
-    });
-
-    return () => {
-      isCurrent = false;
-    };
-  }, []);
-
-  function updateStoredSettings(
-    update: (
-      currentSettings: StoredSearchEngineSettings,
-    ) => StoredSearchEngineSettings,
-  ) {
-    const nextSettings = update(storedSettings);
-    if (nextSettings === storedSettings) return;
-
-    setStoredSettings(nextSettings);
-    void platform.searchEngineSettings.save(nextSettings);
-  }
-
   function selectSearchEngine(engineId: string) {
-    updateStoredSettings((currentSettings) =>
-      currentSettings.selectedEngineId === engineId
-        ? currentSettings
-        : { ...currentSettings, selectedEngineId: engineId },
-    );
+    void select(engineId);
     setTemporaryEngineId(null);
     setEngineSelectorOpen(false);
-  }
-
-  function openAddDialog() {
-    setEditingEngineId(null);
-    setCustomEngineDraft(EMPTY_CUSTOM_ENGINE);
-    setEngineSelectorOpen(false);
-    window.setTimeout(() => setIsEditorDialogOpen(true), 0);
-  }
-
-  function openEditDialog(engine: SearchEngine) {
-    setEditingEngineId(engine.id);
-    setCustomEngineDraft({ name: engine.name, urlFormat: engine.urlFormat });
-    setEngineSelectorOpen(false);
-    window.setTimeout(() => setIsEditorDialogOpen(true), 0);
-  }
-
-  function handleSaveCustomEngine(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const name = customEngineDraft.name.trim();
-    const urlFormat = customEngineDraft.urlFormat.trim();
-    if (!name || !urlFormat) return;
-
-    if (editingEngineId) {
-      updateStoredSettings((currentSettings) => ({
-        ...currentSettings,
-        customEngines: (currentSettings.customEngines ?? []).some(
-          (engine) => engine.id === editingEngineId,
-        )
-          ? (currentSettings.customEngines ?? []).map((engine) =>
-              engine.id === editingEngineId
-                ? { ...engine, name, urlFormat }
-                : engine,
-            )
-          : [
-              ...(currentSettings.customEngines ?? []),
-              { id: editingEngineId, name, urlFormat },
-            ],
-      }));
-      return;
-    }
-
-    const nextCustomEngine = { id: createCustomEngineId(), name, urlFormat };
-    updateStoredSettings((currentSettings) => ({
-      ...currentSettings,
-      selectedEngineId: nextCustomEngine.id,
-      customEngines: [
-        ...(currentSettings.customEngines ?? []),
-        nextCustomEngine,
-      ],
-    }));
-  }
-
-  function deleteSearchEngine(engine: SearchEngine) {
-    const fallbackEngineId = searchEngines.find(
-      (candidate) => candidate.id !== engine.id,
-    )?.id;
-    if (!fallbackEngineId) return;
-
-    const isDefaultEngine = DEFAULT_SEARCH_ENGINES.some(
-      (defaultEngine) => defaultEngine.id === engine.id,
-    );
-    updateStoredSettings((currentSettings) => ({
-      ...currentSettings,
-      selectedEngineId:
-        currentSettings.selectedEngineId === engine.id
-          ? fallbackEngineId
-          : currentSettings.selectedEngineId,
-      hiddenDefaultEngineIds: isDefaultEngine
-        ? Array.from(
-            new Set([
-              ...(currentSettings.hiddenDefaultEngineIds ?? []),
-              engine.id,
-            ]),
-          )
-        : currentSettings.hiddenDefaultEngineIds,
-      customEngines: (currentSettings.customEngines ?? []).filter(
-        (customEngine) => customEngine.id !== engine.id,
-      ),
-    }));
-    if (temporaryEngineId === engine.id) setTemporaryEngineId(null);
   }
 
   function acceptEngineSuggestion(
@@ -306,6 +197,7 @@ export function SearchEngineBox() {
 
   function handleSearchSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!isSettingsLoaded) return;
     if (activeSuggestion?.type === "bookmark") {
       openBookmarkSuggestion(activeSuggestion);
       return;
@@ -314,11 +206,17 @@ export function SearchEngineBox() {
     const trimmedQuery = query.trim();
     if (!trimmedQuery) return;
 
-    window.open(
-      buildSearchUrl(effectiveEngine.urlFormat, trimmedQuery),
-      "_parent",
-      "noreferrer",
-    );
+    const search = submitSearch(effectiveEngine, trimmedQuery, platform.search);
+    void search.catch((error: unknown) => {
+      console.error("Failed to search", error);
+      toast.error(
+        t(
+          error instanceof InvalidSearchEngineUrlError
+            ? "search.invalidUrl"
+            : "search.failed",
+        ),
+      );
+    });
   }
 
   return (
@@ -361,15 +259,13 @@ export function SearchEngineBox() {
               selectedEngine={selectedEngine}
               temporaryEngine={temporaryEngine}
               isOpen={isEngineSelectorOpen}
+              disabled={!isSettingsLoaded || isSaving}
               onOpenChange={setEngineSelectorOpen}
               onSelect={selectSearchEngine}
               onClearTemporary={() => setTemporaryEngineId(null)}
-              onAdd={openAddDialog}
-              onEdit={openEditDialog}
-              onRequestDelete={(engine) => {
-                setEngineSelectorOpen(false);
-                window.setTimeout(() => setEnginePendingDeletion(engine), 0);
-              }}
+              onAdd={() => setEditor({ id: createCustomEngineId() })}
+              onEdit={(engine) => setEditor({ engine, id: engine.id })}
+              onRequestDelete={setEnginePendingDeletion}
             />
 
             <div className="mx-3 h-6 w-px shrink-0 bg-slate-500/30" />
@@ -382,6 +278,7 @@ export function SearchEngineBox() {
                 ref={inputRef}
                 className="min-w-0 flex-1 bg-transparent text-[15px] text-slate-800 outline-none placeholder:text-slate-600/75 sm:text-base [&::-webkit-search-cancel-button]:appearance-none"
                 type="search"
+                disabled={!isSettingsLoaded || isSaving}
                 role="combobox"
                 value={query}
                 onChange={(event) => {
@@ -391,8 +288,8 @@ export function SearchEngineBox() {
                   setDismissedSuggestionQuery(null);
                 }}
                 onKeyDown={handleInputKeyDown}
-                placeholder={t("search.placeholder")}
-                aria-label={t("search.placeholder")}
+                placeholder={searchLabel}
+                aria-label={searchLabel}
                 aria-autocomplete="list"
                 aria-expanded={visibleSuggestions.length > 0}
                 aria-controls={
@@ -425,17 +322,31 @@ export function SearchEngineBox() {
         </div>
       </Popover.Root>
 
-      <SearchEngineDialogs
-        isEditorOpen={isEditorDialogOpen}
-        editingEngineId={editingEngineId}
-        draft={customEngineDraft}
-        onDraftChange={setCustomEngineDraft}
-        onCloseEditor={() => setIsEditorDialogOpen(false)}
-        onSave={handleSaveCustomEngine}
-        enginePendingDeletion={enginePendingDeletion}
-        onCloseDeletion={() => setEnginePendingDeletion(null)}
-        onDelete={deleteSearchEngine}
-      />
+      {editor && (
+        <SearchEngineEditorDialog
+          engine={editor.engine}
+          onClose={() => setEditor(null)}
+          onSave={async (draft) => {
+            const success = editor.engine
+              ? await save(draft, editor.id)
+              : await add(draft, editor.id);
+            if (success) setTemporaryEngineId(null);
+            return success;
+          }}
+        />
+      )}
+      {enginePendingDeletion && (
+        <DeleteSearchEngineDialog
+          engine={enginePendingDeletion}
+          onClose={() => setEnginePendingDeletion(null)}
+          onDelete={async () => {
+            const success = await remove(enginePendingDeletion);
+            if (temporaryEngineId === enginePendingDeletion.id)
+              setTemporaryEngineId(null);
+            return success;
+          }}
+        />
+      )}
     </>
   );
 }

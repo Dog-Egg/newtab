@@ -151,3 +151,45 @@ describe("extension bookmark mutations", () => {
     );
   });
 });
+
+describe("extension search", () => {
+  it("uses Chrome's active search provider despite saved custom engine settings", async () => {
+    const chromeMock = createChromeMock(
+      {
+        "search-engine-settings": { selectedEngineId: "bing" },
+      },
+      [],
+    );
+    const query = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("chrome", { ...chrome, search: { query } });
+    const { platform } = await import("./extension");
+
+    expect(platform.search.defaultEngineId).toBe("_default_");
+    await platform.search.browserSearch!("中文 & test");
+
+    expect(query).toHaveBeenCalledExactlyOnceWith({
+      text: "中文 & test",
+      disposition: "CURRENT_TAB",
+    });
+    expect(chromeMock.storageGet).not.toHaveBeenCalled();
+  });
+});
+
+describe("extension engine preferences", () => {
+  it("preserves existing selections and remembers subsequent choices", async () => {
+    createChromeMock(
+      { "search-engine-settings": { selectedEngineId: "bing" } },
+      [],
+    );
+    const { platform } = await import("./extension");
+    const settings = await platform.searchEngineSettings.read();
+    expect(settings.selectedEngineId).toBe("bing");
+    await platform.searchEngineSettings.save({
+      ...settings,
+      selectedEngineId: "google",
+    });
+    expect((await platform.searchEngineSettings.read()).selectedEngineId).toBe(
+      "google",
+    );
+  });
+});

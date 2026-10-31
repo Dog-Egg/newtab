@@ -127,17 +127,6 @@ function findNode(
   return null;
 }
 
-function readStoredSearchEngineSettings() {
-  try {
-    return searchEngineSettingsSchema.parse(
-      readJsonStorageValue(SEARCH_ENGINE_SETTINGS_KEY),
-    );
-  } catch (error: unknown) {
-    console.error("Failed to read search engine settings", error);
-    return searchEngineSettingsSchema.parse(undefined);
-  }
-}
-
 function readStoredSettings() {
   try {
     return settingsSchema.parse(readJsonStorageValue(SETTINGS_STORAGE_KEY));
@@ -148,7 +137,16 @@ function readStoredSettings() {
 }
 
 export const platform: Platform = {
+  search: { defaultEngineId: "google" },
   defaultLocale,
+  searchEngineSettings: {
+    read: async () =>
+      searchEngineSettingsSchema.parse(
+        readJsonStorageValue(SEARCH_ENGINE_SETTINGS_KEY),
+      ),
+    save: async (settings) =>
+      writeJsonStorageValue(SEARCH_ENGINE_SETTINGS_KEY, settings),
+  },
   bookmarks: {
     read: async () => readStoredWebBookmarks(),
     create: async ({ parentId, title, url, index }) => {
@@ -222,10 +220,5 @@ export const platform: Platform = {
       window.addEventListener("storage", handleStorageChange);
       return () => window.removeEventListener("storage", handleStorageChange);
     },
-  },
-  searchEngineSettings: {
-    read: async () => readStoredSearchEngineSettings(),
-    save: async (settings) =>
-      writeJsonStorageValue(SEARCH_ENGINE_SETTINGS_KEY, settings),
   },
 };

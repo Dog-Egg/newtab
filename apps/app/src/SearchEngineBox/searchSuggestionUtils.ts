@@ -1,10 +1,10 @@
 import type { BrowserBookmarkItem } from "../Launcher/bookmarkTree";
 import {
   getSearchEngineMatches,
-  type SearchEngine,
   type SearchEngineMatches,
   type TextMatch,
 } from "./searchEngineUtils";
+import { type SearchEngine } from "./schema";
 
 const MAX_SEARCH_SUGGESTIONS = 8;
 

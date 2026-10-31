@@ -1,12 +1,20 @@
+import type { StoredSearchEngineSettings } from "../SearchEngineBox/schema";
 import type { Settings } from "../Settings/schema";
 import type { AppLocale } from "../i18n/locale";
 import type { BrowserBookmarkNode } from "../Launcher/bookmarkTree";
-import type { StoredSearchEngineSettings } from "../SearchEngineBox/schema";
 
 type StorageUnsubscribe = () => void;
 
 export type Platform = {
   defaultLocale: AppLocale;
+  search: {
+    defaultEngineId: string;
+    browserSearch?: (text: string) => Promise<void>;
+  };
+  searchEngineSettings: {
+    read: () => Promise<StoredSearchEngineSettings>;
+    save: (settings: StoredSearchEngineSettings) => Promise<void>;
+  };
   bookmarks: {
     read: () => Promise<BrowserBookmarkNode[]>;
     create: (bookmark: {
@@ -30,9 +38,5 @@ export type Platform = {
     read: () => Promise<Settings>;
     save: (settings: Settings) => Promise<void>;
     subscribe: (onChange: (settings: Settings) => void) => StorageUnsubscribe;
-  };
-  searchEngineSettings: {
-    read: () => Promise<StoredSearchEngineSettings>;
-    save: (settings: StoredSearchEngineSettings) => Promise<void>;
   };
 };

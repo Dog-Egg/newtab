@@ -48,10 +48,10 @@ export const translations = {
         label: "SEARCH",
         title: "Search the web and your bookmarks.",
         description:
-          "Type in the search box to search the web or find a matching bookmark. You can switch search engines for a single search and see suggestions as you type.",
+          "Type in the search box to search the web with your browser’s default search engine or find a matching bookmark. You can also choose another search engine. The web demo defaults to Google and also supports switching search engines.",
         points: [
           "Search the web and your bookmarks together",
-          "Switch search engines for a single search",
+          "Use browser default or switch search engines",
           "See suggestions as you type",
         ],
         imageAlt: "Search suggestions for the web and browser bookmarks",
@@ -142,10 +142,10 @@ export const translations = {
         label: "搜索",
         title: "搜索网页和浏览器书签。",
         description:
-          "在搜索框中输入内容，可以搜索网页或查找匹配的书签。你可以为当前搜索切换搜索引擎，并在输入时看到搜索建议。",
+          "在搜索框中输入内容，可以使用浏览器默认搜索引擎搜索网页，或查找匹配的书签，也可以主动切换其他搜索引擎。网页版演示默认使用 Google，也支持切换搜索引擎。",
         points: [
           "同时搜索网页和浏览器书签",
-          "为当前搜索切换搜索引擎",
+          "默认跟随浏览器，也可切换搜索引擎",
           "输入内容时显示搜索建议",
         ],
         imageAlt: "网页和浏览器书签的搜索建议",

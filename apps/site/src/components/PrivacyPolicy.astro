@@ -43,7 +43,7 @@ const copy = isEnglish
         [
           "data",
           "2. Information handled by the extension",
-          `<p>${PRODUCT_NAME} handles only the information needed to provide its new-tab features:</p><ul><li><strong>Browser bookmarks:</strong> website titles, URLs, folder names, bookmark-root information, and ordering data from your browser bookmark tree.</li><li><strong>Selected text:</strong> when you explicitly choose the ${PRODUCT_NAME} search command from a page’s right-click menu, the browser provides the selected text so the extension can open a search with your chosen engine.</li><li><strong>Preferences:</strong> language, selected and custom search engines, hidden search engines, wallpaper URL, icon size, wallpaper overlay, and similar display settings.</li></ul><p>The extension does not request your name, email address, payment information, passwords, precise location, personal communications, or health information.</p>`,
+          `<p>${PRODUCT_NAME} handles only the information needed to provide its new-tab features:</p><ul><li><strong>Browser bookmarks:</strong> website titles, URLs, folder names, bookmark-root information, and ordering data from your browser bookmark tree.</li><li><strong>Selected text:</strong> when you explicitly choose the ${PRODUCT_NAME} search command from a page’s right-click menu, the browser provides the selected text so the extension can open a search with the engine you explicitly choose.</li><li><strong>Preferences:</strong> language, selected and custom search engines, hidden search engines, wallpaper URL, icon size, wallpaper overlay, and similar display settings.</li></ul><p>The extension does not request your name, email address, payment information, passwords, precise location, personal communications, or health information.</p>`,
         ],
         [
           "local-storage",
@@ -53,12 +53,12 @@ const copy = isEnglish
         [
           "permissions",
           "4. Browser permissions",
-          `<ul><li><strong>bookmarks:</strong> reads and displays your browser bookmark tree whenever the new-tab page is used, listens for bookmark changes, and lets you create, edit, move, reorder, and delete bookmarks and folders directly.</li><li><strong>contextMenus:</strong> adds a right-click command for searching text you have selected with a configured search engine.</li><li><strong>storage:</strong> saves search-engine settings, language, wallpaper settings, icon size, and other preferences locally.</li></ul>`,
+          `<ul><li><strong>bookmarks:</strong> reads and displays your browser bookmark tree whenever the new-tab page is used, listens for bookmark changes, and lets you create, edit, move, reorder, and delete bookmarks and folders directly.</li><li><strong>contextMenus:</strong> adds a right-click command for searching text you have selected with your chosen search engine, listing browser default first.</li><li><strong>search:</strong> runs searches through Chrome’s Search API using your browser’s default search engine.</li><li><strong>storage:</strong> saves search-engine settings, language, wallpaper settings, icon size, and other preferences locally.</li></ul>`,
         ],
         [
           "external-services",
           "5. Requests to external services",
-          `<p>${PRODUCT_NAME} does not send data to a developer-operated backend. The following user-facing features may contact third parties:</p><ul><li><strong>Search:</strong> when you submit a search from the new-tab page or selected-text context menu, your query is sent directly to the search engine you selected (for example, Google, Bing, or a custom provider). That provider’s privacy policy applies.</li><li><strong>Opening bookmarks:</strong> when you open a bookmark, your browser connects to the destination website as it normally would.</li><li><strong>Wallpapers:</strong> the default wallpaper is loaded from Unsplash. If you set a custom wallpaper URL, your browser requests the image from that provider. The provider may receive standard request information such as your IP address and browser details.</li><li><strong>Website icons:</strong> in builds configured to show remote website logos, the extension may send the domain portion of a bookmark URL to logo.dev to request an icon. The full page path, bookmark title, and your other bookmarks are not included in that icon request.</li></ul><p>${PRODUCT_NAME} does not control these third-party services. Their own privacy policies govern the information they receive.</p>`,
+          `<p>${PRODUCT_NAME} does not send data to a developer-operated backend. The following user-facing features may contact third parties:</p><ul><li><strong>Search:</strong> when you submit a search from the new-tab page or selected-text context menu, the new-tab page defaults to your browser’s default search engine through Chrome’s Search API. If you explicitly select another engine, your query is sent directly to that provider. The selected-text context menu also offers these engines, with browser default listed first. The web demo defaults to Google and also supports switching search engines. That provider’s privacy policy applies.</li><li><strong>Opening bookmarks:</strong> when you open a bookmark, your browser connects to the destination website as it normally would.</li><li><strong>Wallpapers:</strong> the default wallpaper is loaded from Unsplash. If you set a custom wallpaper URL, your browser requests the image from that provider. The provider may receive standard request information such as your IP address and browser details.</li><li><strong>Website icons:</strong> in builds configured to show remote website logos, the extension may send the domain portion of a bookmark URL to logo.dev to request an icon. The full page path, bookmark title, and your other bookmarks are not included in that icon request.</li></ul><p>${PRODUCT_NAME} does not control these third-party services. Their own privacy policies govern the information they receive.</p>`,
         ],
         [
           "sharing",
@@ -116,7 +116,7 @@ const copy = isEnglish
         [
           "data",
           "2. 扩展处理的信息",
-          `<p>${PRODUCT_NAME} 仅处理实现新标签页功能所需的信息：</p><ul><li><strong>浏览器书签：</strong>浏览器书签树中的网站标题、网址、文件夹名称、书签根目录信息及排序数据。</li><li><strong>选中的文字：</strong>仅当你主动在网页右键菜单中选择 ${PRODUCT_NAME} 搜索命令时，浏览器才会把选中的文字提供给扩展，以便使用你选择的搜索引擎打开搜索。</li><li><strong>偏好设置：</strong>语言、选中及自定义的搜索引擎、隐藏的搜索引擎、壁纸网址、图标大小、壁纸遮罩和类似显示设置。</li></ul><p>扩展不会要求你的姓名、电子邮箱、付款信息、密码、精确位置、私人通信或健康信息。</p>`,
+          `<p>${PRODUCT_NAME} 仅处理实现新标签页功能所需的信息：</p><ul><li><strong>浏览器书签：</strong>浏览器书签树中的网站标题、网址、文件夹名称、书签根目录信息及排序数据。</li><li><strong>选中的文字：</strong>仅当你主动在网页右键菜单中选择 ${PRODUCT_NAME} 搜索命令时，浏览器才会把选中的文字提供给扩展，以便使用你主动选择的搜索引擎打开搜索。</li><li><strong>偏好设置：</strong>语言、选中及自定义的搜索引擎、隐藏的搜索引擎、壁纸网址、图标大小、壁纸遮罩和类似显示设置。</li></ul><p>扩展不会要求你的姓名、电子邮箱、付款信息、密码、精确位置、私人通信或健康信息。</p>`,
         ],
         [
           "local-storage",
@@ -126,12 +126,12 @@ const copy = isEnglish
         [
           "permissions",
           "4. 浏览器权限",
-          `<ul><li><strong>bookmarks：</strong>在使用新标签页时读取并展示浏览器书签树、监听书签变化，并允许你直接新建、编辑、移动、排序和删除书签及文件夹。</li><li><strong>contextMenus：</strong>在右键菜单中添加命令，用配置的搜索引擎搜索你选中的文字。</li><li><strong>storage：</strong>在本地保存搜索引擎设置、语言、壁纸设置、图标大小及其他偏好。</li></ul>`,
+          `<ul><li><strong>bookmarks：</strong>在使用新标签页时读取并展示浏览器书签树、监听书签变化，并允许你直接新建、编辑、移动、排序和删除书签及文件夹。</li><li><strong>contextMenus：</strong>在右键菜单中添加命令，用你选择的搜索引擎搜索选中文字，浏览器默认排在首位。</li><li><strong>search：</strong>通过 Chrome Search API 使用浏览器默认搜索引擎执行搜索。</li><li><strong>storage：</strong>在本地保存搜索引擎设置、语言、壁纸设置、图标大小及其他偏好。</li></ul>`,
         ],
         [
           "external-services",
           "5. 向外部服务发起的请求",
-          `<p>${PRODUCT_NAME} 不会把数据发送到开发者运营的后端。以下面向用户的功能可能连接第三方：</p><ul><li><strong>搜索：</strong>当你从新标签页或划词搜索右键菜单提交搜索时，搜索词会直接发送给你选择的搜索引擎（例如 Google、Bing 或自定义提供商），并受该提供商隐私政策约束。</li><li><strong>打开书签：</strong>打开书签时，浏览器会像正常访问网站一样连接目标网站。</li><li><strong>壁纸：</strong>默认壁纸从 Unsplash 加载。如果你设置自定义壁纸网址，浏览器会向相应提供商请求图片。提供商可能收到 IP 地址、浏览器信息等标准请求信息。</li><li><strong>网站图标：</strong>在启用远程网站标志的构建版本中，扩展可能把书签网址的域名部分发送给 logo.dev 以请求图标。该请求不会包含完整页面路径、书签标题或其他书签。</li></ul><p>${PRODUCT_NAME} 无法控制这些第三方服务；它们收到的信息受各自隐私政策约束。</p>`,
+          `<p>${PRODUCT_NAME} 不会把数据发送到开发者运营的后端。以下面向用户的功能可能连接第三方：</p><ul><li><strong>搜索：</strong>当你从新标签页或划词搜索右键菜单提交搜索时，新标签页默认通过 Chrome Search API 使用浏览器默认搜索引擎；如果你主动选择其他引擎，搜索词会直接发送给相应提供商。划词搜索右键菜单也提供这些引擎，并将浏览器默认排在首位。网页版演示默认使用 Google，也支持切换搜索引擎。相应提供商的隐私政策适用。</li><li><strong>打开书签：</strong>打开书签时，浏览器会像正常访问网站一样连接目标网站。</li><li><strong>壁纸：</strong>默认壁纸从 Unsplash 加载。如果你设置自定义壁纸网址，浏览器会向相应提供商请求图片。提供商可能收到 IP 地址、浏览器信息等标准请求信息。</li><li><strong>网站图标：</strong>在启用远程网站标志的构建版本中，扩展可能把书签网址的域名部分发送给 logo.dev 以请求图标。该请求不会包含完整页面路径、书签标题或其他书签。</li></ul><p>${PRODUCT_NAME} 无法控制这些第三方服务；它们收到的信息受各自隐私政策约束。</p>`,
         ],
         [
           "sharing",

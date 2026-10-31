@@ -1,10 +1,9 @@
-import type { StoredSearchEngineSettings } from "./schema";
-
-export type SearchEngine = {
-  id: string;
-  name: string;
-  urlFormat: string;
-};
+import type {
+  SearchEngine,
+  StoredSearchEngineSettings,
+  UrlSearchEngine,
+} from "./schema";
+import { BROWSER_DEFAULT_ENGINE_ID, customEngineDraftSchema } from "./schema";
 
 export type TextMatch = {
   start: number;
@@ -16,47 +15,59 @@ export type SearchEngineMatches = {
   domain: TextMatch[];
 };
 
-export type CustomEngineDraft = {
-  name: string;
-  urlFormat: string;
+export const BROWSER_DEFAULT_ENGINE: SearchEngine = {
+  kind: "browser",
+  id: BROWSER_DEFAULT_ENGINE_ID,
+  name: "Browser default search engine",
 };
 
-export const DEFAULT_SEARCH_ENGINES: SearchEngine[] = [
+export const PRESET_SEARCH_ENGINES: UrlSearchEngine[] = [
   {
+    kind: "url",
     id: "google",
     name: "Google",
     urlFormat: "https://www.google.com/search?q=%s",
   },
   {
+    kind: "url",
     id: "bing",
     name: "Bing",
     urlFormat: "https://www.bing.com/search?q=%s",
   },
 ];
 
-export const EMPTY_CUSTOM_ENGINE: CustomEngineDraft = {
-  name: "",
-  urlFormat: "",
-};
-
 export function getAvailableSearchEngines(
-  settings: StoredSearchEngineSettings,
+  settings: Pick<
+    StoredSearchEngineSettings,
+    "hiddenDefaultEngineIds" | "customEngines"
+  >,
+  includeBrowserDefault = true,
 ): SearchEngine[] {
   const customEngines = settings.customEngines ?? [];
   const customEngineById = new Map(
     customEngines.map((engine) => [engine.id, engine]),
   );
-  const defaultEngineIds = new Set(
-    DEFAULT_SEARCH_ENGINES.map((engine) => engine.id),
+  const presetEngineIds = new Set(
+    PRESET_SEARCH_ENGINES.map((engine) => engine.id),
   );
-  const visibleDefaultEngines = DEFAULT_SEARCH_ENGINES.filter(
+  const visiblePresetEngines = PRESET_SEARCH_ENGINES.filter(
     (engine) => !settings.hiddenDefaultEngineIds?.includes(engine.id),
   ).map((engine) => customEngineById.get(engine.id) ?? engine);
   const addedEngines = customEngines.filter(
-    (engine) => !defaultEngineIds.has(engine.id),
+    (engine) => !presetEngineIds.has(engine.id),
   );
 
-  return [...visibleDefaultEngines, ...addedEngines];
+  const engines: SearchEngine[] = [
+    ...(includeBrowserDefault ? [BROWSER_DEFAULT_ENGINE] : []),
+    ...visiblePresetEngines.map((engine) => ({
+      ...engine,
+      kind: "url" as const,
+    })),
+    ...addedEngines
+      .filter((engine) => engine.id !== BROWSER_DEFAULT_ENGINE_ID)
+      .map((engine) => ({ ...engine, kind: "url" as const })),
+  ];
+  return engines.length > 0 ? engines : [PRESET_SEARCH_ENGINES[0]];
 }
 
 export function buildSearchUrl(urlFormat: string, query: string) {
@@ -66,8 +77,9 @@ export function buildSearchUrl(urlFormat: string, query: string) {
     return urlFormat.split("%s").join(encodedQuery);
   }
 
-  const separator = urlFormat.includes("?") ? "&" : "?";
-  return `${urlFormat}${separator}q=${encodedQuery}`;
+  const url = new URL(urlFormat);
+  url.searchParams.set("q", query);
+  return url.href;
 }
 
 export function createCustomEngineId() {
@@ -76,8 +88,8 @@ export function createCustomEngineId() {
     .slice(2, 8)}`;
 }
 
-export function getSearchEngineIconSource(urlFormat: string) {
-  return urlFormat.split("%s").join("");
+export function getSearchEngineIconSource(urlFormat?: string) {
+  return urlFormat?.split("%s").join("") ?? "";
 }
 
 function normalizeHostname(hostname: string) {
@@ -88,6 +100,7 @@ function normalizeHostname(hostname: string) {
 }
 
 export function getSearchEngineDomain(engine: SearchEngine) {
+  if (engine.kind === "browser") return null;
   try {
     return normalizeHostname(
       new URL(getSearchEngineIconSource(engine.urlFormat)).hostname,
@@ -120,4 +133,31 @@ export function getSearchEngineMatches(
   };
 
   return matches.name.length > 0 || matches.domain.length > 0 ? matches : null;
+}
+
+export async function submitSearch(
+  engine: SearchEngine,
+  text: string,
+  search: { browserSearch?: (text: string) => Promise<void> },
+) {
+  const query = text.trim();
+  if (!query) return;
+  if (engine.kind === "browser") {
+    if (!search.browserSearch) throw new Error("Browser search is unavailable");
+    await search.browserSearch(query);
+  } else {
+    if (!customEngineDraftSchema.safeParse(engine).success)
+      throw new InvalidSearchEngineUrlError();
+    window.open(
+      buildSearchUrl(engine.urlFormat, query),
+      "_parent",
+      "noreferrer",
+    );
+  }
+}
+
+export class InvalidSearchEngineUrlError extends Error {
+  constructor() {
+    super("Invalid search engine URL");
+  }
 }
