@@ -19,6 +19,7 @@ import {
 import { PointerActivationConstraints } from "@dnd-kit/dom";
 import { type SortableDraggable } from "@dnd-kit/dom/sortable";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
+import { Tooltip } from "@base-ui/react/tooltip";
 import {
   ArrowLeft,
   ChevronRight,
@@ -671,6 +672,8 @@ function NodeLabel({
   node: BrowserBookmarkNode;
   hidden?: boolean;
 }) {
+  const labelRef = useRef<HTMLSpanElement>(null);
+
   return (
     <span
       className={clsx(
@@ -678,16 +681,48 @@ function NodeLabel({
         hidden && "invisible",
       )}
     >
-      <span
-        className="line-clamp-2 w-full text-balance font-semibold text-white drop-shadow-[0_1px_2px_rgba(15,23,42,0.45)]"
-        style={{
-          minHeight: scaledPixels(40),
-          fontSize: scaledPixels(12),
-          lineHeight: scaledPixels(20),
+      <Tooltip.Root
+        disabled={hidden}
+        disableHoverablePopup
+        onOpenChange={(open, details) => {
+          const label = labelRef.current;
+          if (
+            open &&
+            label &&
+            label.scrollHeight <= label.clientHeight &&
+            label.scrollWidth <= label.clientWidth
+          ) {
+            details.cancel();
+          }
         }}
       >
-        {node.title}
-      </span>
+        <Tooltip.Trigger
+          delay={600}
+          render={
+            <span
+              ref={labelRef}
+              className="line-clamp-2 w-full text-balance font-semibold text-white drop-shadow-[0_1px_2px_rgba(15,23,42,0.45)]"
+              style={{
+                minHeight: scaledPixels(40),
+                fontSize: scaledPixels(12),
+                lineHeight: scaledPixels(20),
+              }}
+            >
+              {node.title}
+            </span>
+          }
+        />
+        <Tooltip.Portal>
+          <Tooltip.Positioner
+            sideOffset={6}
+            className="z-[70] data-[anchor-hidden]:invisible"
+          >
+            <Tooltip.Popup className="max-w-[min(24rem,var(--available-width))] rounded-lg bg-slate-900/95 px-3 py-1.5 text-center text-sm text-white shadow-lg [overflow-wrap:anywhere]">
+              {node.title}
+            </Tooltip.Popup>
+          </Tooltip.Positioner>
+        </Tooltip.Portal>
+      </Tooltip.Root>
     </span>
   );
 }
