@@ -339,7 +339,7 @@ function MergeTargetFrame({
 }) {
   return (
     <span
-      className="relative shrink-0 transition-transform group-hover/bookmark:scale-[1.03]"
+      className="relative grid shrink-0 transform-gpu place-items-center transition-transform group-hover/bookmark:scale-[1.03]"
       style={{ width: scaledPixels(64), height: scaledPixels(64) }}
     >
       <span
@@ -352,9 +352,8 @@ function MergeTargetFrame({
           transform: `translate(-50%, -50%) scale(var(${LAUNCHER_NODE_SCALE_VARIABLE}, 1))`,
         }}
       />
-      <span className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
-        {children}
-      </span>
+      {/* 用布局居中，避免图片的 translate 与外层缩放叠加产生像素抖动。 */}
+      <span className="relative z-10">{children}</span>
     </span>
   );
 }
