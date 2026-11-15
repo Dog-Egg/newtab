@@ -19,7 +19,6 @@ import {
 import { PointerActivationConstraints } from "@dnd-kit/dom";
 import { type SortableDraggable } from "@dnd-kit/dom/sortable";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
-import { Tooltip } from "@base-ui/react/tooltip";
 import {
   ArrowLeft,
   ChevronRight,
@@ -54,6 +53,16 @@ import { DeleteBookmarkCollectionDialog } from "./DeleteBookmarkCollectionDialog
 import { deleteFolderKeepingContents } from "./folder-deletion";
 import { useBookmarkNavigation } from "./BookmarkNavigationProvider";
 import { useBookmarks } from "./BookmarkProvider";
+import { BookmarkDock } from "./BookmarkDock";
+import {
+  BookmarkLink,
+  BookmarkLabel as NodeLabel,
+  bookmarkNodeClassName,
+  interactiveBookmarkNodeClassName,
+  LAUNCHER_NODE_SCALE_VARIABLE,
+  LAUNCHER_NODE_COLUMN_WIDTH_VARIABLE,
+  scaledPixels,
+} from "./BookmarkLink";
 
 type EditorState =
   | { mode: "create-item"; parentId: string }
@@ -67,22 +76,6 @@ type SortableCollisionDetector = NonNullable<
 const MERGE_TARGET_PREFIX = "merge:";
 const BREADCRUMB_TARGET_PREFIX = "breadcrumb:";
 const ROOT_TARGET_PREFIX = "root:";
-const bookmarkNodeClassName = clsx(
-  "flex flex-col items-center gap-2 rounded-2xl text-center",
-);
-// 悬停状态通过命名 group 传给图标，仅缩放图标，避免底部文字跟随放大或位移。
-const interactiveBookmarkNodeClassName = clsx(
-  bookmarkNodeClassName,
-  "group/bookmark outline-none transition focus-visible:ring-4 focus-visible:ring-white/70",
-);
-
-const LAUNCHER_NODE_SCALE_VARIABLE = "--node-scale";
-const LAUNCHER_NODE_COLUMN_WIDTH_VARIABLE = "--node-column-width";
-
-function scaledPixels(pixels: number) {
-  return `calc(${pixels}px * var(${LAUNCHER_NODE_SCALE_VARIABLE}, 1))`;
-}
-
 type BookmarkContainer =
   { type: "root"; id: string } | { type: "folder"; id: string };
 
@@ -313,14 +306,14 @@ function BookmarkRootDropTarget({
       type="button"
       aria-pressed={active}
       className={clsx(
-        "flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-semibold shadow-sm outline-none backdrop-blur-xl transition duration-200 focus-visible:ring-2 focus-visible:ring-glass-focus",
+        "relative flex h-10 shrink-0 items-center gap-2 rounded-lg px-4 text-sm font-semibold outline-none drop-shadow-sm transition duration-200 focus-visible:ring-2 focus-visible:ring-glass-focus",
         // 命中状态使用深色半透明底，拖拽预览覆盖在附近时文字仍有足够对比度。
         // ring 只负责强调目标，不会像 border 一样改变按钮和相邻元素的位置。
         isDropTarget
           ? "scale-105 bg-slate-950/75 text-white shadow-lg ring-2 ring-white/45"
           : active
-            ? "bg-white text-slate-900 hover:bg-white/90"
-            : "bg-slate-900/35 text-white/70 hover:bg-slate-900/50 hover:text-white",
+            ? "text-white after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-4 after:-translate-x-1/2 after:rounded-full after:bg-white hover:bg-white/10"
+            : "text-white/70 hover:bg-white/10 hover:text-white",
       )}
       onClick={onSelect}
     >
@@ -529,17 +522,12 @@ function BookmarkNodeCard({
 
   const content =
     node.type === "item" ? (
-      <a
+      <BookmarkLink
         ref={handleRef as Ref<HTMLAnchorElement>}
-        className={interactiveBookmarkNodeClassName}
-        style={{ width: scaledPixels(80) }}
-        href={node.url}
-        target="_parent"
-        rel="noreferrer"
-      >
-        <BookmarkPreview bookmark={node} isMergeTarget={isMergeTarget} />
-        <NodeLabel node={node} hidden={isDragging} />
-      </a>
+        bookmark={node}
+        icon={<BookmarkPreview bookmark={node} isMergeTarget={isMergeTarget} />}
+        labelHidden={isDragging}
+      />
     ) : isRenaming ? (
       <div
         className={bookmarkNodeClassName}
@@ -661,68 +649,6 @@ function BookmarkNodeCard({
         </div>
       )}
     </li>
-  );
-}
-
-function NodeLabel({
-  node,
-  hidden = false,
-}: {
-  node: BrowserBookmarkNode;
-  hidden?: boolean;
-}) {
-  const labelRef = useRef<HTMLSpanElement>(null);
-
-  return (
-    <span
-      className={clsx(
-        "flex w-full flex-col items-center",
-        hidden && "invisible",
-      )}
-    >
-      <Tooltip.Root
-        disabled={hidden}
-        disableHoverablePopup
-        onOpenChange={(open, details) => {
-          const label = labelRef.current;
-          if (
-            open &&
-            label &&
-            label.scrollHeight <= label.clientHeight &&
-            label.scrollWidth <= label.clientWidth
-          ) {
-            details.cancel();
-          }
-        }}
-      >
-        <Tooltip.Trigger
-          delay={600}
-          render={
-            <span
-              ref={labelRef}
-              className="line-clamp-2 w-full text-balance font-semibold text-white drop-shadow-[0_1px_2px_rgba(15,23,42,0.45)]"
-              style={{
-                minHeight: scaledPixels(40),
-                fontSize: scaledPixels(12),
-                lineHeight: scaledPixels(20),
-              }}
-            >
-              {node.title}
-            </span>
-          }
-        />
-        <Tooltip.Portal>
-          <Tooltip.Positioner
-            sideOffset={6}
-            className="z-[70] data-[anchor-hidden]:invisible"
-          >
-            <Tooltip.Popup className="max-w-[min(24rem,var(--available-width))] rounded-lg bg-slate-900/95 px-3 py-1.5 text-center text-sm text-white shadow-lg [overflow-wrap:anywhere]">
-              {node.title}
-            </Tooltip.Popup>
-          </Tooltip.Positioner>
-        </Tooltip.Portal>
-      </Tooltip.Root>
-    </span>
   );
 }
 
@@ -1299,7 +1225,7 @@ export function Launcher() {
         ref={rootRef}
         className="flex min-h-0 flex-1 flex-col overflow-hidden"
       >
-        <section className="relative z-10 mx-auto flex min-h-[15rem] w-full max-w-6xl flex-1 flex-col pt-12 sm:pt-5">
+        <section className="relative z-10 mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col pt-12 sm:pt-5">
           <div className="shrink-0 px-6 sm:px-10">
             <BookmarkBreadcrumb
               key={`${currentFolder.id}:${renameFolderId === currentFolder.id ? "editing" : "view"}`}
@@ -1382,7 +1308,7 @@ export function Launcher() {
         </section>
 
         <nav
-          className="z-20 flex shrink-0 justify-center pb-8 pt-3 sm:pb-12 md:pb-16"
+          className="z-20 flex shrink-0 justify-center pb-2 pt-3"
           aria-label={t("launcher.bookmarkRoots")}
         >
           {/* 每个根目录独立成组，避免额外的外层玻璃容器抢占视觉层级。 */}
@@ -1400,6 +1326,7 @@ export function Launcher() {
             })}
           </span>
         </nav>
+        <BookmarkDock />
       </div>
 
       {/* 独立浮层保留旧版拖拽时的跟手预览，不受网格占位透明度影响。 */}
