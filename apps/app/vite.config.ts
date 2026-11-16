@@ -21,6 +21,7 @@ function extensionManifestPlugin(): Plugin {
 
 export default defineConfig(({ mode, command }) => {
   const isExtension = mode === "extension";
+  const isAnalyze = process.env.ANALYZE === "true";
   const input: Record<string, string> = {
     index: "index.html",
   };
@@ -37,7 +38,7 @@ export default defineConfig(({ mode, command }) => {
     publicDir: isExtension ? "public" : false,
     plugins: [
       react(),
-      ...(mode === "analyze"
+      ...(isAnalyze
         ? [
             visualizer({
               open: true,
