@@ -24,14 +24,14 @@ async function rebuildContextMenus() {
   await createSelectedTextSearchMenu(items, locale);
 }
 
-export const refreshContextMenus = createRefreshScheduler(
+const refreshContextMenus = createRefreshScheduler(
   rebuildContextMenus,
   (error) => {
     console.error("Failed to refresh context menu", error);
   },
 );
 
-export function shouldRefreshContextMenus(
+function shouldRefreshContextMenus(
   changes: Record<string, chrome.storage.StorageChange>,
   areaName: string,
 ) {
@@ -41,6 +41,19 @@ export function shouldRefreshContextMenus(
   );
 }
 
-export function handleContextMenuClick(info: chrome.contextMenus.OnClickData) {
+function handleContextMenuClick(info: chrome.contextMenus.OnClickData) {
   handleSelectedTextSearchMenuClick(info);
+}
+
+export function registerContextMenus() {
+  chrome.runtime.onInstalled.addListener(refreshContextMenus);
+  chrome.runtime.onStartup.addListener(refreshContextMenus);
+
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (shouldRefreshContextMenus(changes, areaName)) {
+      refreshContextMenus();
+    }
+  });
+
+  chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
 }
