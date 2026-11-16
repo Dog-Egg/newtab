@@ -2,10 +2,15 @@ import type { StoredSearchEngineSettings } from "../search-engine-box/schema";
 import type { Settings } from "../settings/schema";
 import type { AppLocale } from "../i18n/locale";
 import type { BrowserBookmarkNode } from "../launcher/bookmark-tree";
+import type { BookmarkUsage } from "../launcher/bookmark-usage";
 
 type StorageUnsubscribe = () => void;
 
 export type Platform = {
+  bookmarkUsage: {
+    read: () => Promise<BookmarkUsage>;
+    record: (bookmarkId: string) => Promise<void>;
+  };
   defaultLocale: AppLocale;
   search: {
     defaultEngineId: string;

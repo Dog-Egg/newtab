@@ -3,6 +3,7 @@ import { Tooltip } from "@base-ui/react/tooltip";
 import clsx from "clsx";
 import { SiteIcon } from "../components/SiteIcon";
 import type { BrowserBookmarkItem } from "./bookmark-tree";
+import { useBookmarks } from "./BookmarkProvider";
 
 export const LAUNCHER_NODE_SCALE_VARIABLE = "--node-scale";
 export const LAUNCHER_NODE_COLUMN_WIDTH_VARIABLE = "--node-column-width";
@@ -38,13 +39,26 @@ export function BookmarkLink({
   labelHidden = false,
   className,
   style,
+  onClick,
+  onAuxClick,
   ...props
 }: BookmarkLinkProps) {
+  const { recordBookmarkClick } = useBookmarks();
   return (
     <a
       target="_parent"
       rel="noreferrer"
       {...props}
+      onClick={(event) => {
+        onClick?.(event);
+        if (!event.defaultPrevented && event.button === 0)
+          recordBookmarkClick(bookmark.id);
+      }}
+      onAuxClick={(event) => {
+        onAuxClick?.(event);
+        if (!event.defaultPrevented && event.button === 1)
+          recordBookmarkClick(bookmark.id);
+      }}
       href={bookmark.url}
       className={clsx(interactiveBookmarkNodeClassName, className)}
       style={{ width: scaledPixels(compact ? 60 : 80), ...style }}

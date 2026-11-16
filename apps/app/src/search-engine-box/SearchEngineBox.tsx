@@ -31,7 +31,7 @@ import {
 
 export function SearchEngineBox() {
   const { t } = useTranslation();
-  const { bookmarks } = useBookmarks();
+  const { bookmarks, recordBookmarkClick } = useBookmarks();
   const { revealBookmark } = useBookmarkNavigation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [searchBoxAnchor, setSearchBoxAnchor] = useState<HTMLDivElement | null>(
@@ -114,6 +114,7 @@ export function SearchEngineBox() {
 
   function openBookmarkSuggestion(suggestion: SearchSuggestionItem) {
     if (suggestion.type !== "bookmark") return;
+    recordBookmarkClick(suggestion.bookmark.id);
     window.open(suggestion.bookmark.url, "_parent", "noreferrer");
   }
 
@@ -317,6 +318,7 @@ export function SearchEngineBox() {
               }
               onAccept={acceptSuggestion}
               onLocateBookmark={locateBookmarkSuggestion}
+              onRecordBookmark={recordBookmarkClick}
             />
           ) : null}
         </div>

@@ -12,8 +12,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SearchEngineBox } from "./SearchEngineBox";
 import { MainDialogPortal } from "../components/Dialog";
 import type { StoredSearchEngineSettings } from "./schema";
+import type { BrowserBookmarkItem } from "../launcher/bookmark-tree";
 
-const { search, storage, errorToast } = vi.hoisted(() => ({
+const { search, storage, errorToast, bookmarkState } = vi.hoisted(() => ({
+  bookmarkState: {
+    bookmarks: [] as BrowserBookmarkItem[],
+    recordBookmarkClick: vi.fn(),
+  },
   search: {
     defaultEngineId: "_default_",
     browserSearch: vi.fn<() => Promise<void>>() as
@@ -34,7 +39,7 @@ function translate(key: string, values?: { name?: string }) {
   return values?.name ? `${key} ${values.name}` : key;
 }
 vi.mock("../launcher/BookmarkProvider", () => ({
-  useBookmarks: () => ({ bookmarks: [] }),
+  useBookmarks: () => bookmarkState,
 }));
 vi.mock("../launcher/BookmarkNavigationProvider", () => ({
   useBookmarkNavigation: () => ({ revealBookmark: vi.fn() }),
@@ -43,6 +48,7 @@ vi.mock("../components/SiteIcon", () => ({ SiteIcon: () => <span /> }));
 
 beforeEach(() => {
   vi.clearAllMocks();
+  bookmarkState.bookmarks = [];
   search.defaultEngineId = "_default_";
   search.browserSearch = vi.fn().mockResolvedValue(undefined);
   storage.read.mockResolvedValue({});
@@ -101,6 +107,44 @@ function submitSearch(text = "hello") {
 }
 
 describe("search engine interaction", () => {
+  it("records search result clicks, middle clicks and keyboard opens, but not locate actions", async () => {
+    bookmarkState.bookmarks = [
+      {
+        type: "item",
+        id: "github",
+        title: "GitHub",
+        url: "https://github.com/",
+      },
+    ];
+    mount();
+    await ready();
+    const input = screen.getByRole("combobox");
+    fireEvent.change(input, { target: { value: "github" } });
+    const link = await screen.findByRole("link", { name: /GitHub/ });
+    // Keep the test document in place after the normal link event.
+    document.addEventListener("click", (event) => event.preventDefault(), {
+      once: true,
+    });
+    fireEvent.click(link);
+    fireEvent(link, new MouseEvent("auxclick", { button: 1, bubbles: true }));
+    fireEvent(link, new MouseEvent("auxclick", { button: 2, bubbles: true }));
+    expect(bookmarkState.recordBookmarkClick.mock.calls).toEqual([
+      ["github"],
+      ["github"],
+    ]);
+    fireEvent.keyDown(input, { key: "ArrowDown" });
+    fireEvent.submit(input.closest("form")!);
+    expect(bookmarkState.recordBookmarkClick).toHaveBeenCalledTimes(3);
+    expect(window.open).toHaveBeenCalledWith(
+      "https://github.com/",
+      "_parent",
+      "noreferrer",
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "search.locateBookmark GitHub" }),
+    );
+    expect(bookmarkState.recordBookmarkClick).toHaveBeenCalledTimes(3);
+  });
   it("waits for preferences and restores an existing selection", async () => {
     let resolve!: (value: StoredSearchEngineSettings) => void;
     storage.read.mockReturnValue(

@@ -14,6 +14,18 @@ import {
   toChromeMoveDestination,
 } from "./chrome-bookmarks";
 import { getChromeStorage, setChromeStorage } from "./chrome-storage";
+import { parseBookmarkUsage } from "../launcher/bookmark-usage";
+import {
+  BOOKMARK_USAGE_MESSAGE_TYPES,
+  type BookmarkUsageMessage,
+} from "./messages";
+
+async function requestBookmarkUsage(message: BookmarkUsageMessage) {
+  const response = await chrome.runtime.sendMessage(message);
+  if (!response || response.error)
+    throw new Error(response?.error ?? "No bookmark usage response");
+  return response;
+}
 
 const defaultLocale = getLocaleFromLanguage(chrome.i18n.getUILanguage());
 
@@ -110,6 +122,20 @@ function subscribeBookmarks(onChange: () => void) {
 }
 
 export const platform: Platform = {
+  bookmarkUsage: {
+    read: async () => {
+      const response = await requestBookmarkUsage({
+        type: BOOKMARK_USAGE_MESSAGE_TYPES.read,
+      });
+      return parseBookmarkUsage(response.usage);
+    },
+    record: async (bookmarkId) => {
+      await requestBookmarkUsage({
+        type: BOOKMARK_USAGE_MESSAGE_TYPES.record,
+        bookmarkId,
+      });
+    },
+  },
   defaultLocale,
   search: {
     defaultEngineId: BROWSER_DEFAULT_ENGINE_ID,

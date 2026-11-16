@@ -82,12 +82,14 @@ export function SearchSuggestion({
   activeSuggestionKey,
   onAccept,
   onLocateBookmark,
+  onRecordBookmark,
 }: {
   anchorElement: HTMLDivElement | null;
   suggestions: SearchSuggestionItem[];
   activeSuggestionKey: string | null;
   onAccept: (suggestion: SearchSuggestionItem) => void;
   onLocateBookmark: (bookmarkId: string) => void;
+  onRecordBookmark: (bookmarkId: string) => void;
 }) {
   const { t } = useTranslation();
   const activeItemRef = useRef<HTMLElement>(null);
@@ -230,6 +232,14 @@ export function SearchSuggestion({
                     href={suggestion.bookmark.url}
                     target="_parent"
                     rel="noreferrer"
+                    onClick={(event) => {
+                      if (!event.defaultPrevented && event.button === 0)
+                        onRecordBookmark(suggestion.bookmark.id);
+                    }}
+                    onAuxClick={(event) => {
+                      if (!event.defaultPrevented && event.button === 1)
+                        onRecordBookmark(suggestion.bookmark.id);
+                    }}
                   >
                     {content}
                   </a>

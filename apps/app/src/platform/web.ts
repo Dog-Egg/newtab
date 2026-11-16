@@ -1,4 +1,13 @@
-import type { BrowserBookmarkNode } from "../launcher/bookmark-tree";
+import {
+  flattenBookmarkItems,
+  type BrowserBookmarkNode,
+} from "../launcher/bookmark-tree";
+import {
+  BOOKMARK_USAGE_KEY,
+  parseBookmarkUsage,
+  reconcileBookmarkUsage,
+  recordBookmarkUsage,
+} from "../launcher/bookmark-usage";
 import { browserBookmarkTreeSchema } from "../launcher/schema";
 import {
   createWebDefaultBookmarkTree,
@@ -19,6 +28,25 @@ import { getLocaleFromLanguage } from "../i18n/locale";
 
 const WEB_BOOKMARKS_STORAGE_KEY = "web-bookmarks";
 const webBookmarkListeners = new Set<() => void>();
+
+function updateBookmarkUsage(bookmarkId?: string) {
+  const saved = window.localStorage.getItem(BOOKMARK_USAGE_KEY);
+  let value: unknown;
+  try {
+    value = saved === null ? undefined : JSON.parse(saved);
+  } catch {
+    value = undefined;
+  }
+  const stored = parseBookmarkUsage(value);
+  const bookmarks = flattenBookmarkItems(readStoredWebBookmarks());
+  let next = reconcileBookmarkUsage(stored, bookmarks);
+  const bookmark = bookmarks.find((item) => item.id === bookmarkId);
+  if (bookmark) next = recordBookmarkUsage(next, bookmark, Date.now());
+  if (next !== stored) {
+    window.localStorage.setItem(BOOKMARK_USAGE_KEY, JSON.stringify(next));
+  }
+  return next;
+}
 const defaultLocale = getLocaleFromLanguage(
   new URLSearchParams(window.location.search).get("lang") ?? "en",
 );
@@ -137,6 +165,12 @@ function readStoredSettings() {
 }
 
 export const platform: Platform = {
+  bookmarkUsage: {
+    read: async () => updateBookmarkUsage(),
+    record: async (bookmarkId) => {
+      updateBookmarkUsage(bookmarkId);
+    },
+  },
   search: { defaultEngineId: "google" },
   defaultLocale,
   searchEngineSettings: {

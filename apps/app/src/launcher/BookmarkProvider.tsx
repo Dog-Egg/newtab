@@ -12,10 +12,13 @@ import {
   type BrowserBookmarkItem,
   type BrowserBookmarkNode,
 } from "./bookmark-tree";
+import { parseBookmarkUsage, rankBookmarks } from "./bookmark-usage";
 
 type BookmarkContextValue = {
   bookmarkTree: BrowserBookmarkNode[];
   bookmarks: BrowserBookmarkItem[];
+  topBookmarks: BrowserBookmarkItem[];
+  recordBookmarkClick: (bookmarkId: string) => void;
 };
 
 const BookmarkContext = createContext<BookmarkContextValue | null>(null);
@@ -28,6 +31,7 @@ export function BookmarkProvider({
   initialBookmarks: BrowserBookmarkNode[];
 }) {
   const [bookmarkTree, setBookmarkTree] = useState(initialBookmarks);
+  const [usage, setUsage] = useState(() => parseBookmarkUsage(undefined));
 
   useEffect(() => {
     let isCurrent = true;
@@ -53,8 +57,38 @@ export function BookmarkProvider({
     [bookmarkTree],
   );
 
+  useEffect(() => {
+    let active = true;
+    void platform.bookmarkUsage
+      .read()
+      .then((next) => {
+        if (active) setUsage(next);
+      })
+      .catch((error: unknown) =>
+        console.error("Failed to read bookmark usage", error),
+      );
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  function recordBookmarkClick(bookmarkId: string) {
+    // The extension submits to its background worker before the page navigates;
+    // web previews write synchronously before returning the promise.
+    void platform.bookmarkUsage.record(bookmarkId).catch((error: unknown) => {
+      console.error("Failed to record bookmark click", error);
+    });
+  }
+
+  const topBookmarks = useMemo(
+    () => rankBookmarks(bookmarks, usage),
+    [bookmarks, usage],
+  );
+
   return (
-    <BookmarkContext.Provider value={{ bookmarkTree, bookmarks }}>
+    <BookmarkContext.Provider
+      value={{ bookmarkTree, bookmarks, topBookmarks, recordBookmarkClick }}
+    >
       {children}
     </BookmarkContext.Provider>
   );
