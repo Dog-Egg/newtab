@@ -14,7 +14,7 @@ import {
   MIN_WALLPAPER_OVERLAY_OPACITY,
   wallpaperUrlSchema,
 } from "../schema";
-import { useSettingsStore } from "../store";
+import { useSettingsStore } from "../../store/settings";
 import { SettingsRange } from "../settings-range/SettingsRange";
 
 const DEFAULT_SOLID_COLOR = "#0F766E";

@@ -6,7 +6,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import { useSettingsStore } from "./settings/store";
+import { useSettingsStore } from "./store/settings";
 
 const DEFAULT_WALLPAPER_URL =
   import.meta.env.VITE_DEFAULT_WALLPAPER_URL?.trim() ||

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { platform } from "@platform";
 import i18n from "../i18n";
-import type { Settings } from "./schema";
+import type { Settings } from "../settings/schema";
 
 type SettingsUpdate =
   Partial<Settings> | ((settings: Settings) => Partial<Settings>);

@@ -3,7 +3,7 @@ import { Tooltip } from "@base-ui/react/tooltip";
 import clsx from "clsx";
 import { SiteIcon } from "../components/SiteIcon";
 import type { BrowserBookmarkItem } from "./bookmark-tree";
-import { useBookmarks } from "./BookmarkProvider";
+import { useBookmarksStore } from "../store/bookmarks";
 
 export const LAUNCHER_NODE_SCALE_VARIABLE = "--node-scale";
 export const LAUNCHER_NODE_COLUMN_WIDTH_VARIABLE = "--node-column-width";
@@ -43,7 +43,9 @@ export function BookmarkLink({
   onAuxClick,
   ...props
 }: BookmarkLinkProps) {
-  const { recordBookmarkClick } = useBookmarks();
+  const recordBookmarkClick = useBookmarksStore(
+    (state) => state.recordBookmarkClick,
+  );
   return (
     <a
       target="_parent"

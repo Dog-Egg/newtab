@@ -39,7 +39,7 @@ import {
   ContextMenuPopup,
 } from "../components/ContextMenu";
 import { SiteIcon } from "../components/SiteIcon";
-import { useSettingsStore } from "../settings/store";
+import { useSettingsStore } from "../store/settings";
 import {
   findBookmarkFolder,
   findBookmarkPath,
@@ -51,8 +51,8 @@ import {
 } from "./bookmark-tree";
 import { DeleteBookmarkCollectionDialog } from "./DeleteBookmarkCollectionDialog";
 import { deleteFolderKeepingContents } from "./folder-deletion";
-import { useBookmarkNavigation } from "./BookmarkNavigationProvider";
-import { useBookmarks } from "./BookmarkProvider";
+import { useBookmarkNavigationStore } from "../store/bookmark-navigation";
+import { useBookmarksStore } from "../store/bookmarks";
 import { BookmarkDock } from "./BookmarkDock";
 import {
   BookmarkLink,
@@ -1015,15 +1015,23 @@ function BreadcrumbDropTarget({
 
 export function Launcher() {
   const { t } = useTranslation();
-  const { bookmarkTree } = useBookmarks();
-  const {
-    activeRootId,
-    openFolderId,
-    navigationVersion,
-    revealedBookmark,
-    selectRoot,
-    navigateToFolder,
-  } = useBookmarkNavigation();
+  const bookmarkTree = useBookmarksStore((state) => state.bookmarkTree);
+  const activeRootId = useBookmarkNavigationStore(
+    (state) => state.activeRootId,
+  );
+  const openFolderId = useBookmarkNavigationStore(
+    (state) => state.openFolderId,
+  );
+  const navigationVersion = useBookmarkNavigationStore(
+    (state) => state.navigationVersion,
+  );
+  const revealedBookmark = useBookmarkNavigationStore(
+    (state) => state.revealedBookmark,
+  );
+  const selectRoot = useBookmarkNavigationStore((state) => state.selectRoot);
+  const navigateToFolder = useBookmarkNavigationStore(
+    (state) => state.navigateToFolder,
+  );
   const rootRef = useRef<HTMLDivElement>(null);
   const roots = useMemo(() => getBookmarkRoots(bookmarkTree), [bookmarkTree]);
   const [renameState, setRenameState] = useState<{

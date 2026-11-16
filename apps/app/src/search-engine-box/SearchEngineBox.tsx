@@ -6,8 +6,8 @@ import { useTranslation } from "react-i18next";
 import { platform } from "@platform";
 import type { SearchEngine, UrlSearchEngine } from "./schema";
 import { useSearchEngineSettings } from "./use-search-engine-settings";
-import { useBookmarkNavigation } from "../launcher/BookmarkNavigationProvider";
-import { useBookmarks } from "../launcher/BookmarkProvider";
+import { useBookmarkNavigationStore } from "../store/bookmark-navigation";
+import { useBookmarksStore } from "../store/bookmarks";
 import {
   SearchEngineEditorDialog,
   DeleteSearchEngineDialog,
@@ -31,8 +31,13 @@ import {
 
 export function SearchEngineBox() {
   const { t } = useTranslation();
-  const { bookmarks, recordBookmarkClick } = useBookmarks();
-  const { revealBookmark } = useBookmarkNavigation();
+  const bookmarks = useBookmarksStore((state) => state.bookmarks);
+  const recordBookmarkClick = useBookmarksStore(
+    (state) => state.recordBookmarkClick,
+  );
+  const revealBookmark = useBookmarkNavigationStore(
+    (state) => state.revealBookmark,
+  );
   const inputRef = useRef<HTMLInputElement>(null);
   const [searchBoxAnchor, setSearchBoxAnchor] = useState<HTMLDivElement | null>(
     null,

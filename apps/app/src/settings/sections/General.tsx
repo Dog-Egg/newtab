@@ -7,7 +7,7 @@ import {
   MIN_LAUNCHER_NODE_SCALE,
   type Settings,
 } from "../schema";
-import { useSettingsStore } from "../store";
+import { useSettingsStore } from "../../store/settings";
 import { SettingsRange } from "../settings-range/SettingsRange";
 
 function LauncherSizeSettings() {

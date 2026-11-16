@@ -8,7 +8,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { BookmarkProvider } from "./BookmarkProvider";
+import { initializeBookmarks } from "../store/bookmarks";
 import { BookmarkDock } from "./BookmarkDock";
 import { BookmarkLink } from "./BookmarkLink";
 import {
@@ -41,6 +41,7 @@ const bookmark: BrowserBookmarkItem = {
   url: "https://example.com/",
 };
 let saved: BookmarkUsage;
+let disposeBookmarks: (() => void) | undefined;
 let onTree: () => void;
 beforeEach(() => {
   vi.clearAllMocks();
@@ -57,14 +58,18 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  disposeBookmarks?.();
   vi.restoreAllMocks();
 });
 function mount(bookmarks = [bookmark]) {
+  disposeBookmarks?.();
+  api.readTree.mockResolvedValue(bookmarks);
+  disposeBookmarks = initializeBookmarks();
   return render(
-    <BookmarkProvider initialBookmarks={bookmarks}>
+    <>
       <BookmarkLink bookmark={bookmark} />
       <BookmarkDock />
-    </BookmarkProvider>,
+    </>,
   );
 }
 
@@ -136,14 +141,14 @@ describe("bookmark dock integration", () => {
   });
 
   it("does not count an activation cancelled by the caller", async () => {
+    api.readTree.mockResolvedValue([bookmark]);
+    disposeBookmarks = initializeBookmarks();
     render(
-      <BookmarkProvider initialBookmarks={[bookmark]}>
-        <BookmarkLink
-          bookmark={bookmark}
-          onClick={(event) => event.preventDefault()}
-          onAuxClick={(event) => event.preventDefault()}
-        />
-      </BookmarkProvider>,
+      <BookmarkLink
+        bookmark={bookmark}
+        onClick={(event) => event.preventDefault()}
+        onAuxClick={(event) => event.preventDefault()}
+      />,
     );
     const link = screen.getByRole("link", { name: "Example" });
     fireEvent.click(link);

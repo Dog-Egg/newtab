@@ -9,8 +9,10 @@ import { MainDialogPortal } from "./components/Dialog";
 import { Drawer } from "./components/Drawer";
 import { SettingsPanel } from "./settings/SettingsPanel";
 import { useTranslation } from "react-i18next";
+import { useBookmarkLifecycle } from "./store/use-bookmark-lifecycle";
 
 export function App() {
+  const isLoaded = useBookmarkLifecycle();
   const { t, i18n } = useTranslation();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [hasOpenedSettings, setHasOpenedSettings] = useState(false);
@@ -23,6 +25,8 @@ export function App() {
     settingsButtonRef.current?.focus();
     setIsSettingsOpen(false);
   }, []);
+
+  if (!isLoaded) return null;
 
   return (
     <div className="relative flex min-h-screen min-w-80 overflow-hidden font-sans text-white">

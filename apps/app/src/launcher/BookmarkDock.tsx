@@ -1,8 +1,8 @@
 import { BookmarkLink } from "./BookmarkLink";
-import { useBookmarks } from "./BookmarkProvider";
+import { useBookmarksStore } from "../store/bookmarks";
 
 export function BookmarkDock() {
-  const { topBookmarks } = useBookmarks();
+  const topBookmarks = useBookmarksStore((state) => state.topBookmarks);
   if (topBookmarks.length === 0) return null;
   return (
     <nav className="shrink-0 px-3 pb-6 pt-3 sm:px-6 sm:pb-8">

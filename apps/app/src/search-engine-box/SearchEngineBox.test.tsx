@@ -38,11 +38,14 @@ vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: translate }) }));
 function translate(key: string, values?: { name?: string }) {
   return values?.name ? `${key} ${values.name}` : key;
 }
-vi.mock("../launcher/BookmarkProvider", () => ({
-  useBookmarks: () => bookmarkState,
+vi.mock("../store/bookmarks", () => ({
+  useBookmarksStore: (selector: (state: typeof bookmarkState) => unknown) =>
+    selector(bookmarkState),
 }));
-vi.mock("../launcher/BookmarkNavigationProvider", () => ({
-  useBookmarkNavigation: () => ({ revealBookmark: vi.fn() }),
+vi.mock("../store/bookmark-navigation", () => ({
+  useBookmarkNavigationStore: (
+    selector: (state: { revealBookmark: ReturnType<typeof vi.fn> }) => unknown,
+  ) => selector({ revealBookmark: vi.fn() }),
 }));
 vi.mock("../components/SiteIcon", () => ({ SiteIcon: () => <span /> }));
 

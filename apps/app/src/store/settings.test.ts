@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Settings } from "./schema";
+import type { Settings } from "../settings/schema";
 
 const mocks = vi.hoisted(() => ({
   read: vi.fn(),
@@ -26,7 +26,7 @@ const settings: Settings = {
 
 async function loadStore(initialSettings = settings) {
   mocks.read.mockResolvedValue(initialSettings);
-  return import("./store");
+  return import("./settings");
 }
 
 beforeEach(() => {
