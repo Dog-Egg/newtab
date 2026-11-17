@@ -52,6 +52,9 @@ importers:
       "@dnd-kit/react":
         specifier: 0.5.0
         version: 0.5.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      "@tanstack/react-hotkeys":
+        specifier: 0.27.0
+        version: 0.27.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -2399,6 +2402,23 @@ packages:
       {
         integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==,
       }
+
+  "@tanstack/hotkeys@0.32.0":
+    resolution:
+      {
+        integrity: sha512-RofohKwXpAtnySoa/sXCWjkA3fyWn8AKcxXO6/Uc/r+ufNiMAyYSmwpVmT7L9hzRNta9ai10Y2soKKfmK5tL8Q==,
+      }
+    engines: { node: ">=20" }
+
+  "@tanstack/react-hotkeys@0.27.0":
+    resolution:
+      {
+        integrity: sha512-R+XKpXHWIXiQbP4gCogDdqc2uEiHQtZ63rqILZySI595rEHGtFqEkyqrtTkENtu7J8QGan/13xCx18XVdOQuRA==,
+      }
+    engines: { node: ">=20" }
+    peerDependencies:
+      react: ">=18.0.0"
+      react-dom: ">=18.0.0"
 
   "@testing-library/dom@10.4.2":
     resolution:
@@ -7473,6 +7493,14 @@ snapshots:
   "@shikijs/vscode-textmate@10.0.2": {}
 
   "@standard-schema/spec@1.1.0": {}
+
+  "@tanstack/hotkeys@0.32.0": {}
+
+  "@tanstack/react-hotkeys@0.27.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)":
+    dependencies:
+      "@tanstack/hotkeys": 0.32.0
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
 
   "@testing-library/dom@10.4.2":
     dependencies:

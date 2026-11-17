@@ -48,7 +48,9 @@ let itemWidth: number;
 let gap: number;
 let resizeDock: () => void;
 const disconnectObserver = vi.fn();
+const preventNavigation = (event: Event) => event.preventDefault();
 beforeEach(() => {
+  document.addEventListener("click", preventNavigation);
   vi.clearAllMocks();
   availableWidth = 1000;
   itemWidth = 60;
@@ -92,6 +94,7 @@ beforeEach(() => {
   });
 });
 afterEach(() => {
+  document.removeEventListener("click", preventNavigation);
   cleanup();
   disposeBookmarks?.();
   vi.restoreAllMocks();
@@ -110,6 +113,128 @@ function mount(bookmarks = [bookmark]) {
 }
 
 describe("bookmark dock integration", () => {
+  it("reveals number hints while Alt is held and clears them on release or focus loss", async () => {
+    saved = recordBookmarkUsage(saved, bookmark, 0);
+    const view = mount();
+    const dock = await screen.findByRole("navigation");
+    const hints = () =>
+      [...dock.querySelectorAll("kbd")].map((hint) => hint.textContent);
+    expect(hints()).toEqual([]);
+    fireEvent.keyDown(document.body, {
+      key: "Alt",
+      code: "AltLeft",
+      altKey: true,
+    });
+    expect(hints()).toEqual(["1"]);
+    expect(dock.querySelector("a")?.getAttribute("aria-keyshortcuts")).toBe(
+      "Alt+1",
+    );
+    fireEvent.keyUp(document.body, { key: "Alt", code: "AltLeft" });
+    expect(hints()).toEqual([]);
+    for (const target of [window, document]) {
+      vi.spyOn(document, "hidden", "get").mockReturnValue(target === document);
+      fireEvent.keyDown(document.body, { key: "Alt", altKey: true });
+      fireEvent(
+        target,
+        new Event(target === window ? "blur" : "visibilitychange", {
+          bubbles: true,
+        }),
+      );
+      expect(hints()).toEqual([]);
+    }
+    view.unmount();
+    fireEvent.keyDown(document.body, { key: "Alt", altKey: true });
+    expect(api.record).not.toHaveBeenCalled();
+  });
+
+  it("opens only visible shortcuts, maps zero to ten and ignores repeats", async () => {
+    const bookmarks = Array.from({ length: 10 }, (_, index) => ({
+      ...bookmark,
+      id: String(index),
+      title: `Bookmark ${index}`,
+    }));
+    for (const item of bookmarks) saved = recordBookmarkUsage(saved, item, 0);
+    mount(bookmarks);
+    const dock = await screen.findByRole("navigation");
+    fireEvent.keyDown(document.body, { key: "Alt", altKey: true });
+    expect(
+      [...dock.querySelectorAll("kbd")].map((hint) => hint.textContent),
+    ).toEqual(["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]);
+    // Option+1 produces a different character on a Mac keyboard.
+    fireEvent.keyDown(document.body, {
+      key: "¡",
+      code: "Digit1",
+      altKey: true,
+    });
+    fireEvent.keyDown(document.body, {
+      key: "º",
+      code: "Digit0",
+      altKey: true,
+    });
+    fireEvent.keyDown(document.body, {
+      key: "º",
+      code: "Digit0",
+      altKey: true,
+      repeat: true,
+    });
+    expect(api.record.mock.calls).toEqual([["0"], ["9"]]);
+    availableWidth = 220;
+    act(() => resizeDock());
+    fireEvent.keyDown(document.body, { code: "Digit4", altKey: true });
+    fireEvent.keyDown(document.body, { code: "Digit0", altKey: true });
+    fireEvent.keyDown(document.body, { code: "Digit3", altKey: true });
+    expect(api.record.mock.calls).toEqual([["0"], ["9"], ["2"]]);
+  });
+
+  it("leaves editing, composition, other modifiers and cancelled keys alone", async () => {
+    saved = recordBookmarkUsage(saved, bookmark, 0);
+    const view = mount();
+    const dock = await screen.findByRole("navigation");
+    const editors = render(
+      <>
+        <input />
+        <textarea />
+        <select />
+        <div contentEditable tabIndex={0} suppressContentEditableWarning>
+          <span>Editable</span>
+        </div>
+      </>,
+    );
+    for (const element of editors.container.querySelectorAll(
+      "input, textarea, select, [contenteditable]",
+    )) {
+      if (element.hasAttribute("contenteditable"))
+        Object.defineProperty(element, "isContentEditable", { value: true });
+      act(() => (element as HTMLElement).focus());
+      fireEvent.keyDown(element, { code: "Digit1", altKey: true });
+      expect(dock.querySelector("kbd")).toBeNull();
+    }
+    act(() => (document.activeElement as HTMLElement).blur());
+    for (const modifiers of [
+      {},
+      { altKey: true, ctrlKey: true },
+      { altKey: true, metaKey: true },
+      { altKey: true, shiftKey: true },
+      { altKey: true, isComposing: true },
+      { altKey: true, modifierAltGraph: true },
+    ])
+      fireEvent.keyDown(document.body, { code: "Digit1", ...modifiers });
+    const cancelled = new KeyboardEvent("keydown", {
+      code: "Digit1",
+      altKey: true,
+      cancelable: true,
+    });
+    cancelled.preventDefault();
+    fireEvent(document.body, cancelled);
+    expect(api.record).not.toHaveBeenCalled();
+    fireEvent.keyDown(document.body, { key: "Alt", altKey: true });
+    act(() => editors.container.querySelector("input")!.focus());
+    expect(dock.querySelector("kbd")).toBeNull();
+    view.unmount();
+    fireEvent.keyDown(document.body, { code: "Digit1", altKey: true });
+    expect(api.record).not.toHaveBeenCalled();
+  });
+
   it("fits a single row to available space, respects scaling and caps at ten", async () => {
     const bookmarks = Array.from({ length: 12 }, (_, i) => ({
       ...bookmark,
