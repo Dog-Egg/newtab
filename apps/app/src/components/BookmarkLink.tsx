@@ -1,15 +1,13 @@
 import { useRef, type ComponentPropsWithRef, type ReactNode } from "react";
 import { Tooltip } from "@base-ui/react/tooltip";
 import clsx from "clsx";
-import { SiteIcon } from "../components/SiteIcon";
-import type { BrowserBookmarkItem } from "./bookmark-tree";
+import { SiteIcon } from "./SiteIcon";
 import { useBookmarksStore } from "../store/bookmarks";
 
-export const LAUNCHER_NODE_SCALE_VARIABLE = "--node-scale";
-export const LAUNCHER_NODE_COLUMN_WIDTH_VARIABLE = "--node-column-width";
+export const BOOKMARK_NODE_SCALE_VARIABLE = "--node-scale";
 
 export function scaledPixels(pixels: number) {
-  return `calc(${pixels}px * var(${LAUNCHER_NODE_SCALE_VARIABLE}, 1))`;
+  return `calc(${pixels}px * var(${BOOKMARK_NODE_SCALE_VARIABLE}, 1))`;
 }
 
 export const bookmarkNodeClassName = clsx(
@@ -25,7 +23,7 @@ type BookmarkLinkProps = Omit<
   ComponentPropsWithRef<"a">,
   "children" | "href"
 > & {
-  bookmark: Pick<BrowserBookmarkItem, "id" | "title" | "url">;
+  bookmark: { id: string; title: string; url: string };
   compact?: boolean;
   icon?: ReactNode;
   labelHidden?: boolean;

@@ -10,6 +10,8 @@ import { Drawer } from "./components/Drawer";
 import { SettingsPanel } from "./settings/SettingsPanel";
 import { useTranslation } from "react-i18next";
 import { useBookmarkLifecycle } from "./store/use-bookmark-lifecycle";
+import { BookmarkDock } from "./dock/BookmarkDock";
+import { useBookmarkNodeScale } from "./hooks/use-bookmark-node-scale";
 
 export function App() {
   const isLoaded = useBookmarkLifecycle();
@@ -17,6 +19,8 @@ export function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [hasOpenedSettings, setHasOpenedSettings] = useState(false);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
+  const contentRef = useBookmarkNodeScale(isLoaded);
+
   useEffect(() => {
     document.title = t("app.title");
   }, [i18n.resolvedLanguage, t]);
@@ -63,11 +67,15 @@ export function App() {
           <SettingsIcon aria-hidden="true" className="size-5" />
         </button>
 
-        <div className="flex h-screen min-h-0 flex-col pt-16 sm:pt-[clamp(4rem,18vh,12rem)]">
+        <div
+          ref={contentRef}
+          className="flex h-screen min-h-0 flex-col pt-16 sm:pt-[clamp(4rem,18vh,12rem)]"
+        >
           <div className="relative z-20 shrink-0 px-6 sm:px-10">
             <SearchEngineBox />
           </div>
           <Launcher />
+          <BookmarkDock />
         </div>
 
         <MainDialogPortal />

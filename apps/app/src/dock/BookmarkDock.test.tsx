@@ -10,13 +10,13 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { initializeBookmarks } from "../store/bookmarks";
 import { BookmarkDock } from "./BookmarkDock";
-import { BookmarkLink } from "./BookmarkLink";
+import { BookmarkLink } from "../components/BookmarkLink";
 import {
   parseBookmarkUsage,
   recordBookmarkUsage,
   type BookmarkUsage,
-} from "./bookmark-usage";
-import type { BrowserBookmarkItem } from "./bookmark-tree";
+} from "../launcher/bookmark-usage";
+import type { BrowserBookmarkItem } from "../launcher/bookmark-tree";
 
 const api = vi.hoisted(() => ({
   read: vi.fn(),

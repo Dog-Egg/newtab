@@ -53,16 +53,16 @@ import { DeleteBookmarkCollectionDialog } from "./DeleteBookmarkCollectionDialog
 import { deleteFolderKeepingContents } from "./folder-deletion";
 import { useBookmarkNavigationStore } from "../store/bookmark-navigation";
 import { useBookmarksStore } from "../store/bookmarks";
-import { BookmarkDock } from "./BookmarkDock";
 import {
   BookmarkLink,
   BookmarkLabel as NodeLabel,
   bookmarkNodeClassName,
   interactiveBookmarkNodeClassName,
-  LAUNCHER_NODE_SCALE_VARIABLE,
-  LAUNCHER_NODE_COLUMN_WIDTH_VARIABLE,
+  BOOKMARK_NODE_SCALE_VARIABLE,
   scaledPixels,
-} from "./BookmarkLink";
+} from "../components/BookmarkLink";
+
+const LAUNCHER_NODE_COLUMN_WIDTH_VARIABLE = "--node-column-width";
 
 type EditorState =
   | { mode: "create-item"; parentId: string }
@@ -342,7 +342,7 @@ function MergeTargetFrame({
           width: active ? 72 : 64,
           height: active ? 72 : 64,
           borderRadius: active ? 22 : 18,
-          transform: `translate(-50%, -50%) scale(var(${LAUNCHER_NODE_SCALE_VARIABLE}, 1))`,
+          transform: `translate(-50%, -50%) scale(var(${BOOKMARK_NODE_SCALE_VARIABLE}, 1))`,
         }}
       />
       {/* 用布局居中，避免图片的 translate 与外层缩放叠加产生像素抖动。 */}
@@ -1069,7 +1069,6 @@ export function Launcher() {
       const root = rootRef.current;
       if (!root) return;
 
-      root.style.setProperty(LAUNCHER_NODE_SCALE_VARIABLE, String(nodeScale));
       root.style.setProperty(
         LAUNCHER_NODE_COLUMN_WIDTH_VARIABLE,
         `${Math.round(88 * nodeScale)}px`,
@@ -1334,7 +1333,6 @@ export function Launcher() {
             })}
           </span>
         </nav>
-        <BookmarkDock />
       </div>
 
       {/* 独立浮层保留旧版拖拽时的跟手预览，不受网格占位透明度影响。 */}

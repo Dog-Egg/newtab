@@ -1,4 +1,4 @@
-import { BookmarkLink } from "./BookmarkLink";
+import { BookmarkLink } from "../components/BookmarkLink";
 import { useBookmarksStore } from "../store/bookmarks";
 
 export function BookmarkDock() {
