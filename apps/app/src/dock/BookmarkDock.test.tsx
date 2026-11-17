@@ -76,9 +76,7 @@ beforeEach(() => {
       constructor(callback: () => void) {
         resizeDock = callback;
       }
-      observe() {
-        resizeDock();
-      }
+      observe() {}
       disconnect = disconnectObserver;
     },
   );

@@ -60,7 +60,7 @@ export function BookmarkDock() {
     const item = itemRef.current;
     if (!list || !item) return;
 
-    const observer = new ResizeObserver(() => {
+    const updateCapacity = () => {
       const width = list.getBoundingClientRect().width;
       const itemWidth = item.getBoundingClientRect().width;
       const gap = parseFloat(getComputedStyle(list).columnGap) || 0;
@@ -71,7 +71,10 @@ export function BookmarkDock() {
           Math.min(10, Math.floor((width + gap) / (itemWidth + gap))),
         ),
       );
-    });
+    };
+    // Resolve the initial capacity before paint, without waiting for the observer.
+    updateCapacity();
+    const observer = new ResizeObserver(updateCapacity);
     // Observe both available space and the actual item size (including scaling).
     observer.observe(list);
     observer.observe(item);
