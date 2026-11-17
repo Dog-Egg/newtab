@@ -5,7 +5,11 @@ import {
   type BrowserBookmarkItem,
   type BrowserBookmarkNode,
 } from "../launcher/bookmark-tree";
-import { parseBookmarkUsage, rankBookmarks } from "../launcher/bookmark-usage";
+import {
+  parseBookmarkUsage,
+  rankBookmarks,
+  type BookmarkUsage,
+} from "../launcher/bookmark-usage";
 
 type BookmarksStore = {
   isLoaded: boolean;
@@ -28,51 +32,78 @@ export const useBookmarksStore = create<BookmarksStore>()(() => ({
   },
 }));
 
+function deriveBookmarkData(
+  bookmarkTree: BrowserBookmarkNode[],
+  usage: BookmarkUsage,
+) {
+  const bookmarks = flattenBookmarkItems(bookmarkTree);
+  return {
+    bookmarkTree,
+    bookmarks,
+    topBookmarks: rankBookmarks(bookmarks, usage),
+  };
+}
+
+async function readBookmarks() {
+  try {
+    return await platform.bookmarks.read();
+  } catch (error) {
+    console.error("Failed to refresh browser bookmarks", error);
+    return undefined;
+  }
+}
+
+async function readBookmarkUsage() {
+  try {
+    return await platform.bookmarkUsage.read();
+  } catch (error) {
+    console.error("Failed to read bookmark usage", error);
+    return parseBookmarkUsage(undefined);
+  }
+}
+
 export function initializeBookmarks() {
   let active = true;
   let refreshVersion = 0;
   let usage = parseBookmarkUsage(undefined);
-  const applyTree = (bookmarkTree: BrowserBookmarkNode[]) => {
-    const bookmarks = flattenBookmarkItems(bookmarkTree);
-    useBookmarksStore.setState({
-      bookmarkTree,
-      bookmarks,
-      topBookmarks: rankBookmarks(bookmarks, usage),
-    });
-  };
-  useBookmarksStore.setState({ isLoaded: false });
-  applyTree([]);
+  useBookmarksStore.setState({
+    isLoaded: false,
+    ...deriveBookmarkData([], usage),
+  });
+
   const refreshBookmarks = () => {
     const version = ++refreshVersion;
-    void platform.bookmarks
-      .read()
-      .then((tree) => {
-        if (active && version === refreshVersion) applyTree(tree);
-      })
-      .catch((error: unknown) => {
-        console.error("Failed to refresh browser bookmarks", error);
-      })
-      .finally(() => {
-        if (active && version === refreshVersion) {
-          useBookmarksStore.setState({ isLoaded: true });
-        }
-      });
+    // Startup will consume changes received before the first snapshot is ready.
+    if (!useBookmarksStore.getState().isLoaded) return;
+    void readBookmarks().then((tree) => {
+      if (active && version === refreshVersion && tree) {
+        useBookmarksStore.setState(deriveBookmarkData(tree, usage));
+      }
+    });
   };
   const unsubscribe = platform.bookmarks.subscribe(refreshBookmarks);
-  refreshBookmarks();
-  void platform.bookmarkUsage
-    .read()
-    .then((next) => {
-      if (!active) return;
-      usage = next;
-      const { bookmarks } = useBookmarksStore.getState();
-      useBookmarksStore.setState({
-        topBookmarks: rankBookmarks(bookmarks, usage),
-      });
-    })
-    .catch((error: unknown) => {
-      console.error("Failed to read bookmark usage", error);
+
+  const loadStartup = async () => {
+    const [initialTree, initialUsage] = await Promise.all([
+      readBookmarks(),
+      readBookmarkUsage(),
+    ]);
+    let tree = initialTree ?? [];
+    let version = 0;
+    // Coalesce startup events and catch up before publishing any visible data.
+    while (active && version !== refreshVersion) {
+      version = refreshVersion;
+      tree = (await readBookmarks()) ?? tree;
+    }
+    if (!active) return;
+    usage = initialUsage;
+    useBookmarksStore.setState({
+      ...deriveBookmarkData(tree, usage),
+      isLoaded: true,
     });
+  };
+  void loadStartup();
+
   return () => {
     active = false;
     unsubscribe();
