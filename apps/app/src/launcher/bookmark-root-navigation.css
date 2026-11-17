@@ -1,0 +1,43 @@
+/* Older browsers keep a static indicator on the selected button. */
+.bookmark-root-tab[aria-pressed="true"]::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 16px;
+  border-bottom: 2px solid white;
+  border-radius: 999px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+@supports (anchor-name: --active-bookmark-root) and
+  (left: anchor(--active-bookmark-root center)) {
+  .bookmark-root-tab[aria-pressed="true"] {
+    anchor-name: --active-bookmark-root;
+  }
+
+  .bookmark-root-tab[aria-pressed="true"]::after {
+    content: none;
+  }
+
+  /* One shared underline follows the active button, regardless of its width. */
+  .bookmark-root-tabs::after {
+    content: "";
+    position: absolute;
+    position-anchor: --active-bookmark-root;
+    bottom: 0;
+    left: anchor(center);
+    width: 16px;
+    border-bottom: 2px solid white;
+    border-radius: 999px;
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .bookmark-root-tabs::after {
+      transition: left 300ms ease-out;
+    }
+  }
+}

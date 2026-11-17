@@ -1,3 +1,4 @@
+import "./bookmark-root-navigation.css";
 import {
   useEffect,
   useLayoutEffect,
@@ -306,13 +307,13 @@ function BookmarkRootDropTarget({
       type="button"
       aria-pressed={active}
       className={clsx(
-        "relative flex h-10 shrink-0 items-center gap-2 rounded-lg px-4 text-sm font-semibold outline-none drop-shadow-sm transition duration-200 focus-visible:ring-2 focus-visible:ring-glass-focus",
+        "bookmark-root-tab relative flex h-10 shrink-0 items-center gap-2 rounded-lg px-4 text-sm font-semibold outline-none drop-shadow-sm transition duration-200 focus-visible:ring-2 focus-visible:ring-glass-focus",
         // 命中状态使用深色半透明底，拖拽预览覆盖在附近时文字仍有足够对比度。
         // ring 只负责强调目标，不会像 border 一样改变按钮和相邻元素的位置。
         isDropTarget
           ? "scale-105 bg-slate-950/75 text-white shadow-lg ring-2 ring-white/45"
           : active
-            ? "text-white after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-4 after:-translate-x-1/2 after:rounded-full after:bg-white hover:bg-white/10"
+            ? "text-white hover:bg-white/10"
             : "text-white/70 hover:bg-white/10 hover:text-white",
       )}
       onClick={onSelect}
@@ -1319,18 +1320,17 @@ export function Launcher() {
           aria-label={t("launcher.bookmarkRoots")}
         >
           {/* 每个根目录独立成组，避免额外的外层玻璃容器抢占视觉层级。 */}
-          <span className="flex items-center gap-2.5 overflow-x-auto px-4 py-1.5 [scrollbar-width:none]">
-            {roots.map((root) => {
-              const isActive = root.id === activeRoot.id;
-              return (
+          <span className="flex items-center overflow-x-auto px-4 py-1.5 [scrollbar-width:none]">
+            <span className="bookmark-root-tabs relative flex shrink-0 items-center gap-2.5">
+              {roots.map((root) => (
                 <BookmarkRootDropTarget
                   key={root.id}
                   root={root}
-                  active={isActive}
+                  active={root.id === activeRoot.id}
                   onSelect={() => selectRootNode(root.id)}
                 />
-              );
-            })}
+              ))}
+            </span>
           </span>
         </nav>
       </div>
