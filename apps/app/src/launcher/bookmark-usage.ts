@@ -112,6 +112,6 @@ export function rankBookmarks(
             ? 1
             : 0),
     )
-    .slice(0, 6)
+    .slice(0, 10)
     .map(({ bookmark }) => bookmark);
 }

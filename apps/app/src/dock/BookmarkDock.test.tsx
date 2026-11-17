@@ -43,8 +43,43 @@ const bookmark: BrowserBookmarkItem = {
 let saved: BookmarkUsage;
 let disposeBookmarks: (() => void) | undefined;
 let onTree: () => void;
+let availableWidth: number;
+let itemWidth: number;
+let gap: number;
+let resizeDock: () => void;
+const disconnectObserver = vi.fn();
 beforeEach(() => {
   vi.clearAllMocks();
+  availableWidth = 1000;
+  itemWidth = 60;
+  gap = 20;
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+    function (this: HTMLElement) {
+      return {
+        width: this.tagName === "LI" ? itemWidth : availableWidth,
+      } as DOMRect;
+    },
+  );
+  const getStyle = window.getComputedStyle.bind(window);
+  vi.spyOn(window, "getComputedStyle").mockImplementation((element) => {
+    const style = getStyle(element);
+    if (element.tagName === "UL") {
+      Object.defineProperty(style, "columnGap", { value: `${gap}px` });
+    }
+    return style;
+  });
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      constructor(callback: () => void) {
+        resizeDock = callback;
+      }
+      observe() {
+        resizeDock();
+      }
+      disconnect = disconnectObserver;
+    },
+  );
   saved = parseBookmarkUsage(undefined);
   api.read.mockImplementation(async () => saved);
   api.subscribeTree.mockImplementation((listener) => {
@@ -60,6 +95,7 @@ afterEach(() => {
   cleanup();
   disposeBookmarks?.();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 function mount(bookmarks = [bookmark]) {
   disposeBookmarks?.();
@@ -74,6 +110,46 @@ function mount(bookmarks = [bookmark]) {
 }
 
 describe("bookmark dock integration", () => {
+  it("fits a single row to available space, respects scaling and caps at ten", async () => {
+    const bookmarks = Array.from({ length: 12 }, (_, i) => ({
+      ...bookmark,
+      id: String(i).padStart(2, "0"),
+      title: `Bookmark ${i}`,
+    }));
+    for (const item of bookmarks) {
+      saved = recordBookmarkUsage(saved, item, 0);
+    }
+    const view = mount(bookmarks);
+    const dock = await screen.findByRole("navigation");
+    const titles = () =>
+      [...dock.querySelectorAll("a")].map((link) => link.textContent);
+    expect(titles()).toEqual(bookmarks.slice(0, 10).map((item) => item.title));
+
+    for (const [width, expectedCount] of [
+      [780, 10],
+      [779, 9],
+      [460, 6],
+      [459, 5],
+      [780, 10],
+    ]) {
+      availableWidth = width;
+      act(() => resizeDock());
+      expect(titles()).toEqual(
+        bookmarks.slice(0, expectedCount).map((item) => item.title),
+      );
+    }
+
+    gap = 12;
+    availableWidth = 296; // A 320px viewport after horizontal padding.
+    act(() => resizeDock());
+    expect(titles()).toHaveLength(4);
+    itemWidth = 90; // 1.5x icon scale.
+    act(() => resizeDock());
+    expect(titles()).toHaveLength(3);
+    view.unmount();
+    expect(disconnectObserver).toHaveBeenCalled();
+  });
+
   it("starts hidden, records primary and middle clicks once, and restores persisted ranking", async () => {
     const view = mount();
     await waitFor(() => expect(api.read).toHaveBeenCalled());

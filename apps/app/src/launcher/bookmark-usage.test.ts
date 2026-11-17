@@ -30,21 +30,27 @@ describe("bookmark usage", () => {
     expect(usage.entries.a.score).toBe(1.5);
   });
 
-  it("ranks recency against frequency, excludes unclicked items and caps at six", () => {
+  it("ranks recency against frequency, excludes unclicked items and caps at ten", () => {
     let usage = parseBookmarkUsage(undefined);
-    const bookmarks = Array.from({ length: 8 }, (_, i) => bookmark(String(i)));
-    for (const item of bookmarks.slice(0, 7))
+    const bookmarks = Array.from({ length: 12 }, (_, i) =>
+      bookmark(String(i).padStart(2, "0")),
+    );
+    for (const item of bookmarks.slice(0, 11))
       usage = recordBookmarkUsage(usage, item, 0);
     for (let i = 0; i < 8; i++)
       usage = recordBookmarkUsage(usage, bookmarks[0], 0);
     usage = recordBookmarkUsage(usage, bookmarks[1], week * 4);
     expect(rankBookmarks(bookmarks, usage).map((item) => item.id)).toEqual([
-      "1",
-      "0",
-      "2",
-      "3",
-      "4",
-      "5",
+      "01",
+      "00",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+      "09",
     ]);
     expect(rankBookmarks(bookmarks, parseBookmarkUsage(undefined))).toEqual([]);
   });
