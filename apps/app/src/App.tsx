@@ -69,7 +69,7 @@ export function App() {
 
         <div
           ref={contentRef}
-          className="flex h-screen min-h-0 flex-col pt-16 sm:pt-[clamp(4rem,18vh,12rem)]"
+          className="flex h-screen min-h-0 flex-col pt-16 sm:pt-[clamp(4rem,14vh,12rem)] 2xl:pt-[clamp(4rem,18vh,12rem)]"
         >
           <div className="relative z-20 shrink-0 px-6 sm:px-10">
             <SearchEngineBox />
