@@ -3,9 +3,11 @@ import react from "@vitejs/plugin-react";
 import { visualizer } from "rollup-plugin-visualizer";
 import { fileURLToPath, URL } from "node:url";
 import { manifest } from "./manifest.ts";
-import { appVersion } from "./build/version.ts";
+import { readAppVersion } from "./build/version.ts";
 
-function extensionManifestPlugin(): Plugin {
+function extensionManifestPlugin(
+  version: ReturnType<typeof readAppVersion>,
+): Plugin {
   return {
     name: "extension-manifest",
     apply: "build",
@@ -13,13 +15,22 @@ function extensionManifestPlugin(): Plugin {
       this.emitFile({
         type: "asset",
         fileName: "manifest.json",
-        source: `${JSON.stringify(manifest, null, 2)}\n`,
+        source: `${JSON.stringify(
+          {
+            ...manifest,
+            version: version.version,
+            version_name: version.versionName,
+          },
+          null,
+          2,
+        )}\n`,
       });
     },
   };
 }
 
 export default defineConfig(({ mode, command }) => {
+  const appVersion = readAppVersion();
   const isExtension = mode === "extension";
   const isAnalyze = process.env.ANALYZE === "true";
   const input: Record<string, string> = {
@@ -33,7 +44,7 @@ export default defineConfig(({ mode, command }) => {
   return {
     base: "./",
     define: {
-      __APP_VERSION__: JSON.stringify(appVersion),
+      __APP_VERSION__: JSON.stringify(appVersion.versionName),
     },
     publicDir: isExtension ? "public" : false,
     plugins: [
@@ -46,7 +57,7 @@ export default defineConfig(({ mode, command }) => {
           ]
         : []),
       ...(isExtension && command === "build"
-        ? [extensionManifestPlugin()]
+        ? [extensionManifestPlugin(appVersion)]
         : []),
     ],
     resolve: {
