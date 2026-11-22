@@ -1,6 +1,5 @@
 import * as z from "zod/mini";
 
-export const WALLPAPERS_STORAGE_KEY = "wallpapers";
 export const DEFAULT_OVERLAY_OPACITY = 0.35;
 export const MIN_OVERLAY_OPACITY = 0;
 export const MAX_OVERLAY_OPACITY = 0.8;

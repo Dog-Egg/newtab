@@ -1,4 +1,5 @@
 import projectConfig from "../../project.config.json" with { type: "json" };
+import { WALLHAVEN_ORIGIN } from "./src/features/wallpapers/gallery/config.ts";
 
 const productName = projectConfig.product.name;
 
@@ -15,7 +16,7 @@ export const manifest = {
     "128": "icons/logo-128.png",
   },
   permissions: ["bookmarks", "contextMenus", "storage", "favicon", "search"],
-  host_permissions: ["https://wallhaven.cc/*"],
+  host_permissions: [`${WALLHAVEN_ORIGIN}/*`],
   background: {
     service_worker: "background.js",
     type: "module",

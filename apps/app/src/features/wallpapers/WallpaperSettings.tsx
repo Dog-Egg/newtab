@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { SettingsRange } from "../settings/settings-range/SettingsRange";
-import { SettingsScrollArea } from "../settings/SettingsScrollArea";
+import { SettingsRange } from "../../settings/settings-range/SettingsRange";
+import { SettingsScrollArea } from "../../settings/SettingsScrollArea";
 import { CustomWallpaperUrl } from "./CustomWallpaperUrl";
 import { WallpaperGallery } from "./gallery/WallpaperGallery";
 import {

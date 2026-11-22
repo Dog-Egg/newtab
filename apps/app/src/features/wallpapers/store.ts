@@ -1,6 +1,6 @@
-import { platform } from "@platform";
 import { create } from "zustand";
 import { wallpapersSchema, type StoredWallpaper } from "./schema";
+import { wallpaperStorage } from "./storage";
 
 type WallpapersStore = {
   wallpaper: StoredWallpaper;
@@ -8,7 +8,7 @@ type WallpapersStore = {
 };
 
 async function createWallpapersStore() {
-  const initialWallpaper = await platform.wallpapers
+  const initialWallpaper = await wallpaperStorage
     .read()
     .catch((error: unknown) => {
       console.error("Failed to read wallpaper", error);
@@ -30,7 +30,7 @@ async function createWallpapersStore() {
       // Keep rapid slider updates ordered and skip snapshots superseded before their write.
       const save = (pendingSave ?? Promise.resolve())
         .then(() => {
-          if (pendingSave === save) return platform.wallpapers.save(wallpaper);
+          if (pendingSave === save) return wallpaperStorage.save(wallpaper);
         })
         .catch((error: unknown) =>
           console.error("Failed to save wallpaper", error),
@@ -50,7 +50,7 @@ async function createWallpapersStore() {
     if (pendingSave) return;
 
     const revision = ++readRevision;
-    void platform.wallpapers.read().then(
+    void wallpaperStorage.read().then(
       (wallpaper) => {
         if (!pendingSave && revision === readRevision)
           store.setState({ wallpaper });
@@ -59,7 +59,7 @@ async function createWallpapersStore() {
     );
   }
 
-  platform.wallpapers.subscribe(refreshFromStorage);
+  wallpaperStorage.subscribe(refreshFromStorage);
   return store;
 }
 

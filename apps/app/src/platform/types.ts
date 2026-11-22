@@ -3,7 +3,6 @@ import type { Settings } from "../settings/schema";
 import type { AppLocale } from "../i18n/locale";
 import type { BrowserBookmarkNode } from "../launcher/bookmark-tree";
 import type { BookmarkUsage } from "../launcher/bookmark-usage";
-import type { StoredWallpaper } from "../wallpapers/schema";
 
 type StorageUnsubscribe = () => void;
 
@@ -45,9 +44,9 @@ export type Platform = {
     save: (settings: Settings) => Promise<void>;
     subscribe: (onChange: (settings: Settings) => void) => StorageUnsubscribe;
   };
-  wallpapers: {
-    read: () => Promise<StoredWallpaper>;
-    save: (wallpaper: StoredWallpaper) => Promise<void>;
-    subscribe: (onChange: () => void) => StorageUnsubscribe;
+  localStorage: {
+    read: (key: string) => Promise<unknown>;
+    write: (key: string, value: unknown) => Promise<void>;
+    subscribe: (key: string, onChange: () => void) => StorageUnsubscribe;
   };
 };

@@ -5,6 +5,11 @@ import { Agent } from "node:https";
 import { fileURLToPath, URL } from "node:url";
 import { manifest } from "./manifest.ts";
 import { readAppVersion } from "./build/version.ts";
+import {
+  WALLHAVEN_ORIGIN,
+  WALLHAVEN_PROXY_PATH,
+  WALLHAVEN_SEARCH_PATH,
+} from "./src/features/wallpapers/gallery/config.ts";
 
 function extensionManifestPlugin(
   version: ReturnType<typeof readAppVersion>,
@@ -47,12 +52,12 @@ export default defineConfig(({ mode, command }) => {
     server: {
       proxy: {
         // Wallhaven does not expose its API to cross-origin requests on web pages.
-        "^/api/wallhaven/search(?:\\?|$)": {
-          target: "https://wallhaven.cc",
+        [`^${WALLHAVEN_PROXY_PATH}(?:\\?|$)`]: {
+          target: WALLHAVEN_ORIGIN,
           changeOrigin: true,
           agent: new Agent({ proxyEnv: process.env }),
           rewrite: (path: string) =>
-            path.replace("/api/wallhaven/search", "/api/v1/search"),
+            path.replace(WALLHAVEN_PROXY_PATH, WALLHAVEN_SEARCH_PATH),
         },
       },
     },

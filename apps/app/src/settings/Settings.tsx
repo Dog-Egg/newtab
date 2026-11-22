@@ -3,7 +3,7 @@ import clsx from "clsx";
 import { Image, Info, SlidersHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { AboutSettings, GeneralSettings } from "./sections";
-import { WallpaperSettings } from "../wallpapers/WallpaperSettings";
+import { WallpaperSettings } from "../features/wallpapers/WallpaperSettings";
 
 export function Settings() {
   const { t } = useTranslation();

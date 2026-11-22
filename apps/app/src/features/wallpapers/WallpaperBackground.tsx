@@ -7,6 +7,7 @@ import {
   type CSSProperties,
 } from "react";
 import { useWallpapersStore } from "./store";
+import styles from "./WallpaperBackground.module.css";
 
 const DEFAULT_WALLPAPER_URL =
   import.meta.env.VITE_DEFAULT_WALLPAPER_URL?.trim() ||
@@ -87,7 +88,7 @@ export function WallpaperBackground() {
       {pendingWallpaperUrl && (
         <div
           key={pendingWallpaperUrl}
-          className="absolute inset-0 animate-fade-in bg-cover bg-center motion-reduce:animate-[fade-in_0.01ms_ease-out_forwards]"
+          className={`absolute inset-0 bg-cover bg-center ${styles.fadeIn}`}
           style={getWallpaperLayerStyle(pendingWallpaperUrl)}
           onAnimationEnd={completeWallpaperFade}
         />

@@ -23,7 +23,6 @@ import {
   settingsSchema,
   type Settings,
 } from "../settings/schema";
-import { WALLPAPERS_STORAGE_KEY, wallpapersSchema } from "../wallpapers/schema";
 import i18n from "../i18n";
 import { getLocaleFromLanguage } from "../i18n/locale";
 
@@ -260,22 +259,15 @@ export const platform: Platform = {
       return () => window.removeEventListener("storage", handleStorageChange);
     },
   },
-  wallpapers: {
-    read: async () =>
-      wallpapersSchema.parse(
-        readJsonStorageValue(WALLPAPERS_STORAGE_KEY, window.localStorage),
-      ),
-    save: async (wallpaper) =>
-      writeJsonStorageValue(
-        WALLPAPERS_STORAGE_KEY,
-        wallpaper,
-        window.localStorage,
-      ),
-    subscribe: (onChange) => {
+  localStorage: {
+    read: async (key) => readJsonStorageValue(key, window.localStorage),
+    write: async (key, value) =>
+      writeJsonStorageValue(key, value, window.localStorage),
+    subscribe: (key, onChange) => {
       const handleStorageChange = (event: StorageEvent) => {
         if (
           event.storageArea === window.localStorage &&
-          (event.key === WALLPAPERS_STORAGE_KEY || event.key === null)
+          (event.key === key || event.key === null)
         ) {
           onChange();
         }

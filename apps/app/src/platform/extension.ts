@@ -6,7 +6,6 @@ import {
 import type { BrowserBookmarkNode } from "../launcher/bookmark-tree";
 import type { Platform } from "./types";
 import { SETTINGS_STORAGE_KEY, settingsSchema } from "../settings/schema";
-import { WALLPAPERS_STORAGE_KEY, wallpapersSchema } from "../wallpapers/schema";
 import { getLocaleFromLanguage } from "../i18n/locale";
 import {
   createChromeBookmarkNode,
@@ -169,12 +168,10 @@ export const platform: Platform = {
         onChange(settingsSchema.parse(value)),
       ),
   },
-  wallpapers: {
-    read: async () =>
-      wallpapersSchema.parse(await getChromeStorage(WALLPAPERS_STORAGE_KEY)),
-    save: (wallpaper) => setChromeStorage(WALLPAPERS_STORAGE_KEY, wallpaper),
-    subscribe: (onChange) =>
-      subscribeChromeStorage(WALLPAPERS_STORAGE_KEY, onChange),
+  localStorage: {
+    read: getChromeStorage,
+    write: setChromeStorage,
+    subscribe: subscribeChromeStorage,
   },
   searchEngineSettings: {
     read: async () =>

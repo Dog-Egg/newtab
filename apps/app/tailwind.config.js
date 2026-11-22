@@ -27,10 +27,6 @@ export default {
         control: ["0.75rem", { lineHeight: "1rem", fontWeight: "600" }],
       },
       keyframes: {
-        "fade-in": {
-          from: { opacity: "0" },
-          to: { opacity: "1" },
-        },
         shake: {
           "0%, 100%": {
             transform: "translateX(0) rotate(0)",
@@ -80,7 +76,6 @@ export default {
         },
       },
       animation: {
-        "fade-in": "fade-in 520ms ease-out forwards",
         shake: "shake 620ms ease-in-out",
         highlight: "highlight 620ms ease-in-out",
         "dialog-overlay-in": "dialog-overlay-in 160ms ease-out",

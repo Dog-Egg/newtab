@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { Settings as SettingsIcon } from "lucide-react";
 import { Launcher } from "./launcher/Launcher";
 import { SearchEngineBox } from "./search-engine-box";
-import { WallpaperBackground } from "./wallpapers/WallpaperBackground";
+import { WallpaperBackground } from "./features/wallpapers/WallpaperBackground";
 import { MainDialogPortal } from "./components/Dialog";
 import { Drawer } from "./components/Drawer";
 import { SettingsPanel } from "./settings/SettingsPanel";

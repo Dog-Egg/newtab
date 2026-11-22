@@ -1,4 +1,9 @@
 import * as z from "zod/mini";
+import {
+  WALLHAVEN_ORIGIN,
+  WALLHAVEN_PROXY_PATH,
+  WALLHAVEN_SEARCH_PATH,
+} from "./config";
 
 const searchResponse = z.object({
   data: z.array(
@@ -20,8 +25,8 @@ const searchResponse = z.object({
 
 const searchEndpoint =
   import.meta.env.MODE === "extension"
-    ? "https://wallhaven.cc/api/v1/search"
-    : "/api/wallhaven/search";
+    ? `${WALLHAVEN_ORIGIN}${WALLHAVEN_SEARCH_PATH}`
+    : WALLHAVEN_PROXY_PATH;
 
 export type GalleryWallpaper = {
   id: string;
