@@ -3,7 +3,7 @@ import { Toaster } from "sonner";
 import clsx from "clsx";
 import { Settings as SettingsIcon } from "lucide-react";
 import { Launcher } from "./launcher/Launcher";
-import { SearchEngineBox } from "./search-engine-box";
+import { SearchEngineBox } from "./features/search";
 import { WallpaperBackground } from "./features/wallpapers/WallpaperBackground";
 import { MainDialogPortal } from "./components/Dialog";
 import { Drawer } from "./components/Drawer";

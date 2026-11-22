@@ -11,6 +11,7 @@ import {
   getAvailableSearchEngines,
   PRESET_SEARCH_ENGINES,
 } from "./search-engine-utils";
+import { readSearchEngineSettings, writeSearchEngineSettings } from "./storage";
 
 export function useSearchEngineSettings() {
   const { t } = useTranslation();
@@ -26,8 +27,7 @@ export function useSearchEngineSettings() {
 
   useEffect(() => {
     let active = true;
-    void platform.searchEngineSettings
-      .read()
+    void readSearchEngineSettings(platform.preferencesStorage.read)
       .then((value) => {
         if (active) {
           current.current = value;
@@ -57,17 +57,16 @@ export function useSearchEngineSettings() {
       ),
     [settings, t],
   );
-  const selectedId =
-    settings.selectedEngineId ?? platform.search.defaultEngineId;
   const selectedEngine =
-    engines.find((engine) => engine.id === selectedId) ?? engines[0];
+    engines.find((engine) => engine.id === settings.selectedEngineId) ??
+    engines[0];
 
   async function update(next: StoredSearchEngineSettings): Promise<boolean> {
     current.current = next;
     setSettings(next);
     setSaving(true);
     try {
-      await platform.searchEngineSettings.save(next);
+      await writeSearchEngineSettings(platform.preferencesStorage.write, next);
       return true;
     } catch (error) {
       console.error("Failed to save search engine settings", error);

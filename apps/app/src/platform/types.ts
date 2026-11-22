@@ -1,10 +1,14 @@
-import type { StoredSearchEngineSettings } from "../search-engine-box/schema";
 import type { Settings } from "../settings/schema";
 import type { AppLocale } from "../i18n/locale";
 import type { BrowserBookmarkNode } from "../launcher/bookmark-tree";
 import type { BookmarkUsage } from "../launcher/bookmark-usage";
 
 type StorageUnsubscribe = () => void;
+
+type KeyValueStorage = {
+  read: (key: string) => Promise<unknown>;
+  write: (key: string, value: unknown) => Promise<void>;
+};
 
 export type Platform = {
   bookmarkUsage: {
@@ -13,13 +17,9 @@ export type Platform = {
   };
   defaultLocale: AppLocale;
   search: {
-    defaultEngineId: string;
     browserSearch?: (text: string) => Promise<void>;
   };
-  searchEngineSettings: {
-    read: () => Promise<StoredSearchEngineSettings>;
-    save: (settings: StoredSearchEngineSettings) => Promise<void>;
-  };
+  preferencesStorage: KeyValueStorage;
   bookmarks: {
     read: () => Promise<BrowserBookmarkNode[]>;
     create: (bookmark: {
@@ -44,9 +44,7 @@ export type Platform = {
     save: (settings: Settings) => Promise<void>;
     subscribe: (onChange: (settings: Settings) => void) => StorageUnsubscribe;
   };
-  localStorage: {
-    read: (key: string) => Promise<unknown>;
-    write: (key: string, value: unknown) => Promise<void>;
+  localStorage: KeyValueStorage & {
     subscribe: (key: string, onChange: () => void) => StorageUnsubscribe;
   };
 };

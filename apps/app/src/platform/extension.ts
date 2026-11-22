@@ -1,8 +1,3 @@
-import {
-  BROWSER_DEFAULT_ENGINE_ID,
-  SEARCH_ENGINE_SETTINGS_KEY,
-  searchEngineSettingsSchema,
-} from "../search-engine-box/schema";
 import type { BrowserBookmarkNode } from "../launcher/bookmark-tree";
 import type { Platform } from "./types";
 import { SETTINGS_STORAGE_KEY, settingsSchema } from "../settings/schema";
@@ -138,7 +133,6 @@ export const platform: Platform = {
   },
   defaultLocale,
   search: {
-    defaultEngineId: BROWSER_DEFAULT_ENGINE_ID,
     browserSearch: (text) =>
       chrome.search.query({ text, disposition: "CURRENT_TAB" }),
   },
@@ -173,11 +167,8 @@ export const platform: Platform = {
     write: setChromeStorage,
     subscribe: subscribeChromeStorage,
   },
-  searchEngineSettings: {
-    read: async () =>
-      searchEngineSettingsSchema.parse(
-        await getChromeStorage(SEARCH_ENGINE_SETTINGS_KEY),
-      ),
-    save: (settings) => setChromeStorage(SEARCH_ENGINE_SETTINGS_KEY, settings),
+  preferencesStorage: {
+    read: getChromeStorage,
+    write: setChromeStorage,
   },
 };

@@ -2,7 +2,11 @@ import { afterEach, expect, it, vi } from "vitest";
 import {
   getAvailableSearchEngines,
   submitSearch,
-} from "../search-engine-box/search-engine-utils";
+} from "../features/search/search-engine-utils";
+import {
+  readSearchEngineSettings,
+  writeSearchEngineSettings,
+} from "../features/search/storage";
 
 vi.mock("../i18n", () => ({
   default: { on: vi.fn(), addResourceBundle: vi.fn(), language: "en" },
@@ -22,7 +26,6 @@ it("provides Google as the web fallback search provider", async () => {
     sessionStorage: { getItem },
   });
   const { platform } = await import("./web");
-  expect(platform.search.defaultEngineId).toBe("google");
   await submitSearch(
     getAvailableSearchEngines({}, false)[0],
     "中文 & test?#",
@@ -60,7 +63,8 @@ it("restores engine preferences, searches with the selected engine and saves edi
     },
   });
   const { platform } = await import("./web");
-  const restored = await platform.searchEngineSettings.read();
+  const { read, write } = platform.preferencesStorage;
+  const restored = await readSearchEngineSettings(read);
   expect(restored).toEqual(settings);
   const engines = getAvailableSearchEngines(restored, false);
   expect(engines.map((engine) => engine.id)).toEqual(["google", "custom"]);
@@ -74,11 +78,11 @@ it("restores engine preferences, searches with the selected engine and saves edi
     "_parent",
     "noreferrer",
   );
-  await platform.searchEngineSettings.save({
+  await writeSearchEngineSettings(write, {
     ...restored,
     selectedEngineId: "google",
   });
-  expect((await platform.searchEngineSettings.read()).selectedEngineId).toBe(
+  expect((await readSearchEngineSettings(read)).selectedEngineId).toBe(
     "google",
   );
 });

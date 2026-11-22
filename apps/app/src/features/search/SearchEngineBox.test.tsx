@@ -10,9 +10,10 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SearchEngineBox } from "./SearchEngineBox";
-import { MainDialogPortal } from "../components/Dialog";
+import { MainDialogPortal } from "../../components/Dialog";
 import type { StoredSearchEngineSettings } from "./schema";
-import type { BrowserBookmarkItem } from "../launcher/bookmark-tree";
+import { SEARCH_ENGINE_SETTINGS_KEY } from "./storage";
+import type { BrowserBookmarkItem } from "../../launcher/bookmark-tree";
 
 const { search, storage, errorToast, bookmarkState } = vi.hoisted(() => ({
   bookmarkState: {
@@ -20,42 +21,43 @@ const { search, storage, errorToast, bookmarkState } = vi.hoisted(() => ({
     recordBookmarkClick: vi.fn(),
   },
   search: {
-    defaultEngineId: "_default_",
     browserSearch: vi.fn<() => Promise<void>>() as
       (() => Promise<void>) | undefined,
   },
   storage: {
-    read: vi.fn<() => Promise<StoredSearchEngineSettings>>(),
-    save: vi.fn<() => Promise<void>>(),
+    read: vi.fn<(key: string) => Promise<StoredSearchEngineSettings>>(),
+    write:
+      vi.fn<
+        (key: string, settings: StoredSearchEngineSettings) => Promise<void>
+      >(),
   },
   errorToast: vi.fn(),
 }));
 vi.mock("@platform", () => ({
-  platform: { search, searchEngineSettings: storage },
+  platform: { search, preferencesStorage: storage },
 }));
 vi.mock("sonner", () => ({ toast: { error: errorToast } }));
 vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: translate }) }));
 function translate(key: string, values?: { name?: string }) {
   return values?.name ? `${key} ${values.name}` : key;
 }
-vi.mock("../store/bookmarks", () => ({
+vi.mock("../../store/bookmarks", () => ({
   useBookmarksStore: (selector: (state: typeof bookmarkState) => unknown) =>
     selector(bookmarkState),
 }));
-vi.mock("../store/bookmark-navigation", () => ({
+vi.mock("../../store/bookmark-navigation", () => ({
   useBookmarkNavigationStore: (
     selector: (state: { revealBookmark: ReturnType<typeof vi.fn> }) => unknown,
   ) => selector({ revealBookmark: vi.fn() }),
 }));
-vi.mock("../components/SiteIcon", () => ({ SiteIcon: () => <span /> }));
+vi.mock("../../components/SiteIcon", () => ({ SiteIcon: () => <span /> }));
 
 beforeEach(() => {
   vi.clearAllMocks();
   bookmarkState.bookmarks = [];
-  search.defaultEngineId = "_default_";
   search.browserSearch = vi.fn().mockResolvedValue(undefined);
   storage.read.mockResolvedValue({});
-  storage.save.mockResolvedValue(undefined);
+  storage.write.mockResolvedValue(undefined);
   vi.spyOn(console, "error").mockImplementation(() => {});
   vi.stubGlobal(
     "ResizeObserver",
@@ -177,12 +179,13 @@ describe("search engine interaction", () => {
     await openSelector();
     fireEvent.click(screen.getByRole("button", { name: "Bing" }));
     await waitFor(() =>
-      expect(storage.save).toHaveBeenCalledWith({ selectedEngineId: "bing" }),
+      expect(storage.write).toHaveBeenCalledWith(SEARCH_ENGINE_SETTINGS_KEY, {
+        selectedEngineId: "bing",
+      }),
     );
   });
 
   it("keeps web presets and custom engines without browser default", async () => {
-    search.defaultEngineId = "google";
     search.browserSearch = undefined;
     mount();
     await ready();
@@ -211,7 +214,7 @@ describe("search engine interaction", () => {
       "_parent",
       "noreferrer",
     );
-    expect(storage.save).not.toHaveBeenCalled();
+    expect(storage.write).not.toHaveBeenCalled();
     fireEvent.change(input, { target: { value: "" } });
     fireEvent.keyDown(input, { key: "Backspace" });
     submitSearch();
@@ -262,7 +265,7 @@ describe("search engine interaction", () => {
       within(dialog).getByRole("button", { name: "common.save" }),
     );
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(storage.save).toHaveBeenCalledWith({
+    expect(storage.write).toHaveBeenCalledWith(SEARCH_ENGINE_SETTINGS_KEY, {
       selectedEngineId: "legacy",
       customEngines: [{ ...legacy, urlFormat: "https://example.com/?q=%s" }],
     });
@@ -270,7 +273,7 @@ describe("search engine interaction", () => {
 
   it("adds a custom engine, keeps the draft after failure and prevents duplicate saves", async () => {
     let resolve!: () => void;
-    storage.save.mockRejectedValueOnce(new Error("write failed"));
+    storage.write.mockRejectedValueOnce(new Error("write failed"));
     mount();
     await ready();
     await openSelector();
@@ -288,7 +291,7 @@ describe("search engine interaction", () => {
       expect(errorToast).toHaveBeenCalledWith("search.saveFailed"),
     );
     expect((name as HTMLInputElement).value).toBe("Custom");
-    storage.save.mockReturnValue(
+    storage.write.mockReturnValue(
       new Promise<void>((done) => {
         resolve = done;
       }),
@@ -296,15 +299,13 @@ describe("search engine interaction", () => {
     const button = within(dialog).getByRole("button", { name: "common.save" });
     fireEvent.click(button);
     fireEvent.click(button);
-    expect(storage.save).toHaveBeenCalledTimes(2);
+    expect(storage.write).toHaveBeenCalledTimes(2);
     expect((button as HTMLButtonElement).disabled).toBe(true);
     await act(async () => resolve());
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    const saved = storage.save.mock.calls[1] as unknown as [
-      StoredSearchEngineSettings,
-    ];
-    expect(saved[0].customEngines).toHaveLength(1);
-    expect(saved[0].customEngines?.[0]).not.toHaveProperty("kind");
+    const [, saved] = storage.write.mock.calls[1];
+    expect(saved.customEngines).toHaveLength(1);
+    expect(saved.customEngines?.[0]).not.toHaveProperty("kind");
   });
 
   it("edits a preset and deletes the selected override with a fallback", async () => {
@@ -326,7 +327,7 @@ describe("search engine interaction", () => {
       within(dialog).getByRole("button", { name: "common.delete" }),
     );
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(storage.save).toHaveBeenLastCalledWith({
+    expect(storage.write).toHaveBeenLastCalledWith(SEARCH_ENGINE_SETTINGS_KEY, {
       selectedEngineId: "_default_",
       hiddenDefaultEngineIds: ["google"],
       customEngines: [],
@@ -335,7 +336,7 @@ describe("search engine interaction", () => {
   it("keeps legacy entries when saving another selection and reports a failed selection save", async () => {
     const legacy = { id: "legacy", name: "Legacy", urlFormat: "invalid" };
     storage.read.mockResolvedValue({ customEngines: [legacy] });
-    storage.save.mockRejectedValue(new Error("write failed"));
+    storage.write.mockRejectedValue(new Error("write failed"));
     mount();
     await ready();
     await openSelector();
@@ -343,7 +344,7 @@ describe("search engine interaction", () => {
     await waitFor(() =>
       expect(errorToast).toHaveBeenCalledWith("search.saveFailed"),
     );
-    expect(storage.save).toHaveBeenCalledWith({
+    expect(storage.write).toHaveBeenCalledWith(SEARCH_ENGINE_SETTINGS_KEY, {
       selectedEngineId: "bing",
       customEngines: [legacy],
     });
@@ -353,7 +354,6 @@ describe("search engine interaction", () => {
   });
 
   it("deletes a selected custom engine and keeps at least one engine on the web", async () => {
-    search.defaultEngineId = "google";
     search.browserSearch = undefined;
     const custom = {
       id: "custom",
@@ -376,7 +376,6 @@ describe("search engine interaction", () => {
   });
 
   it("keeps edits to the web fallback when all presets were hidden", async () => {
-    search.defaultEngineId = "google";
     search.browserSearch = undefined;
     storage.read.mockResolvedValue({
       hiddenDefaultEngineIds: ["google", "bing"],
@@ -395,7 +394,7 @@ describe("search engine interaction", () => {
       within(dialog).getByRole("button", { name: "common.save" }),
     );
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(storage.save).toHaveBeenLastCalledWith({
+    expect(storage.write).toHaveBeenLastCalledWith(SEARCH_ENGINE_SETTINGS_KEY, {
       hiddenDefaultEngineIds: ["bing"],
       customEngines: [
         {
@@ -417,7 +416,6 @@ describe("search engine interaction", () => {
   });
 
   it("deletes a custom engine with available presets and falls back to Google on the web", async () => {
-    search.defaultEngineId = "google";
     search.browserSearch = undefined;
     storage.read.mockResolvedValue({
       selectedEngineId: "custom",
@@ -433,7 +431,7 @@ describe("search engine interaction", () => {
       within(dialog).getByRole("button", { name: "common.delete" }),
     );
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(storage.save).toHaveBeenLastCalledWith({
+    expect(storage.write).toHaveBeenLastCalledWith(SEARCH_ENGINE_SETTINGS_KEY, {
       selectedEngineId: "google",
       customEngines: [],
       hiddenDefaultEngineIds: undefined,

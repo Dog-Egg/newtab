@@ -1,6 +1,5 @@
 import * as z from "zod/mini";
 
-export const SEARCH_ENGINE_SETTINGS_KEY = "search-engine-settings";
 export const BROWSER_DEFAULT_ENGINE_ID = "_default_";
 
 const optionalStringArraySchema = z.optional(

@@ -1,4 +1,4 @@
-import type { BrowserBookmarkItem } from "../launcher/bookmark-tree";
+import type { BrowserBookmarkItem } from "../../launcher/bookmark-tree";
 import {
   getSearchEngineMatches,
   type SearchEngineMatches,

@@ -5,11 +5,13 @@ import {
 } from "./selected-text-search-menu";
 const { createMenu, getStorage } = vi.hoisted(() => ({
   createMenu: vi.fn().mockResolvedValue(undefined),
-  getStorage: vi.fn().mockResolvedValue({}),
+  getStorage: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("./chrome", () => ({
   createContextMenuItem: createMenu,
-  getLocalStorage: getStorage,
+}));
+vi.mock("../../platform/chrome-storage", () => ({
+  getChromeStorage: getStorage,
 }));
 afterEach(() => {
   vi.clearAllMocks();
@@ -68,7 +70,7 @@ describe("selected text search", () => {
     expect(createMenu).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Legacy" }),
     );
-    getStorage.mockResolvedValueOnce(stored);
+    getStorage.mockResolvedValueOnce(stored["search-engine-settings"]);
     const create = vi.fn();
     const query = vi.fn();
     vi.stubGlobal("chrome", { tabs: { create }, search: { query } });

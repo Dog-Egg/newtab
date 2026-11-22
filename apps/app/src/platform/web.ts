@@ -15,10 +15,6 @@ import {
 } from "../launcher/web-default-bookmarks";
 import type { Platform } from "./types";
 import {
-  SEARCH_ENGINE_SETTINGS_KEY,
-  searchEngineSettingsSchema,
-} from "../search-engine-box/schema";
-import {
   SETTINGS_STORAGE_KEY,
   settingsSchema,
   type Settings,
@@ -175,15 +171,11 @@ export const platform: Platform = {
       updateBookmarkUsage(bookmarkId);
     },
   },
-  search: { defaultEngineId: "google" },
+  search: {},
   defaultLocale,
-  searchEngineSettings: {
-    read: async () =>
-      searchEngineSettingsSchema.parse(
-        readJsonStorageValue(SEARCH_ENGINE_SETTINGS_KEY),
-      ),
-    save: async (settings) =>
-      writeJsonStorageValue(SEARCH_ENGINE_SETTINGS_KEY, settings),
+  preferencesStorage: {
+    read: async (key) => readJsonStorageValue(key),
+    write: async (key, value) => writeJsonStorageValue(key, value),
   },
   bookmarks: {
     read: async () => readStoredWebBookmarks(),

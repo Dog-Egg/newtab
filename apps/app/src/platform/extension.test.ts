@@ -1,4 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  readSearchEngineSettings,
+  writeSearchEngineSettings,
+} from "../features/search/storage";
 
 beforeEach(() => {
   vi.resetModules();
@@ -164,7 +168,6 @@ describe("extension search", () => {
     vi.stubGlobal("chrome", { ...chrome, search: { query } });
     const { platform } = await import("./extension");
 
-    expect(platform.search.defaultEngineId).toBe("_default_");
     await platform.search.browserSearch!("中文 & test");
 
     expect(query).toHaveBeenCalledExactlyOnceWith({
@@ -182,13 +185,14 @@ describe("extension engine preferences", () => {
       [],
     );
     const { platform } = await import("./extension");
-    const settings = await platform.searchEngineSettings.read();
+    const { read, write } = platform.preferencesStorage;
+    const settings = await readSearchEngineSettings(read);
     expect(settings.selectedEngineId).toBe("bing");
-    await platform.searchEngineSettings.save({
+    await writeSearchEngineSettings(write, {
       ...settings,
       selectedEngineId: "google",
     });
-    expect((await platform.searchEngineSettings.read()).selectedEngineId).toBe(
+    expect((await readSearchEngineSettings(read)).selectedEngineId).toBe(
       "google",
     );
   });

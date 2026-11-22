@@ -1,15 +1,19 @@
 import {
   buildSearchUrl,
   getAvailableSearchEngines,
-} from "../../search-engine-box/search-engine-utils";
-import { BROWSER_DEFAULT_ENGINE_ID } from "../../search-engine-box/schema";
-import type { AppLocale } from "../../i18n/locale";
+} from "../../features/search/search-engine-utils";
 import {
+  BROWSER_DEFAULT_ENGINE_ID,
   customEngineDraftSchema,
-  SEARCH_ENGINE_SETTINGS_KEY,
   searchEngineSettingsSchema,
-} from "../../search-engine-box/schema";
-import { createContextMenuItem, getLocalStorage } from "./chrome";
+} from "../../features/search/schema";
+import {
+  readSearchEngineSettings,
+  SEARCH_ENGINE_SETTINGS_KEY,
+} from "../../features/search/storage";
+import type { AppLocale } from "../../i18n/locale";
+import { getChromeStorage } from "../../platform/chrome-storage";
+import { createContextMenuItem } from "./chrome";
 
 const SEARCH_MENU_ID = "search-selected-text";
 const SEARCH_ENGINE_MENU_ID_PREFIX = `${SEARCH_MENU_ID}:engine:`;
@@ -48,10 +52,10 @@ export async function createSelectedTextSearchMenu(
 }
 
 async function searchSelectedText(engineId: string, selectionText: string) {
-  const items = await getLocalStorage([SEARCH_ENGINE_SETTINGS_KEY]);
-  const engine = getAvailableSearchEngines(
-    searchEngineSettingsSchema.parse(items[SEARCH_ENGINE_SETTINGS_KEY]),
-  ).find((candidate) => candidate.id === engineId);
+  const settings = await readSearchEngineSettings(getChromeStorage);
+  const engine = getAvailableSearchEngines(settings).find(
+    (candidate) => candidate.id === engineId,
+  );
   const query = selectionText.trim();
   if (!engine || !query) return;
 

@@ -4,8 +4,8 @@ import type { SearchEngine, UrlSearchEngine } from "./schema";
 import clsx from "clsx";
 import { EllipsisVertical, Plus, Search, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Menu, MenuItem, MenuPopup } from "../components/Menu";
-import { SiteIcon } from "../components/SiteIcon";
+import { Menu, MenuItem, MenuPopup } from "../../components/Menu";
+import { SiteIcon } from "../../components/SiteIcon";
 import { getSearchEngineIconSource } from "./search-engine-utils";
 
 function SearchEngineGlyph({
