@@ -1,5 +1,6 @@
 import { useState } from "react";
 import clsx from "clsx";
+import { ArrowLeft, ArrowRight, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SettingsRange } from "../settings/settings-range/SettingsRange";
 import settingsStyles from "../settings/Settings.module.css";
@@ -10,11 +11,13 @@ import {
   MAX_OVERLAY_OPACITY,
   MIN_OVERLAY_OPACITY,
 } from "./schema";
-import { useWallpapersStore } from "./store";
+import { canNavigateHistory, useWallpapersStore } from "./store";
 import styles from "./WallpaperSettings.module.css";
 
 const showWallpaperGallery =
   import.meta.env.DEV || import.meta.env.MODE === "extension";
+const iconButtonClass =
+  "grid size-8 place-items-center rounded-md text-glass-content outline-none transition enabled:hover:bg-glass-hover enabled:hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-40 motion-reduce:transition-none";
 
 export function WallpaperSettings() {
   const { t } = useTranslation();
@@ -24,6 +27,13 @@ export function WallpaperSettings() {
   const updateWallpaper = useWallpapersStore((state) => state.updateWallpaper);
   const application = useWallpapersStore((state) => state.imageApplication);
   const applyImage = useWallpapersStore((state) => state.applyImage);
+  const canGoBack = useWallpapersStore((state) =>
+    canNavigateHistory(state, -1),
+  );
+  const canGoForward = useWallpapersStore((state) =>
+    canNavigateHistory(state, 1),
+  );
+  const navigateHistory = useWallpapersStore((state) => state.navigateHistory);
   const restoreDefaultWallpaper = useWallpapersStore(
     (state) => state.restoreDefaultWallpaper,
   );
@@ -47,16 +57,45 @@ export function WallpaperSettings() {
           >
             {t("settings.wallpaper")}
           </h3>
-          {(!isDefault || application?.status === "loading") && (
+          <div className="flex items-center gap-1">
             <button
-              className="rounded px-1 text-xs font-medium text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-white/70 motion-reduce:transition-none"
+              className={iconButtonClass}
               type="button"
+              aria-label={t("settings.wallpaperBack")}
+              title={t("settings.wallpaperBack")}
+              disabled={!canGoBack}
+              onClick={() => navigateHistory(-1)}
+            >
+              <ArrowLeft className="size-4" aria-hidden="true" />
+            </button>
+            <button
+              className={iconButtonClass}
+              type="button"
+              aria-label={t("settings.wallpaperForward")}
+              title={t("settings.wallpaperForward")}
+              disabled={!canGoForward}
+              onClick={() => navigateHistory(1)}
+            >
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </button>
+            <button
+              className={iconButtonClass}
+              type="button"
+              aria-label={t("settings.restoreDefault")}
+              title={t("settings.restoreDefault")}
+              disabled={isDefault && application?.status !== "loading"}
               onClick={restoreDefaultWallpaper}
             >
-              {t("settings.restoreDefault")}
+              <RotateCcw className="size-4" aria-hidden="true" />
             </button>
-          )}
+          </div>
         </div>
+
+        {application?.input === "history" && application.status === "error" && (
+          <p role="alert" className="text-xs font-semibold text-rose-300">
+            {t("settings.imageLoadFailed")}
+          </p>
+        )}
 
         <CustomWallpaperUrl
           initialUrl={customApplication?.url}

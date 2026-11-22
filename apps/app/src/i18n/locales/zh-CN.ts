@@ -53,6 +53,8 @@ export const zhCN = {
     increase: "增大{{label}}",
     resetDefault: "恢复{{value}}的默认值",
     wallpaper: "壁纸",
+    wallpaperBack: "上一张壁纸",
+    wallpaperForward: "下一张壁纸",
     wallpaperGallery: {
       label: "壁纸库",
       select: "选择壁纸 {{resolution}}（{{id}}）",

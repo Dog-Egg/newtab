@@ -55,6 +55,8 @@ export const en = {
     increase: "Increase {{label}}",
     resetDefault: "Reset to the default value of {{value}}",
     wallpaper: "Wallpaper",
+    wallpaperBack: "Previous wallpaper",
+    wallpaperForward: "Next wallpaper",
     wallpaperGallery: {
       label: "Wallpaper library",
       select: "Select wallpaper {{resolution}} ({{id}})",

@@ -57,6 +57,9 @@ afterEach(async () => {
   cleanup();
   useWallpapersStore.getState().restoreDefaultWallpaper();
   await waitFor(() => expect(storage.wallpaper?.url).toBeUndefined());
+  useWallpapersStore.setState({
+    history: useWallpapersStore.getInitialState().history,
+  });
   vi.unstubAllGlobals();
 });
 
@@ -177,4 +180,85 @@ it("discards superseded images and allows restoring defaults while the first wal
   expect(useWallpapersStore.getState().wallpaper).toEqual({
     overlayOpacity: DEFAULT_OVERLAY_OPACITY,
   });
+});
+
+it("navigates wallpaper history and replaces the forward entries after a new selection", async () => {
+  const first = "https://example.com/history-first.jpg";
+  const second = "https://example.com/history-second.jpg";
+  const replacement = "https://example.com/history-replacement.jpg";
+  const currentWallpaper = () => useWallpapersStore.getState().wallpaper;
+  const latestImage = () => images[images.length - 1];
+  const loadLatestImage = () => act(async () => fireEvent.load(latestImage()));
+  render(<Settings />);
+  clickButton("settings.wallpaper");
+  const back = screen.getByRole<HTMLButtonElement>("button", {
+    name: "settings.wallpaperBack",
+  });
+  const forward = screen.getByRole<HTMLButtonElement>("button", {
+    name: "settings.wallpaperForward",
+  });
+  const restore = screen.getByRole<HTMLButtonElement>("button", {
+    name: "settings.restoreDefault",
+  });
+  expect(back.disabled).toBe(true);
+  expect(forward.disabled).toBe(true);
+  expect(restore.disabled).toBe(true);
+
+  submitUrl(first);
+  await loadLatestImage();
+  expect(restore.disabled).toBe(false);
+  submitUrl(second);
+  await loadLatestImage();
+  fireEvent.change(
+    screen.getByRole("slider", { name: "settings.imageOverlayIntensity" }),
+    {
+      target: { value: "0.6" },
+    },
+  );
+
+  fireEvent.click(back);
+  expect(currentWallpaper().url).toBe(second);
+  await act(async () => fireEvent.error(latestImage()));
+  expect(screen.getByRole("alert").textContent).toBe(
+    "settings.imageLoadFailed",
+  );
+  expect(currentWallpaper().url).toBe(second);
+  expect(forward.disabled).toBe(true);
+  await waitFor(() => expect(storage.wallpaper?.url).toBe(second));
+
+  fireEvent.click(back);
+  await loadLatestImage();
+  expect(currentWallpaper()).toEqual({ url: first, overlayOpacity: 0.6 });
+  expect(screen.queryByRole("alert")).toBeNull();
+  fireEvent.click(back);
+  await loadLatestImage();
+  expect(currentWallpaper().url).toBeUndefined();
+  expect(back.disabled).toBe(true);
+  fireEvent.click(forward);
+  const supersededNavigation = latestImage();
+  fireEvent.click(forward);
+  await act(async () => fireEvent.load(supersededNavigation));
+  expect(currentWallpaper().url).toBeUndefined();
+  await loadLatestImage();
+  expect(currentWallpaper().url).toBe(second);
+  expect(forward.disabled).toBe(true);
+
+  submitUrl(replacement);
+  const supersededSelection = latestImage();
+  fireEvent.click(back);
+  await act(async () => fireEvent.load(supersededSelection));
+  await loadLatestImage();
+  expect(currentWallpaper().url).toBe(first);
+  expect(forward.disabled).toBe(false);
+
+  submitUrl(replacement);
+  await loadLatestImage();
+  expect(currentWallpaper().url).toBe(replacement);
+  expect(forward.disabled).toBe(true);
+  await waitFor(() =>
+    expect(storage.wallpaper).toEqual({
+      url: replacement,
+      overlayOpacity: 0.6,
+    }),
+  );
 });

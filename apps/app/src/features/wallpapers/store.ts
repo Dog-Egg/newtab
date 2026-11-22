@@ -1,113 +1,154 @@
 import { create } from "zustand";
-import { preloadWallpaper } from "./preload-wallpaper";
 import {
-  DEFAULT_OVERLAY_OPACITY,
-  wallpapersSchema,
-  type StoredWallpaper,
-} from "./schema";
-import { wallpaperStorage } from "./storage";
+  getHistoryEntry,
+  recordWallpaper,
+  type WallpaperHistory,
+} from "./history";
+import { DEFAULT_WALLPAPER_URL, preloadWallpaper } from "./preload-wallpaper";
+import { DEFAULT_OVERLAY_OPACITY, type StoredWallpaper } from "./schema";
+import { readInitialWallpaper, syncWallpaperStorage } from "./storage";
 
-type ImageApplication = {
-  url: string;
-  input: "gallery" | "custom";
-  status: "loading" | "error";
-};
+type ImageInput = "gallery" | "custom";
+type HistoryStep = -1 | 1;
+
+type WallpaperSelection =
+  | { input: ImageInput; url: string }
+  | { input: "history"; url: StoredWallpaper["url"]; index: number };
+
+type ImageApplication = WallpaperSelection & { status: "loading" | "error" };
 
 type WallpapersStore = {
   wallpaper: StoredWallpaper;
+  history: WallpaperHistory;
   imageApplication: ImageApplication | null;
-  applyImage: (url: string, input: ImageApplication["input"]) => void;
+  applyImage: (url: string, input: ImageInput) => void;
+  navigateHistory: (step: HistoryStep) => void;
   restoreDefaultWallpaper: () => void;
   updateWallpaper: (update: Partial<StoredWallpaper>) => void;
 };
 
-async function createWallpapersStore() {
-  const initialWallpaper = await wallpaperStorage
-    .read()
-    .catch((error: unknown) => {
-      console.error("Failed to read wallpaper", error);
-      return wallpapersSchema.parse(undefined);
-    });
-  let pendingSave: Promise<void> | undefined;
-  let readRevision = 0;
+function getNavigationTarget(
+  { history, imageApplication }: WallpapersStore,
+  step: HistoryStep,
+) {
+  const index =
+    imageApplication?.input === "history" &&
+    imageApplication.status === "loading"
+      ? imageApplication.index
+      : history.index;
 
-  const store = create<WallpapersStore>()((set, get) => ({
+  return getHistoryEntry(history, index + step);
+}
+
+export function canNavigateHistory(state: WallpapersStore, step: HistoryStep) {
+  return getNavigationTarget(state, step) !== null;
+}
+
+async function createWallpapersStore() {
+  const initialWallpaper = await readInitialWallpaper();
+  const store = create<WallpapersStore>()((_set, get) => ({
     wallpaper: initialWallpaper,
+    history: { urls: [initialWallpaper.url], index: 0 },
     imageApplication: null,
     applyImage: (url, input) => {
-      const { imageApplication, wallpaper } = get();
+      const { imageApplication } = get();
       if (
         imageApplication?.status === "loading" &&
+        imageApplication.input !== "history" &&
         imageApplication.url === url
-      )
-        return;
-
-      if (wallpaper.url === url) {
-        set({ imageApplication: null });
+      ) {
         return;
       }
 
-      const application: ImageApplication = { url, input, status: "loading" };
-      set({ imageApplication: application });
-      void preloadWallpaper(url).then((loaded) => {
-        if (get().imageApplication !== application) return;
-        if (!loaded) {
-          set({ imageApplication: { ...application, status: "error" } });
-          return;
-        }
-
-        set({ imageApplication: null });
-        get().updateWallpaper({ url });
-      });
+      selectWallpaper({ url, input });
     },
-    restoreDefaultWallpaper: () => {
-      set({ imageApplication: null });
-      get().updateWallpaper({
-        url: undefined,
-        overlayOpacity: DEFAULT_OVERLAY_OPACITY,
-      });
+    navigateHistory: (step) => {
+      const target = getNavigationTarget(get(), step);
+      if (target) selectWallpaper({ ...target, input: "history" });
     },
-    updateWallpaper: (update) => {
-      const current = get().wallpaper;
-      const { url, overlayOpacity } = { ...current, ...update };
-      if (url === current.url && overlayOpacity === current.overlayOpacity)
-        return;
-
-      const wallpaper =
-        url === undefined ? { overlayOpacity } : { url, overlayOpacity };
-      // Keep rapid slider updates ordered and skip snapshots superseded before their write.
-      const save = (pendingSave ?? Promise.resolve())
-        .then(() => {
-          if (pendingSave === save) return wallpaperStorage.save(wallpaper);
-        })
-        .catch((error: unknown) =>
-          console.error("Failed to save wallpaper", error),
-        );
-      pendingSave = save;
-      set({ wallpaper });
-
-      void save.then(() => {
-        if (pendingSave !== save) return;
-        pendingSave = undefined;
-        refreshFromStorage();
-      });
-    },
+    restoreDefaultWallpaper: () =>
+      updateWallpaper(
+        { url: undefined, overlayOpacity: DEFAULT_OVERLAY_OPACITY },
+        null,
+      ),
+    updateWallpaper: (update) =>
+      updateWallpaper(update, get().imageApplication),
   }));
 
-  function refreshFromStorage() {
-    if (pendingSave) return;
+  const saveWallpaper = syncWallpaperStorage((wallpaper) => {
+    const { history, imageApplication } = store.getState();
+    const nextHistory = recordWallpaper(history, wallpaper.url);
 
-    const revision = ++readRevision;
-    void wallpaperStorage.read().then(
-      (wallpaper) => {
-        if (!pendingSave && revision === readRevision)
-          store.setState({ wallpaper });
+    store.setState({
+      wallpaper,
+      history: nextHistory,
+      imageApplication:
+        nextHistory !== history && imageApplication?.input === "history"
+          ? null
+          : imageApplication,
+    });
+  });
+
+  function selectWallpaper(selection: WallpaperSelection) {
+    if (selection.url === store.getState().wallpaper.url) {
+      applySelection(selection);
+      return;
+    }
+
+    const application: ImageApplication = { ...selection, status: "loading" };
+    store.setState({ imageApplication: application });
+    void preloadWallpaper(selection.url ?? DEFAULT_WALLPAPER_URL).then(
+      (loaded) => {
+        if (store.getState().imageApplication !== application) return;
+
+        if (loaded) applySelection(selection);
+        else
+          store.setState({
+            imageApplication: { ...application, status: "error" },
+          });
       },
-      (error: unknown) => console.error("Failed to read wallpaper", error),
     );
   }
 
-  wallpaperStorage.subscribe(refreshFromStorage);
+  function applySelection(selection: WallpaperSelection) {
+    const { wallpaper, history } = store.getState();
+    const { url } = selection;
+    const nextHistory =
+      selection.input === "history"
+        ? { ...history, index: selection.index }
+        : recordWallpaper(history, url);
+
+    commitWallpaper({ ...wallpaper, url }, nextHistory, null);
+  }
+
+  function updateWallpaper(
+    update: Partial<StoredWallpaper>,
+    imageApplication: ImageApplication | null,
+  ) {
+    const { wallpaper, history } = store.getState();
+    const nextWallpaper = { ...wallpaper, ...update };
+    commitWallpaper(
+      nextWallpaper,
+      recordWallpaper(history, nextWallpaper.url),
+      imageApplication,
+    );
+  }
+
+  function commitWallpaper(
+    { url, overlayOpacity }: StoredWallpaper,
+    history: WallpaperHistory,
+    imageApplication: ImageApplication | null,
+  ) {
+    const { wallpaper: current } = store.getState();
+    let wallpaper = current;
+    if (url !== current.url || overlayOpacity !== current.overlayOpacity) {
+      wallpaper =
+        url === undefined ? { overlayOpacity } : { url, overlayOpacity };
+      saveWallpaper(wallpaper);
+    }
+    store.setState({ wallpaper, history, imageApplication });
+  }
+
   return store;
 }
 

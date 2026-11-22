@@ -5,13 +5,9 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import { preloadWallpaper } from "./preload-wallpaper";
+import { DEFAULT_WALLPAPER_URL, preloadWallpaper } from "./preload-wallpaper";
 import { useWallpapersStore } from "./store";
 import styles from "./WallpaperBackground.module.css";
-
-const DEFAULT_WALLPAPER_URL =
-  import.meta.env.VITE_DEFAULT_WALLPAPER_URL?.trim() ||
-  "https://images.unsplash.com/photo-1515268064940-5150b7c29f35";
 
 type WallpaperRequest = {
   url: string;
