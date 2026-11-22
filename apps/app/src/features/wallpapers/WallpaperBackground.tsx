@@ -2,10 +2,10 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type CSSProperties,
 } from "react";
+import { preloadWallpaper } from "./preload-wallpaper";
 import { useWallpapersStore } from "./store";
 import styles from "./WallpaperBackground.module.css";
 
@@ -38,28 +38,16 @@ export function WallpaperBackground() {
   const [activeWallpaperUrl, setActiveWallpaperUrl] = useState(wallpaperUrl);
   const [pendingWallpaperRequest, setPendingWallpaperRequest] =
     useState<WallpaperRequest | null>(null);
-  const wallpaperRequestIdRef = useRef(0);
 
   useEffect(() => {
-    const requestId = wallpaperRequestIdRef.current + 1;
-    wallpaperRequestIdRef.current = requestId;
-
     if (activeWallpaperUrl === wallpaperUrl) return;
 
-    const image = new Image();
-    image.decoding = "async";
-    image.onload = () => {
-      if (wallpaperRequestIdRef.current !== requestId) {
-        return;
-      }
-
-      setPendingWallpaperRequest(wallpaperRequest);
-    };
-    image.src = wallpaperUrl;
-
+    let canceled = false;
+    void preloadWallpaper(wallpaperUrl).then((loaded) => {
+      if (loaded && !canceled) setPendingWallpaperRequest(wallpaperRequest);
+    });
     return () => {
-      image.onload = null;
-      image.onerror = null;
+      canceled = true;
     };
   }, [activeWallpaperUrl, wallpaperRequest, wallpaperUrl]);
 

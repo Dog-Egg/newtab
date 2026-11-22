@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SettingsRange } from "../settings/settings-range/SettingsRange";
 import { SettingsScrollArea } from "../settings/SettingsScrollArea";
@@ -14,63 +14,23 @@ import { useWallpapersStore } from "./store";
 const showWallpaperGallery =
   import.meta.env.DEV || import.meta.env.MODE === "extension";
 
-type ImageApplication = {
-  url: string;
-  input: "gallery" | "custom";
-  status: "loading" | "error";
-};
-
 export function WallpaperSettings() {
   const { t } = useTranslation();
   const { url, overlayOpacity } = useWallpapersStore(
     (state) => state.wallpaper,
   );
   const updateWallpaper = useWallpapersStore((state) => state.updateWallpaper);
+  const application = useWallpapersStore((state) => state.imageApplication);
+  const applyImage = useWallpapersStore((state) => state.applyImage);
+  const restoreDefaultWallpaper = useWallpapersStore(
+    (state) => state.restoreDefaultWallpaper,
+  );
   const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
-  const [application, setApplication] = useState<ImageApplication | null>(null);
-  const pendingImage = useRef<HTMLImageElement | null>(null);
-
-  const cancelImageRequest = useCallback(() => {
-    const image = pendingImage.current;
-    if (!image) return;
-
-    image.onload = null;
-    image.onerror = null;
-    pendingImage.current = null;
-  }, []);
-
-  useEffect(() => cancelImageRequest, [cancelImageRequest]);
-
-  function applyImage(nextUrl: string, input: ImageApplication["input"]) {
-    if (application?.status === "loading" && application.url === nextUrl)
-      return;
-    cancelImageRequest();
-
-    if (url === nextUrl) {
-      setApplication(null);
-      return;
-    }
-
-    const image = new Image();
-    pendingImage.current = image;
-    setApplication({ url: nextUrl, input, status: "loading" });
-
-    image.onload = () => {
-      if (pendingImage.current !== image) return;
-      cancelImageRequest();
-      setApplication(null);
-      updateWallpaper({ url: nextUrl });
-    };
-    image.onerror = () => {
-      if (pendingImage.current !== image) return;
-      cancelImageRequest();
-      setApplication({ url: nextUrl, input, status: "error" });
-    };
-    image.src = nextUrl;
-  }
 
   const isDefault =
     url === undefined && overlayOpacity === DEFAULT_OVERLAY_OPACITY;
+  const customApplication =
+    application?.input === "custom" ? application : null;
 
   return (
     <SettingsScrollArea ref={showWallpaperGallery ? setScrollRoot : undefined}>
@@ -82,18 +42,11 @@ export function WallpaperSettings() {
           >
             {t("settings.wallpaper")}
           </h3>
-          {!isDefault && (
+          {(!isDefault || application?.status === "loading") && (
             <button
               className="rounded px-1 text-xs font-medium text-glass-content outline-none transition hover:bg-glass-hover hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-white/70 motion-reduce:transition-none"
               type="button"
-              onClick={() => {
-                cancelImageRequest();
-                setApplication(null);
-                updateWallpaper({
-                  url: undefined,
-                  overlayOpacity: DEFAULT_OVERLAY_OPACITY,
-                });
-              }}
+              onClick={restoreDefaultWallpaper}
             >
               {t("settings.restoreDefault")}
             </button>
@@ -101,13 +54,16 @@ export function WallpaperSettings() {
         </div>
 
         <CustomWallpaperUrl
+          initialUrl={customApplication?.url}
           onApply={(nextUrl) => applyImage(nextUrl, "custom")}
-          pending={
-            application?.input === "custom" && application.status === "loading"
+          pendingUrl={
+            customApplication?.status === "loading"
+              ? customApplication.url
+              : undefined
           }
           failedUrl={
-            application?.input === "custom" && application.status === "error"
-              ? application.url
+            customApplication?.status === "error"
+              ? customApplication.url
               : undefined
           }
         />

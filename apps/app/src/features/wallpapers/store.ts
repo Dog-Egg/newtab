@@ -1,9 +1,23 @@
 import { create } from "zustand";
-import { wallpapersSchema, type StoredWallpaper } from "./schema";
+import { preloadWallpaper } from "./preload-wallpaper";
+import {
+  DEFAULT_OVERLAY_OPACITY,
+  wallpapersSchema,
+  type StoredWallpaper,
+} from "./schema";
 import { wallpaperStorage } from "./storage";
+
+type ImageApplication = {
+  url: string;
+  input: "gallery" | "custom";
+  status: "loading" | "error";
+};
 
 type WallpapersStore = {
   wallpaper: StoredWallpaper;
+  imageApplication: ImageApplication | null;
+  applyImage: (url: string, input: ImageApplication["input"]) => void;
+  restoreDefaultWallpaper: () => void;
   updateWallpaper: (update: Partial<StoredWallpaper>) => void;
 };
 
@@ -19,6 +33,40 @@ async function createWallpapersStore() {
 
   const store = create<WallpapersStore>()((set, get) => ({
     wallpaper: initialWallpaper,
+    imageApplication: null,
+    applyImage: (url, input) => {
+      const { imageApplication, wallpaper } = get();
+      if (
+        imageApplication?.status === "loading" &&
+        imageApplication.url === url
+      )
+        return;
+
+      if (wallpaper.url === url) {
+        set({ imageApplication: null });
+        return;
+      }
+
+      const application: ImageApplication = { url, input, status: "loading" };
+      set({ imageApplication: application });
+      void preloadWallpaper(url).then((loaded) => {
+        if (get().imageApplication !== application) return;
+        if (!loaded) {
+          set({ imageApplication: { ...application, status: "error" } });
+          return;
+        }
+
+        set({ imageApplication: null });
+        get().updateWallpaper({ url });
+      });
+    },
+    restoreDefaultWallpaper: () => {
+      set({ imageApplication: null });
+      get().updateWallpaper({
+        url: undefined,
+        overlayOpacity: DEFAULT_OVERLAY_OPACITY,
+      });
+    },
     updateWallpaper: (update) => {
       const current = get().wallpaper;
       const { url, overlayOpacity } = { ...current, ...update };

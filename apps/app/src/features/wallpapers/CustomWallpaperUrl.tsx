@@ -4,20 +4,24 @@ import { useTranslation } from "react-i18next";
 import { wallpaperUrlSchema } from "./schema";
 
 export function CustomWallpaperUrl({
+  initialUrl = "",
   onApply,
-  pending,
+  pendingUrl,
   failedUrl,
 }: {
+  initialUrl?: string;
   onApply: (url: string) => void;
-  pending: boolean;
+  pendingUrl?: string;
   failedUrl?: string;
 }) {
   const { t } = useTranslation();
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(initialUrl);
   const [invalid, setInvalid] = useState(false);
-  const imageFailed =
-    failedUrl !== undefined &&
-    wallpaperUrlSchema.safeParse(draft).data === failedUrl;
+  const parsed = wallpaperUrlSchema.safeParse(draft);
+  const loading = pendingUrl !== undefined && parsed.data === pendingUrl;
+  const imageFailed = failedUrl !== undefined && parsed.data === failedUrl;
+  const submitDisabled =
+    pendingUrl === undefined ? !draft.trim() : loading || !parsed.success;
   const error = invalid
     ? t("settings.invalidImageUrl")
     : imageFailed
@@ -26,7 +30,7 @@ export function CustomWallpaperUrl({
 
   function applyCustomWallpaper(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    const parsed = wallpaperUrlSchema.safeParse(draft);
+    if (submitDisabled) return;
     setInvalid(!parsed.success);
     if (parsed.success) onApply(parsed.data);
   }
@@ -51,10 +55,10 @@ export function CustomWallpaperUrl({
         <button
           className="grid size-10 shrink-0 place-items-center rounded-xl bg-glass-selected text-glass-selected-content outline-none transition hover:bg-glass-strong/90 focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-75 motion-reduce:transition-none"
           type="submit"
-          disabled={pending || !draft.trim()}
-          aria-label={t(pending ? "common.loading" : "settings.apply")}
+          disabled={submitDisabled}
+          aria-label={t(loading ? "common.loading" : "settings.apply")}
         >
-          {pending ? (
+          {loading ? (
             <LoaderCircle
               aria-hidden="true"
               className="size-4 animate-spin motion-reduce:animate-none"
