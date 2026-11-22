@@ -18,10 +18,7 @@ vi.mock("../i18n", () => ({
 
 const settings: Settings = {
   locale: "en",
-  wallpaperUrl: undefined,
-  wallpaperColor: undefined,
   nodeScale: 1,
-  wallpaperOverlayOpacity: 0.35,
 };
 
 async function loadStore(initialSettings = settings) {
@@ -62,11 +59,9 @@ describe("settings store", () => {
     );
     const { useSettingsStore } = await loadStore();
 
-    onChange?.({ ...settings, wallpaperUrl: "https://example.com/image" });
+    onChange?.({ ...settings, nodeScale: 1.2 });
 
-    expect(useSettingsStore.getState().wallpaperUrl).toBe(
-      "https://example.com/image",
-    );
+    expect(useSettingsStore.getState().nodeScale).toBe(1.2);
     expect(mocks.save).not.toHaveBeenCalled();
   });
 

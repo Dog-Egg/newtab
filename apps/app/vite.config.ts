@@ -1,6 +1,7 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { visualizer } from "rollup-plugin-visualizer";
+import { Agent } from "node:https";
 import { fileURLToPath, URL } from "node:url";
 import { manifest } from "./manifest.ts";
 import { readAppVersion } from "./build/version.ts";
@@ -43,6 +44,19 @@ export default defineConfig(({ mode, command }) => {
 
   return {
     base: "./",
+    server: {
+      proxy: {
+        // Wallhaven does not expose its API to cross-origin requests on web pages.
+        "^/api/wallhaven/search(?:\\?|$)": {
+          target: "https://wallhaven.cc",
+          changeOrigin: true,
+          agent: new Agent({ proxyEnv: process.env }),
+          rewrite: (path: string) =>
+            path.replace("/api/wallhaven/search", "/api/v1/search"),
+        },
+      },
+    },
+    preview: { proxy: {} },
     define: {
       __APP_VERSION__: JSON.stringify(appVersion.versionName),
     },

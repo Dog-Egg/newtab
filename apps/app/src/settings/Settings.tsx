@@ -2,7 +2,8 @@ import { useState } from "react";
 import clsx from "clsx";
 import { Image, Info, SlidersHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { AboutSettings, GeneralSettings, WallpaperSettings } from "./sections";
+import { AboutSettings, GeneralSettings } from "./sections";
+import { WallpaperSettings } from "../wallpapers/WallpaperSettings";
 
 export function Settings() {
   const { t } = useTranslation();
@@ -64,9 +65,7 @@ export function Settings() {
         </div>
       </nav>
 
-      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5 sm:px-6 sm:pt-6">
-        <ActiveSection />
-      </div>
+      <ActiveSection />
     </div>
   );
 }

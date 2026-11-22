@@ -6,7 +6,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import { useSettingsStore } from "./store/settings";
+import { useWallpapersStore } from "./store";
 
 const DEFAULT_WALLPAPER_URL =
   import.meta.env.VITE_DEFAULT_WALLPAPER_URL?.trim() ||
@@ -24,22 +24,17 @@ function getWallpaperLayerStyle(wallpaperUrl: string): CSSProperties {
   };
 }
 
-export function Wallpaper() {
-  const selectedWallpaperUrl = useSettingsStore((state) => state.wallpaperUrl);
-  const wallpaperColor = useSettingsStore((state) => state.wallpaperColor);
-  const overlayOpacity = useSettingsStore(
-    (state) => state.wallpaperOverlayOpacity,
+export function WallpaperBackground() {
+  const { url, overlayOpacity } = useWallpapersStore(
+    (state) => state.wallpaper,
   );
-  const usesSolidColor = wallpaperColor !== undefined;
-  const wallpaperUrl = selectedWallpaperUrl ?? DEFAULT_WALLPAPER_URL;
+  const wallpaperUrl = url ?? DEFAULT_WALLPAPER_URL;
   const wallpaperRequest = useMemo<WallpaperRequest>(
     () => ({ url: wallpaperUrl }),
     [wallpaperUrl],
   );
   // 首次渲染必须直接展示当前壁纸；pending/onLoad 只用于后续切换时的淡入效果。
-  const [activeWallpaperUrl, setActiveWallpaperUrl] = useState<string | null>(
-    wallpaperUrl,
-  );
+  const [activeWallpaperUrl, setActiveWallpaperUrl] = useState(wallpaperUrl);
   const [pendingWallpaperRequest, setPendingWallpaperRequest] =
     useState<WallpaperRequest | null>(null);
   const wallpaperRequestIdRef = useRef(0);
@@ -48,7 +43,7 @@ export function Wallpaper() {
     const requestId = wallpaperRequestIdRef.current + 1;
     wallpaperRequestIdRef.current = requestId;
 
-    if (usesSolidColor || activeWallpaperUrl === wallpaperUrl) return;
+    if (activeWallpaperUrl === wallpaperUrl) return;
 
     const image = new Image();
     image.decoding = "async";
@@ -65,7 +60,7 @@ export function Wallpaper() {
       image.onload = null;
       image.onerror = null;
     };
-  }, [activeWallpaperUrl, usesSolidColor, wallpaperRequest, wallpaperUrl]);
+  }, [activeWallpaperUrl, wallpaperRequest, wallpaperUrl]);
 
   const completeWallpaperFade = useCallback(() => {
     if (
@@ -84,36 +79,25 @@ export function Wallpaper() {
 
   return (
     <div className="pointer-events-none fixed inset-0 overflow-hidden">
-      {usesSolidColor ? (
-        <div
-          className="absolute inset-0 transition-colors duration-200 motion-reduce:transition-none"
-          style={{ backgroundColor: wallpaperColor }}
-        />
-      ) : activeWallpaperUrl ? (
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={getWallpaperLayerStyle(activeWallpaperUrl)}
-        />
-      ) : null}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={getWallpaperLayerStyle(activeWallpaperUrl)}
+      />
 
-      {!usesSolidColor && pendingWallpaperUrl ? (
+      {pendingWallpaperUrl && (
         <div
           key={pendingWallpaperUrl}
           className="absolute inset-0 animate-fade-in bg-cover bg-center motion-reduce:animate-[fade-in_0.01ms_ease-out_forwards]"
           style={getWallpaperLayerStyle(pendingWallpaperUrl)}
           onAnimationEnd={completeWallpaperFade}
         />
-      ) : null}
+      )}
 
-      {!usesSolidColor && (activeWallpaperUrl || pendingWallpaperUrl) ? (
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.2),transparent_28%)]" />
-      ) : null}
-      {!usesSolidColor ? (
-        <div
-          className="absolute inset-0 bg-black transition-opacity duration-200"
-          style={{ opacity: overlayOpacity }}
-        />
-      ) : null}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.2),transparent_28%)]" />
+      <div
+        className="absolute inset-0 bg-black transition-opacity duration-200"
+        style={{ opacity: overlayOpacity }}
+      />
     </div>
   );
 }

@@ -15,6 +15,7 @@ export const manifest = {
     "128": "icons/logo-128.png",
   },
   permissions: ["bookmarks", "contextMenus", "storage", "favicon", "search"],
+  host_permissions: ["https://wallhaven.cc/*"],
   background: {
     service_worker: "background.js",
     type: "module",

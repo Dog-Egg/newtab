@@ -10,20 +10,8 @@ type SettingsStore = Settings & {
   updateSettings: (update: SettingsUpdate) => void;
 };
 
-function getSettings({
-  locale,
-  wallpaperUrl,
-  wallpaperColor,
-  nodeScale,
-  wallpaperOverlayOpacity,
-}: SettingsStore): Settings {
-  return {
-    locale,
-    wallpaperUrl,
-    wallpaperColor,
-    nodeScale,
-    wallpaperOverlayOpacity,
-  };
+function getSettings({ locale, nodeScale }: SettingsStore): Settings {
+  return { locale, nodeScale };
 }
 
 function getNextSettings(current: Settings, update: SettingsUpdate): Settings {

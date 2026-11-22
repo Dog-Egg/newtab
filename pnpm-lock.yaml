@@ -73,6 +73,9 @@ importers:
       react-i18next:
         specifier: ^17.0.9
         version: 17.0.9(i18next@26.3.6(typescript@5.9.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.9.3)
+      react-virtuoso:
+        specifier: ^4.18.23
+        version: 4.18.23(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       sonner:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -5072,6 +5075,15 @@ packages:
         integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==,
       }
 
+  react-virtuoso@4.18.23:
+    resolution:
+      {
+        integrity: sha512-J/FpyeLUbU6uEXiMsTKjlJaSMqpjxPCanjSYRxFKobLhP73Wo4gloFldDD7osmFUEv2VMF8Ki/YScofwa3ymyw==,
+      }
+    peerDependencies:
+      react: ">=16 || >=17 || >= 18 || >= 19"
+      react-dom: ">=16 || >=17 || >= 18 || >=19"
+
   react@19.2.7:
     resolution:
       {
@@ -9027,6 +9039,11 @@ snapshots:
       typescript: 5.9.3
 
   react-is@17.0.2: {}
+
+  react-virtuoso@4.18.23(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
+    dependencies:
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
 
   react@19.2.7: {}
 

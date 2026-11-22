@@ -23,6 +23,7 @@ import {
   settingsSchema,
   type Settings,
 } from "../settings/schema";
+import { WALLPAPERS_STORAGE_KEY, wallpapersSchema } from "../wallpapers/schema";
 import i18n from "../i18n";
 import { getLocaleFromLanguage } from "../i18n/locale";
 
@@ -57,8 +58,8 @@ function notifyWebBookmarkListeners() {
 
 i18n.on("languageChanged", notifyWebBookmarkListeners);
 
-function readJsonStorageValue(key: string) {
-  const saved = window.sessionStorage.getItem(key);
+function readJsonStorageValue(key: string, storage = window.sessionStorage) {
+  const saved = storage.getItem(key);
   if (saved === null) return undefined;
   try {
     return JSON.parse(saved) as unknown;
@@ -67,8 +68,12 @@ function readJsonStorageValue(key: string) {
   }
 }
 
-function writeJsonStorageValue(key: string, value: unknown) {
-  window.sessionStorage.setItem(key, JSON.stringify(value));
+function writeJsonStorageValue(
+  key: string,
+  value: unknown,
+  storage = window.sessionStorage,
+) {
+  storage.setItem(key, JSON.stringify(value));
 }
 
 function readStoredWebBookmarks() {
@@ -249,6 +254,30 @@ export const platform: Platform = {
       const handleStorageChange = (event: StorageEvent) => {
         if (event.key === SETTINGS_STORAGE_KEY) {
           onChange(readStoredSettings());
+        }
+      };
+      window.addEventListener("storage", handleStorageChange);
+      return () => window.removeEventListener("storage", handleStorageChange);
+    },
+  },
+  wallpapers: {
+    read: async () =>
+      wallpapersSchema.parse(
+        readJsonStorageValue(WALLPAPERS_STORAGE_KEY, window.localStorage),
+      ),
+    save: async (wallpaper) =>
+      writeJsonStorageValue(
+        WALLPAPERS_STORAGE_KEY,
+        wallpaper,
+        window.localStorage,
+      ),
+    subscribe: (onChange) => {
+      const handleStorageChange = (event: StorageEvent) => {
+        if (
+          event.storageArea === window.localStorage &&
+          (event.key === WALLPAPERS_STORAGE_KEY || event.key === null)
+        ) {
+          onChange();
         }
       };
       window.addEventListener("storage", handleStorageChange);

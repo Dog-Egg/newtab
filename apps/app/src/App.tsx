@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { Settings as SettingsIcon } from "lucide-react";
 import { Launcher } from "./launcher/Launcher";
 import { SearchEngineBox } from "./search-engine-box";
-import { Wallpaper } from "./Wallpaper";
+import { WallpaperBackground } from "./wallpapers/WallpaperBackground";
 import { MainDialogPortal } from "./components/Dialog";
 import { Drawer } from "./components/Drawer";
 import { SettingsPanel } from "./settings/SettingsPanel";
@@ -34,7 +34,7 @@ export function App() {
 
   return (
     <div className="relative flex min-h-screen min-w-80 overflow-hidden font-sans text-white">
-      <Wallpaper />
+      <WallpaperBackground />
 
       <main className="relative min-h-screen min-w-0 flex-1 overflow-hidden">
         <Toaster
