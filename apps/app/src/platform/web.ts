@@ -8,19 +8,21 @@ const defaultLocale = getLocaleFromLanguage(
   new URLSearchParams(window.location.search).get("lang") ?? "en",
 );
 
+function asAsyncStorage(
+  storage: typeof webLocalStorage,
+): Platform["localStorage"] {
+  return {
+    read: async (key) => storage.read(key),
+    write: async (key, value) => storage.write(key, value),
+    subscribe: storage.subscribe,
+  };
+}
+
 export const platform: Platform = {
   bookmarkUsage: webBookmarkUsage,
   search: {},
   defaultLocale,
   bookmarks: webBookmarks,
-  preferencesStorage: {
-    read: async (key) => webSessionStorage.read(key),
-    write: async (key, value) => webSessionStorage.write(key, value),
-    subscribe: webSessionStorage.subscribe,
-  },
-  localStorage: {
-    read: async (key) => webLocalStorage.read(key),
-    write: async (key, value) => webLocalStorage.write(key, value),
-    subscribe: webLocalStorage.subscribe,
-  },
+  preferencesStorage: asAsyncStorage(webSessionStorage),
+  localStorage: asAsyncStorage(webLocalStorage),
 };
