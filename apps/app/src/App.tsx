@@ -2,16 +2,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Toaster } from "sonner";
 import clsx from "clsx";
 import { Settings as SettingsIcon } from "lucide-react";
-import { Launcher } from "./launcher/Launcher";
+import { Launcher } from "./features/launcher/Launcher";
 import { SearchEngineBox } from "./features/search";
 import { WallpaperBackground } from "./features/wallpapers/WallpaperBackground";
 import { MainDialogPortal } from "./components/Dialog";
 import { Drawer } from "./components/Drawer";
-import { SettingsPanel } from "./settings/SettingsPanel";
+import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { useTranslation } from "react-i18next";
-import { useBookmarkLifecycle } from "./store/use-bookmark-lifecycle";
-import { BookmarkDock } from "./dock/BookmarkDock";
-import { useBookmarkNodeScale } from "./hooks/use-bookmark-node-scale";
+import { useBookmarkLifecycle } from "./features/launcher/use-bookmark-lifecycle";
+import { BookmarkDock } from "./features/dock/BookmarkDock";
+import { useBookmarkNodeScale } from "./features/launcher/use-bookmark-node-scale";
 
 export function App() {
   const isLoaded = useBookmarkLifecycle();

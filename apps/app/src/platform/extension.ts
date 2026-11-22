@@ -1,6 +1,5 @@
-import type { BrowserBookmarkNode } from "../launcher/bookmark-tree";
+import type { BrowserBookmarkNode } from "../bookmarks/bookmark-tree";
 import type { Platform } from "./types";
-import { SETTINGS_STORAGE_KEY, settingsSchema } from "../settings/schema";
 import { getLocaleFromLanguage } from "../i18n/locale";
 import {
   createChromeBookmarkNode,
@@ -9,11 +8,10 @@ import {
   toChromeMoveDestination,
 } from "./chrome-bookmarks";
 import { getChromeStorage, setChromeStorage } from "./chrome-storage";
-import { parseBookmarkUsage } from "../launcher/bookmark-usage";
 import {
   BOOKMARK_USAGE_MESSAGE_TYPES,
   type BookmarkUsageMessage,
-} from "./messages";
+} from "../bookmarks/bookmark-usage-messages";
 
 async function requestBookmarkUsage(message: BookmarkUsageMessage) {
   const response = await chrome.runtime.sendMessage(message);
@@ -122,7 +120,7 @@ export const platform: Platform = {
       const response = await requestBookmarkUsage({
         type: BOOKMARK_USAGE_MESSAGE_TYPES.read,
       });
-      return parseBookmarkUsage(response.usage);
+      return response.usage;
     },
     record: async (bookmarkId) => {
       await requestBookmarkUsage({
@@ -145,23 +143,6 @@ export const platform: Platform = {
     remove: removeBookmark,
     subscribe: subscribeBookmarks,
   },
-  settings: {
-    read: async () => {
-      try {
-        return settingsSchema.parse(
-          await getChromeStorage(SETTINGS_STORAGE_KEY),
-        );
-      } catch (error: unknown) {
-        console.error("Failed to read settings", error);
-        return settingsSchema.parse(undefined);
-      }
-    },
-    save: (settings) => setChromeStorage(SETTINGS_STORAGE_KEY, settings),
-    subscribe: (onChange) =>
-      subscribeChromeStorage(SETTINGS_STORAGE_KEY, (value) =>
-        onChange(settingsSchema.parse(value)),
-      ),
-  },
   localStorage: {
     read: getChromeStorage,
     write: setChromeStorage,
@@ -170,5 +151,6 @@ export const platform: Platform = {
   preferencesStorage: {
     read: getChromeStorage,
     write: setChromeStorage,
+    subscribe: subscribeChromeStorage,
   },
 };

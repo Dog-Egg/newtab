@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { registerBookmarkUsage } from "./bookmark-usage";
-import { BOOKMARK_USAGE_KEY } from "../launcher/bookmark-usage";
-import { BOOKMARK_USAGE_MESSAGE_TYPES } from "../platform/messages";
-import type { BrowserBookmarkNode } from "../launcher/bookmark-tree";
+import { BOOKMARK_USAGE_KEY } from "../bookmarks/bookmark-usage";
+import { BOOKMARK_USAGE_MESSAGE_TYPES } from "../bookmarks/bookmark-usage-messages";
+import type { BrowserBookmarkNode } from "../bookmarks/bookmark-tree";
 
 const storage = vi.hoisted(() => ({
   read: vi.fn(),

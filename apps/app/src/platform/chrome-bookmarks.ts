@@ -1,4 +1,4 @@
-import type { BrowserBookmarkNode } from "../launcher/bookmark-tree";
+import type { BrowserBookmarkNode } from "../bookmarks/bookmark-tree";
 
 function getBookmarkError() {
   const error = chrome.runtime.lastError;

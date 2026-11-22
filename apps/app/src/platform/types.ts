@@ -1,18 +1,20 @@
-import type { Settings } from "../settings/schema";
 import type { AppLocale } from "../i18n/locale";
-import type { BrowserBookmarkNode } from "../launcher/bookmark-tree";
-import type { BookmarkUsage } from "../launcher/bookmark-usage";
+import type { BrowserBookmarkNode } from "../bookmarks/bookmark-tree";
 
 type StorageUnsubscribe = () => void;
 
 type KeyValueStorage = {
   read: (key: string) => Promise<unknown>;
   write: (key: string, value: unknown) => Promise<void>;
+  subscribe: (
+    key: string,
+    onChange: (value: unknown) => void,
+  ) => StorageUnsubscribe;
 };
 
 export type Platform = {
   bookmarkUsage: {
-    read: () => Promise<BookmarkUsage>;
+    read: () => Promise<unknown>;
     record: (bookmarkId: string) => Promise<void>;
   };
   defaultLocale: AppLocale;
@@ -39,12 +41,5 @@ export type Platform = {
     remove: (id: string) => Promise<void>;
     subscribe: (onChange: () => void) => StorageUnsubscribe;
   };
-  settings: {
-    read: () => Promise<Settings>;
-    save: (settings: Settings) => Promise<void>;
-    subscribe: (onChange: (settings: Settings) => void) => StorageUnsubscribe;
-  };
-  localStorage: KeyValueStorage & {
-    subscribe: (key: string, onChange: () => void) => StorageUnsubscribe;
-  };
+  localStorage: KeyValueStorage;
 };

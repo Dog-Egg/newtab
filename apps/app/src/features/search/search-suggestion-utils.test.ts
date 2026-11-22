@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { BrowserBookmarkItem } from "../../launcher/bookmark-tree";
+import type { BrowserBookmarkItem } from "../../bookmarks/bookmark-tree";
 import { findSearchSuggestions } from "./search-suggestion-utils";
 
 const bookmarks: BrowserBookmarkItem[] = [

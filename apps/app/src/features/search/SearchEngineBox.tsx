@@ -6,8 +6,8 @@ import { useTranslation } from "react-i18next";
 import { platform } from "@platform";
 import type { SearchEngine, UrlSearchEngine } from "./schema";
 import { useSearchEngineSettings } from "./use-search-engine-settings";
-import { useBookmarkNavigationStore } from "../../store/bookmark-navigation";
-import { useBookmarksStore } from "../../store/bookmarks";
+import { useBookmarkNavigationStore } from "../launcher/bookmark-navigation-store";
+import { useBookmarksStore } from "../../bookmarks/store";
 import {
   SearchEngineEditorDialog,
   DeleteSearchEngineDialog,

@@ -1,14 +1,12 @@
-import { flattenBookmarkItems } from "../launcher/bookmark-tree";
 import {
   BOOKMARK_USAGE_KEY,
   parseBookmarkUsage,
-  reconcileBookmarkUsage,
-  recordBookmarkUsage,
-} from "../launcher/bookmark-usage";
+  updateBookmarkUsage,
+} from "../bookmarks/bookmark-usage";
 import {
   BOOKMARK_USAGE_MESSAGE_TYPES,
   bookmarkUsageMessageSchema,
-} from "../platform/messages";
+} from "../bookmarks/bookmark-usage-messages";
 import { getBookmarkTree } from "../platform/chrome-bookmarks";
 import { getChromeStorage, setChromeStorage } from "../platform/chrome-storage";
 
@@ -16,13 +14,11 @@ import { getChromeStorage, setChromeStorage } from "../platform/chrome-storage";
 let pending: Promise<unknown> = Promise.resolve();
 function updateUsage(bookmarkId?: string) {
   const operation = pending.then(async () => {
-    const bookmarks = flattenBookmarkItems(await getBookmarkTree());
+    const tree = await getBookmarkTree();
     const stored = parseBookmarkUsage(
       await getChromeStorage(BOOKMARK_USAGE_KEY),
     );
-    let next = reconcileBookmarkUsage(stored, bookmarks);
-    const bookmark = bookmarks.find((item) => item.id === bookmarkId);
-    if (bookmark) next = recordBookmarkUsage(next, bookmark, Date.now());
+    const next = updateBookmarkUsage(stored, tree, bookmarkId);
     if (next !== stored) await setChromeStorage(BOOKMARK_USAGE_KEY, next);
     return next;
   });

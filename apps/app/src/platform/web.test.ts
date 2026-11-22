@@ -9,7 +9,12 @@ import {
 } from "../features/search/storage";
 
 vi.mock("../i18n", () => ({
-  default: { on: vi.fn(), addResourceBundle: vi.fn(), language: "en" },
+  default: {
+    on: vi.fn(),
+    addResourceBundle: vi.fn(),
+    getFixedT: () => (key: string) => key,
+    language: "en",
+  },
 }));
 
 afterEach(() => {
@@ -85,4 +90,52 @@ it("restores engine preferences, searches with the selected engine and saves edi
   expect((await readSearchEngineSettings(read)).selectedEngineId).toBe(
     "google",
   );
+});
+
+it("keeps Web bookmarks in session storage and usage in local storage", async () => {
+  const bookmark = {
+    type: "item",
+    id: "saved",
+    title: "Saved",
+    url: "https://example.com/",
+  };
+  const tree = [
+    { type: "folder", id: "root", title: "Root", children: [bookmark] },
+  ];
+  const sessionValues = new Map([["web-bookmarks", JSON.stringify(tree)]]);
+  const localValues = new Map<string, string>();
+  const createStorage = (values: Map<string, string>) => ({
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+  });
+  vi.stubGlobal("window", {
+    location: { search: "" },
+    sessionStorage: createStorage(sessionValues),
+    localStorage: createStorage(localValues),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  });
+  const { platform } = await import("./web");
+  const onChange = vi.fn();
+  const unsubscribe = platform.bookmarks.subscribe(onChange);
+  try {
+    await expect(platform.bookmarks.read()).resolves.toEqual(tree);
+    await platform.bookmarkUsage.record(bookmark.id);
+    expect(JSON.parse(localValues.get("bookmark-usage")!)).toMatchObject({
+      version: 1,
+      entries: { saved: { score: 1 } },
+    });
+
+    await platform.bookmarks.remove(bookmark.id);
+    expect(JSON.parse(sessionValues.get("web-bookmarks")!)).toEqual([
+      { ...tree[0], children: [] },
+    ]);
+    expect(onChange).toHaveBeenCalledOnce();
+    await expect(platform.bookmarkUsage.read()).resolves.toEqual({
+      version: 1,
+      entries: {},
+    });
+  } finally {
+    unsubscribe();
+  }
 });

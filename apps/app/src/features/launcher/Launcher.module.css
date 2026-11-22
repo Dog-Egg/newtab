@@ -1,0 +1,37 @@
+.locatedBookmark {
+  animation: shake 620ms ease-in-out;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0);
+  }
+  15%,
+  45%,
+  75% {
+    transform: translateX(-0.35rem) rotate(-3deg);
+  }
+  30%,
+  60%,
+  90% {
+    transform: translateX(0.35rem) rotate(3deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .locatedBookmark {
+    border-radius: 1.875rem;
+    animation-name: highlight;
+  }
+}
+
+@keyframes highlight {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 0.3rem rgba(255, 255, 255, 0.82);
+  }
+}

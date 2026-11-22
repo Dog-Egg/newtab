@@ -1,5 +1,8 @@
 import { getLocaleFromLanguage } from "../../i18n/locale";
-import { SETTINGS_STORAGE_KEY, settingsSchema } from "../../settings/schema";
+import {
+  SETTINGS_STORAGE_KEY,
+  settingsSchema,
+} from "../../features/settings/schema";
 import { createRefreshScheduler } from "../context-menu-refresh";
 import { getLocalStorage, removeAllContextMenus } from "./chrome";
 import {

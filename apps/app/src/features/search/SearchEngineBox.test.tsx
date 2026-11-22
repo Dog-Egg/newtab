@@ -13,7 +13,7 @@ import { SearchEngineBox } from "./SearchEngineBox";
 import { MainDialogPortal } from "../../components/Dialog";
 import type { StoredSearchEngineSettings } from "./schema";
 import { SEARCH_ENGINE_SETTINGS_KEY } from "./storage";
-import type { BrowserBookmarkItem } from "../../launcher/bookmark-tree";
+import type { BrowserBookmarkItem } from "../../bookmarks/bookmark-tree";
 
 const { search, storage, errorToast, bookmarkState } = vi.hoisted(() => ({
   bookmarkState: {
@@ -41,11 +41,11 @@ vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: translate }) }));
 function translate(key: string, values?: { name?: string }) {
   return values?.name ? `${key} ${values.name}` : key;
 }
-vi.mock("../../store/bookmarks", () => ({
+vi.mock("../../bookmarks/store", () => ({
   useBookmarksStore: (selector: (state: typeof bookmarkState) => unknown) =>
     selector(bookmarkState),
 }));
-vi.mock("../../store/bookmark-navigation", () => ({
+vi.mock("../launcher/bookmark-navigation-store", () => ({
   useBookmarkNavigationStore: (
     selector: (state: { revealBookmark: ReturnType<typeof vi.fn> }) => unknown,
   ) => selector({ revealBookmark: vi.fn() }),

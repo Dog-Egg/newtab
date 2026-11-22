@@ -1,0 +1,3 @@
+export const DEFAULT_LAUNCHER_NODE_SCALE = 1;
+export const MIN_LAUNCHER_NODE_SCALE = 0.75;
+export const MAX_LAUNCHER_NODE_SCALE = 1.5;
