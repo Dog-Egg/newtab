@@ -1,7 +1,8 @@
 import { useState } from "react";
+import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { SettingsRange } from "../settings/settings-range/SettingsRange";
-import { SettingsScrollArea } from "../settings/SettingsScrollArea";
+import settingsStyles from "../settings/Settings.module.css";
 import { CustomWallpaperUrl } from "./CustomWallpaperUrl";
 import { WallpaperGallery } from "./gallery/WallpaperGallery";
 import {
@@ -10,6 +11,7 @@ import {
   MIN_OVERLAY_OPACITY,
 } from "./schema";
 import { useWallpapersStore } from "./store";
+import styles from "./WallpaperSettings.module.css";
 
 const showWallpaperGallery =
   import.meta.env.DEV || import.meta.env.MODE === "extension";
@@ -33,8 +35,11 @@ export function WallpaperSettings() {
     application?.input === "custom" ? application : null;
 
   return (
-    <SettingsScrollArea ref={showWallpaperGallery ? setScrollRoot : undefined}>
-      <section className="space-y-5" aria-labelledby="wallpaper-title">
+    <section
+      className="flex min-h-0 flex-1 flex-col"
+      aria-labelledby="wallpaper-title"
+    >
+      <div className="shrink-0 space-y-5 px-4 pt-5 sm:px-6 sm:pt-6">
         <div className="flex min-h-6 items-center justify-between gap-3">
           <h3
             id="wallpaper-title"
@@ -88,21 +93,29 @@ export function WallpaperSettings() {
             onChange={(value) => updateWallpaper({ overlayOpacity: value })}
           />
         </div>
+      </div>
 
-        {showWallpaperGallery && scrollRoot && (
-          <WallpaperGallery
-            scrollRoot={scrollRoot}
-            selectedUrl={url}
-            pendingUrl={
-              application?.status === "loading" ? application.url : undefined
-            }
-            imageFailed={
-              application?.input === "gallery" && application.status === "error"
-            }
-            onSelect={(nextUrl) => applyImage(nextUrl, "gallery")}
-          />
-        )}
-      </section>
-    </SettingsScrollArea>
+      {showWallpaperGallery && (
+        <div
+          ref={setScrollRoot}
+          className={clsx(settingsStyles.scrollArea, styles.galleryScrollArea)}
+        >
+          {scrollRoot && (
+            <WallpaperGallery
+              scrollRoot={scrollRoot}
+              selectedUrl={url}
+              pendingUrl={
+                application?.status === "loading" ? application.url : undefined
+              }
+              imageFailed={
+                application?.input === "gallery" &&
+                application.status === "error"
+              }
+              onSelect={(nextUrl) => applyImage(nextUrl, "gallery")}
+            />
+          )}
+        </div>
+      )}
+    </section>
   );
 }

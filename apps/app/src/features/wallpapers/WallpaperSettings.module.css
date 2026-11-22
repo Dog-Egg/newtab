@@ -1,0 +1,10 @@
+.galleryScrollArea {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    rgb(0 0 0 / 15%) 0.5rem,
+    rgb(0 0 0 / 55%) 1rem,
+    rgb(0 0 0 / 90%) 1.5rem,
+    black 2rem
+  );
+}

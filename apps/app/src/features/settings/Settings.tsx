@@ -65,7 +65,9 @@ export function Settings() {
         </div>
       </nav>
 
-      <ActiveSection />
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <ActiveSection />
+      </div>
     </div>
   );
 }
