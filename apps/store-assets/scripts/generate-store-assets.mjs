@@ -352,7 +352,7 @@ async function captureScreenshot(browser, { locale, url, outputPath }) {
       await waitForDocumentAssets(appFrame, "应用预览");
 
       if (metadata.searchQuery) {
-        const searchInput = appFrame.getByRole("combobox");
+        const searchInput = appFrame.getByRole("search").getByRole("textbox");
         await searchInput.fill(metadata.searchQuery);
 
         const suggestions = appFrame.locator("#search-suggestions");

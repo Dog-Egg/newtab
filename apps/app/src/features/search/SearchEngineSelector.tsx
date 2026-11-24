@@ -2,7 +2,7 @@ import { Popover } from "@base-ui/react/popover";
 import { useRef } from "react";
 import type { SearchEngine, UrlSearchEngine } from "./schema";
 import clsx from "clsx";
-import { EllipsisVertical, Plus, Search, X } from "lucide-react";
+import { ChevronDown, EllipsisVertical, Plus, Search, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Menu, MenuItem, MenuPopup } from "../../components/Menu";
 import { SiteIcon } from "../../components/SiteIcon";
@@ -42,6 +42,7 @@ export function SearchEngineSelector({
   engines,
   selectedEngine,
   temporaryEngine,
+  showEngineName = false,
   isOpen,
   disabled = false,
   onOpenChange,
@@ -55,6 +56,7 @@ export function SearchEngineSelector({
   engines: SearchEngine[];
   selectedEngine: SearchEngine;
   temporaryEngine?: SearchEngine | null;
+  showEngineName?: boolean;
   isOpen: boolean;
   disabled?: boolean;
   onOpenChange: (isOpen: boolean) => void;
@@ -116,13 +118,28 @@ export function SearchEngineSelector({
       <Popover.Trigger
         render={
           <button
-            className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-2 text-slate-700 outline-none transition hover:bg-white/45 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400/70 motion-reduce:transition-none"
+            className={clsx(
+              "flex h-9 shrink-0 items-center gap-1.5 rounded-xl border px-[7px] text-slate-700 outline-none transition hover:bg-white/45 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400/70 motion-reduce:transition-none",
+              showEngineName
+                ? "border-slate-300/70 bg-white/45"
+                : "w-10 border-transparent",
+            )}
             type="button"
             disabled={disabled}
             aria-label={t("search.selectEngine", { name: selectedEngine.name })}
             title={selectedEngine.name}
           >
             <SearchEngineGlyph engine={selectedEngine} size="small" />
+            {showEngineName && (
+              <span className="flex min-w-0 items-center gap-1.5 motion-safe:animate-search-engine-label-in">
+                <span className="max-w-28 truncate text-sm font-semibold sm:max-w-36">
+                  {selectedEngine.kind === "browser"
+                    ? t("search.browserDefaultShort")
+                    : selectedEngine.name}
+                </span>
+                <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
+              </span>
+            )}
           </button>
         }
       />

@@ -86,7 +86,7 @@ function mount() {
 }
 async function ready() {
   await waitFor(() =>
-    expect((screen.getByRole("combobox") as HTMLInputElement).disabled).toBe(
+    expect((screen.getByRole("textbox") as HTMLTextAreaElement).disabled).toBe(
       false,
     ),
   );
@@ -106,9 +106,9 @@ async function actions(name: string, action: "edit" | "delete") {
   fireEvent.click(item);
 }
 function submitSearch(text = "hello") {
-  const input = screen.getByRole("combobox");
+  const input = screen.getByRole("textbox");
   fireEvent.change(input, { target: { value: text } });
-  fireEvent.submit(input.closest("form")!);
+  fireEvent.keyDown(input, { key: "Enter" });
 }
 
 describe("search engine interaction", () => {
@@ -123,7 +123,7 @@ describe("search engine interaction", () => {
     ];
     mount();
     await ready();
-    const input = screen.getByRole("combobox");
+    const input = screen.getByRole("textbox");
     fireEvent.change(input, { target: { value: "github" } });
     const link = await screen.findByRole("link", { name: /GitHub/ });
     // Keep the test document in place after the normal link event.
@@ -137,8 +137,8 @@ describe("search engine interaction", () => {
       ["github"],
       ["github"],
     ]);
-    fireEvent.keyDown(input, { key: "ArrowDown" });
-    fireEvent.submit(input.closest("form")!);
+    fireEvent.keyDown(input, { key: "Tab" });
+    fireEvent.keyDown(input, { key: "Enter" });
     expect(bookmarkState.recordBookmarkClick).toHaveBeenCalledTimes(3);
     expect(window.open).toHaveBeenCalledWith(
       "https://github.com/",
@@ -158,7 +158,7 @@ describe("search engine interaction", () => {
       }),
     );
     mount();
-    expect((screen.getByRole("combobox") as HTMLInputElement).disabled).toBe(
+    expect((screen.getByRole("textbox") as HTMLTextAreaElement).disabled).toBe(
       true,
     );
     await act(async () => resolve({ selectedEngineId: "bing" }));
@@ -205,9 +205,9 @@ describe("search engine interaction", () => {
   it("uses a temporary engine without saving the preference and clears it with Backspace", async () => {
     mount();
     await ready();
-    const input = screen.getByRole("combobox");
+    const input = screen.getByRole("textbox");
     fireEvent.change(input, { target: { value: "bing" } });
-    fireEvent.keyDown(input, { key: "ArrowDown" });
+    fireEvent.keyDown(input, { key: "Tab" });
     submitSearch("temporary");
     expect(window.open).toHaveBeenCalledWith(
       "https://www.bing.com/search?q=temporary",
@@ -219,6 +219,33 @@ describe("search engine interaction", () => {
     fireEvent.keyDown(input, { key: "Backspace" });
     submitSearch();
     expect(search.browserSearch).toHaveBeenCalledWith("hello");
+  });
+
+  it("keeps editing keys native and suspends suggestions while the query has a newline", async () => {
+    mount();
+    await ready();
+    const input = screen.getByRole("textbox");
+    fireEvent.change(input, { target: { value: "bing" } });
+    await screen.findByRole("option");
+
+    expect(fireEvent.keyDown(input, { key: "ArrowDown" })).toBe(true);
+    expect(fireEvent.keyDown(input, { key: "ArrowUp" })).toBe(true);
+    expect(fireEvent.keyDown(input, { key: "Enter", isComposing: true })).toBe(
+      true,
+    );
+    expect(fireEvent.keyDown(input, { key: "Enter", shiftKey: true })).toBe(
+      true,
+    );
+    expect(search.browserSearch).not.toHaveBeenCalled();
+
+    // jsdom does not perform the textarea's default key insertion.
+    fireEvent.change(input, { target: { value: "bing\n" } });
+    expect(screen.queryByRole("option")).toBeNull();
+    fireEvent.change(input, { target: { value: "bing" } });
+    await screen.findByRole("option");
+
+    submitSearch("bing\nsecond line");
+    expect(search.browserSearch).toHaveBeenCalledWith("bing\nsecond line");
   });
 
   it("recovers from a preference read failure", async () => {

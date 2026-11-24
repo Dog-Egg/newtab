@@ -27,6 +27,10 @@ export default {
         control: ["0.75rem", { lineHeight: "1rem", fontWeight: "600" }],
       },
       keyframes: {
+        "search-engine-label-in": {
+          from: { opacity: "0", transform: "translateX(-4px)" },
+          to: { opacity: "1", transform: "translateX(0)" },
+        },
         "dialog-overlay-in": {
           from: { opacity: "0" },
           to: { opacity: "1" },
@@ -57,6 +61,7 @@ export default {
         },
       },
       animation: {
+        "search-engine-label-in": "search-engine-label-in 150ms ease-out",
         "dialog-overlay-in": "dialog-overlay-in 160ms ease-out",
         "dialog-overlay-out": "dialog-overlay-out 160ms ease-in",
         "dialog-content-in": "dialog-content-in 160ms ease-out",
