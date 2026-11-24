@@ -93,7 +93,7 @@ export const zhCN = {
     deleteFolder: "删除文件夹",
     deleteBookmarkConfirm: "要从浏览器书签中删除“{{name}}”吗？此操作无法撤销。",
     deleteFolderConfirm:
-      "要从浏览器书签中删除“{{name}}”及其全部内容吗？此操作无法撤销。",
+      "要从浏览器书签中删除空文件夹“{{name}}”吗？此操作无法撤销。",
     collectionPrompt: "“{{name}}”中包含 {{count}} 个项目。你希望如何处理？",
     keepFolderItems: "仅删除文件夹，内容移到上一级文件夹",
     deleteFolderAll: "删除文件夹及其中的全部内容",

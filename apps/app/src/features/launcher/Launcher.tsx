@@ -1339,7 +1339,7 @@ export function Launcher() {
         <BookmarkEditorDialog state={editor} onClose={() => setEditor(null)} />
       ) : null}
       {pendingDelete ? (
-        pendingDelete.type === "folder" ? (
+        pendingDelete.type === "folder" && pendingDelete.children.length > 0 ? (
           <DeleteBookmarkCollectionDialog
             title={t("launcher.deleteFolder")}
             collectionName={pendingDelete.title}

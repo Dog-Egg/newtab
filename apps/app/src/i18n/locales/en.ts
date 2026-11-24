@@ -98,7 +98,7 @@ export const en = {
     deleteBookmarkConfirm:
       "Delete “{{name}}” from your browser bookmarks? This cannot be undone.",
     deleteFolderConfirm:
-      "Delete “{{name}}” and everything inside it from your browser bookmarks? This cannot be undone.",
+      "Delete the empty folder “{{name}}” from your browser bookmarks? This cannot be undone.",
     collectionPrompt_one:
       "“{{name}}” contains {{count}} item. What would you like to do?",
     collectionPrompt_other:
