@@ -38,18 +38,6 @@ import {
 
 const dividerWidth = "mx-3 w-px shrink-0";
 
-function resizeSearchInput(input: HTMLTextAreaElement) {
-  input.style.height = "auto";
-  input.style.height = `${input.scrollHeight}px`;
-}
-
-function getQueryForWidthMeasurement(query: string) {
-  // The textarea lets trailing spaces and tabs hang past the line edge.
-  let end = query.length;
-  while (end > 0 && /[ \t\u3000]/.test(query[end - 1])) end--;
-  return query.slice(0, end);
-}
-
 export function SearchEngineBox() {
   const { t } = useTranslation();
   const bookmarks = useBookmarksStore((state) => state.bookmarks);
@@ -59,10 +47,6 @@ export function SearchEngineBox() {
   const revealBookmark = useBookmarkNavigationStore(
     (state) => state.revealBookmark,
   );
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const engineRef = useRef<HTMLDivElement>(null);
-  const singleLineSpaceRef = useRef<HTMLDivElement>(null);
-  const queryWidthRef = useRef<HTMLSpanElement>(null);
   const [searchBoxAnchor, setSearchBoxAnchor] = useState<HTMLDivElement | null>(
     null,
   );
@@ -77,7 +61,6 @@ export function SearchEngineBox() {
     remove,
   } = useSearchEngineSettings();
   const [query, setQuery] = useState("");
-  const [queryExceedsSingleLine, setQueryExceedsSingleLine] = useState(false);
   const [temporaryEngineId, setTemporaryEngineId] = useState<string | null>(
     null,
   );
@@ -98,103 +81,20 @@ export function SearchEngineBox() {
   const [enginePendingDeletion, setEnginePendingDeletion] =
     useState<UrlSearchEngine | null>(null);
 
-  const hasLineBreak = query.includes("\n");
-  const isMultiline = hasLineBreak || queryExceedsSingleLine;
-  const previousMultiline = useRef(isMultiline);
-
-  useLayoutEffect(() => {
-    if (previousMultiline.current === isMultiline) return;
-    previousMultiline.current = isMultiline;
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches)
-      return;
-
-    const animation = inputRef.current?.animate?.(
-      [
-        { transform: `translateY(${isMultiline ? -5 : 5}px)` },
-        { transform: "translateY(0)" },
-      ],
-      { duration: 150, easing: "ease-out" },
-    );
-    return () => animation?.cancel();
-  }, [isMultiline]);
-
-  const needsInputResize = !globalThis.CSS?.supports?.(
-    "field-sizing",
-    "content",
-  );
-  useLayoutEffect(() => {
-    if (needsInputResize && inputRef.current)
-      resizeSearchInput(inputRef.current);
-  }, [isMultiline, needsInputResize, query]);
-
-  useLayoutEffect(() => {
-    const input = inputRef.current;
-    if (!needsInputResize || !input) return;
-
-    // A narrower viewport or a temporary engine label can change line breaks.
-    let width = input.offsetWidth;
-    let frame: number | undefined;
-    const observer = new ResizeObserver(() => {
-      if (input.offsetWidth === width) return;
-      width = input.offsetWidth;
-      if (frame !== undefined) return;
-      frame = requestAnimationFrame(() => {
-        frame = undefined;
-        resizeSearchInput(input);
-      });
-    });
-    observer.observe(input);
-    return () => {
-      observer.disconnect();
-      if (frame !== undefined) cancelAnimationFrame(frame);
-    };
-  }, [needsInputResize]);
-
   const temporaryEngine = temporaryEngineId
     ? (searchEngines.find((engine) => engine.id === temporaryEngineId) ?? null)
     : null;
   const hasTemporaryEngine = temporaryEngine !== null;
 
-  // Compare against the compact layout even after giving the editor full width.
-  const updateMultilineLayout = useCallback(() => {
-    const space = singleLineSpaceRef.current;
-    const text = queryWidthRef.current;
-    if (!space || !text) return;
-
-    const engineWidth = hasTemporaryEngine
-      ? (engineRef.current?.getBoundingClientRect().width ?? 0)
-      : 0;
-    setQueryExceedsSingleLine(
-      text.getBoundingClientRect().width >
-        space.getBoundingClientRect().width - engineWidth,
-    );
-  }, [hasTemporaryEngine]);
-
-  useLayoutEffect(() => {
-    updateMultilineLayout();
-  }, [query, temporaryEngine, updateMultilineLayout]);
-
-  useLayoutEffect(() => {
-    let frame: number | undefined;
-    const observer = new ResizeObserver(() => {
-      if (frame !== undefined) return;
-      frame = requestAnimationFrame(() => {
-        frame = undefined;
-        updateMultilineLayout();
-      });
-    });
-    for (const element of [
-      singleLineSpaceRef.current,
-      queryWidthRef.current,
-      engineRef.current,
-    ]) {
-      if (element) observer.observe(element);
-    }
-    return () => {
-      observer.disconnect();
-      if (frame !== undefined) cancelAnimationFrame(frame);
-    };
-  }, [updateMultilineLayout]);
+  const hasLineBreak = query.includes("\n");
+  const {
+    inputRef,
+    engineRef,
+    singleLineSpaceRef,
+    queryWidthRef,
+    queryForWidthMeasurement,
+    isMultiline,
+  } = useSearchInputLayout({ query, hasLineBreak, temporaryEngine });
 
   const effectiveEngine = temporaryEngine ?? selectedEngine;
   const searchLabel =
@@ -461,7 +361,7 @@ export function SearchEngineBox() {
                   ref={queryWidthRef}
                   className="inline-block whitespace-pre"
                 >
-                  {getQueryForWidthMeasurement(query)}
+                  {queryForWidthMeasurement}
                 </span>
               </div>
             </div>
@@ -511,4 +411,133 @@ export function SearchEngineBox() {
       )}
     </>
   );
+}
+
+function resizeSearchInput(input: HTMLTextAreaElement) {
+  input.style.height = "auto";
+  input.style.height = `${input.scrollHeight}px`;
+}
+
+function getQueryForWidthMeasurement(query: string) {
+  // The textarea lets trailing spaces and tabs hang past the line edge.
+  let end = query.length;
+  while (end > 0 && /[ \t\u3000]/.test(query[end - 1])) end--;
+  return query.slice(0, end);
+}
+
+function useSearchInputLayout({
+  query,
+  hasLineBreak,
+  temporaryEngine,
+}: {
+  query: string;
+  hasLineBreak: boolean;
+  temporaryEngine: SearchEngine | null;
+}) {
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const engineRef = useRef<HTMLDivElement>(null);
+  const singleLineSpaceRef = useRef<HTMLDivElement>(null);
+  const queryWidthRef = useRef<HTMLSpanElement>(null);
+  const [queryExceedsSingleLine, setQueryExceedsSingleLine] = useState(false);
+  const hasTemporaryEngine = temporaryEngine !== null;
+  const isMultiline = hasLineBreak || queryExceedsSingleLine;
+  const previousMultiline = useRef(isMultiline);
+
+  useLayoutEffect(() => {
+    if (previousMultiline.current === isMultiline) return;
+    previousMultiline.current = isMultiline;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches)
+      return;
+
+    const animation = inputRef.current?.animate?.(
+      [
+        { transform: `translateY(${isMultiline ? -5 : 5}px)` },
+        { transform: "translateY(0)" },
+      ],
+      { duration: 150, easing: "ease-out" },
+    );
+    return () => animation?.cancel();
+  }, [isMultiline]);
+
+  const needsInputResize = !globalThis.CSS?.supports?.(
+    "field-sizing",
+    "content",
+  );
+  useLayoutEffect(() => {
+    if (needsInputResize && inputRef.current)
+      resizeSearchInput(inputRef.current);
+  }, [isMultiline, needsInputResize, query]);
+
+  useLayoutEffect(() => {
+    const input = inputRef.current;
+    if (!needsInputResize || !input) return;
+
+    // A narrower viewport or a temporary engine label can change line breaks.
+    let width = input.offsetWidth;
+    let frame: number | undefined;
+    const observer = new ResizeObserver(() => {
+      if (input.offsetWidth === width) return;
+      width = input.offsetWidth;
+      if (frame !== undefined) return;
+      frame = requestAnimationFrame(() => {
+        frame = undefined;
+        resizeSearchInput(input);
+      });
+    });
+    observer.observe(input);
+    return () => {
+      observer.disconnect();
+      if (frame !== undefined) cancelAnimationFrame(frame);
+    };
+  }, [needsInputResize]);
+
+  // Compare against the compact layout even after giving the editor full width.
+  const updateMultilineLayout = useCallback(() => {
+    const space = singleLineSpaceRef.current;
+    const text = queryWidthRef.current;
+    if (!space || !text) return;
+
+    const engineWidth = hasTemporaryEngine
+      ? (engineRef.current?.getBoundingClientRect().width ?? 0)
+      : 0;
+    setQueryExceedsSingleLine(
+      text.getBoundingClientRect().width >
+        space.getBoundingClientRect().width - engineWidth,
+    );
+  }, [hasTemporaryEngine]);
+
+  useLayoutEffect(() => {
+    updateMultilineLayout();
+  }, [query, temporaryEngine, updateMultilineLayout]);
+
+  useLayoutEffect(() => {
+    let frame: number | undefined;
+    const observer = new ResizeObserver(() => {
+      if (frame !== undefined) return;
+      frame = requestAnimationFrame(() => {
+        frame = undefined;
+        updateMultilineLayout();
+      });
+    });
+    for (const element of [
+      singleLineSpaceRef.current,
+      queryWidthRef.current,
+      engineRef.current,
+    ]) {
+      if (element) observer.observe(element);
+    }
+    return () => {
+      observer.disconnect();
+      if (frame !== undefined) cancelAnimationFrame(frame);
+    };
+  }, [updateMultilineLayout]);
+
+  return {
+    inputRef,
+    engineRef,
+    singleLineSpaceRef,
+    queryWidthRef,
+    queryForWidthMeasurement: getQueryForWidthMeasurement(query),
+    isMultiline,
+  };
 }
