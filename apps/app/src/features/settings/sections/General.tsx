@@ -1,11 +1,9 @@
 import { platform } from "@platform";
-import clsx from "clsx";
 import { ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { LauncherSizeSettings } from "../../launcher/LauncherSizeSettings";
 import type { Settings } from "../schema";
 import { useSettingsStore } from "../store";
-import styles from "../Settings.module.css";
 
 export function GeneralSettings() {
   const { t } = useTranslation();
@@ -13,7 +11,7 @@ export function GeneralSettings() {
   const updateSettings = useSettingsStore((state) => state.updateSettings);
 
   return (
-    <div className={clsx(styles.scrollArea, "divide-y divide-white/10")}>
+    <div className="divide-y divide-white/10">
       <section
         className="pb-5 sm:pb-6"
         aria-labelledby="language-settings-title"

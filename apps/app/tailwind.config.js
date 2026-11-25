@@ -27,17 +27,17 @@ export default {
         control: ["0.75rem", { lineHeight: "1rem", fontWeight: "600" }],
       },
       keyframes: {
-        "search-engine-label-in": {
-          from: { opacity: "0", transform: "translateX(-4px)" },
-          to: { opacity: "1", transform: "translateX(0)" },
-        },
-        "dialog-overlay-in": {
+        "fade-in": {
           from: { opacity: "0" },
           to: { opacity: "1" },
         },
-        "dialog-overlay-out": {
+        "fade-out": {
           from: { opacity: "1" },
           to: { opacity: "0" },
+        },
+        "fade-in-from-left": {
+          from: { opacity: "0", transform: "translateX(-4px)" },
+          to: { opacity: "1", transform: "translateX(0)" },
         },
         "dialog-content-in": {
           from: {
@@ -61,9 +61,10 @@ export default {
         },
       },
       animation: {
-        "search-engine-label-in": "search-engine-label-in 150ms ease-out",
-        "dialog-overlay-in": "dialog-overlay-in 160ms ease-out",
-        "dialog-overlay-out": "dialog-overlay-out 160ms ease-in",
+        "fade-in": "fade-in 520ms ease-out forwards",
+        "fade-in-from-left": "fade-in-from-left 150ms ease-out",
+        "dialog-overlay-in": "fade-in 160ms ease-out",
+        "dialog-overlay-out": "fade-out 160ms ease-in",
         "dialog-content-in": "dialog-content-in 160ms ease-out",
         "dialog-content-out": "dialog-content-out 160ms ease-in",
       },

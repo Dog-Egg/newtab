@@ -2,8 +2,7 @@ import { useState } from "react";
 import clsx from "clsx";
 import { ArrowLeft, ArrowRight, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { SettingsRange } from "../settings/settings-range/SettingsRange";
-import settingsStyles from "../settings/Settings.module.css";
+import { RangeSlider } from "../../components/RangeSlider";
 import { CustomWallpaperUrl } from "./CustomWallpaperUrl";
 import { WallpaperGallery } from "./gallery/WallpaperGallery";
 import {
@@ -119,7 +118,7 @@ export function WallpaperSettings() {
           >
             {t("settings.imageOverlay")}
           </label>
-          <SettingsRange
+          <RangeSlider
             id="wallpaper-overlay"
             min={MIN_OVERLAY_OPACITY}
             max={MAX_OVERLAY_OPACITY}
@@ -137,7 +136,10 @@ export function WallpaperSettings() {
       {showWallpaperGallery && (
         <div
           ref={setScrollRoot}
-          className={clsx(settingsStyles.scrollArea, styles.galleryScrollArea)}
+          className={clsx(
+            "min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5 sm:px-6 sm:pt-6",
+            styles.galleryScrollArea,
+          )}
         >
           {scrollRoot && (
             <WallpaperGallery

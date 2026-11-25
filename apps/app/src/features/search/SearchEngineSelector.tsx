@@ -131,7 +131,7 @@ export function SearchEngineSelector({
           >
             <SearchEngineGlyph engine={selectedEngine} size="small" />
             {showEngineName && (
-              <span className="flex min-w-0 items-center gap-1.5 motion-safe:animate-search-engine-label-in">
+              <span className="flex min-w-0 items-center gap-1.5 motion-safe:animate-fade-in-from-left">
                 <span className="max-w-28 truncate text-sm font-semibold sm:max-w-36">
                   {selectedEngine.kind === "browser"
                     ? t("search.browserDefaultShort")

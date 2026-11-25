@@ -1,11 +1,10 @@
 import { useTranslation } from "react-i18next";
-import styles from "../Settings.module.css";
 
 export function AboutSettings() {
   const { t } = useTranslation();
 
   return (
-    <section className={styles.scrollArea}>
+    <section>
       <dl>
         <div className="flex items-center justify-between gap-4">
           <dt className="text-sm text-glass-content">

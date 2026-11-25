@@ -7,7 +7,6 @@ import {
 } from "react";
 import { DEFAULT_WALLPAPER_URL, preloadWallpaper } from "./preload-wallpaper";
 import { useWallpapersStore } from "./store";
-import styles from "./WallpaperBackground.module.css";
 
 type WallpaperRequest = {
   url: string;
@@ -72,7 +71,7 @@ export function WallpaperBackground() {
       {pendingWallpaperUrl && (
         <div
           key={pendingWallpaperUrl}
-          className={`absolute inset-0 bg-cover bg-center ${styles.fadeIn}`}
+          className="absolute inset-0 animate-fade-in bg-cover bg-center motion-reduce:[animation-duration:0.01ms]"
           style={getWallpaperLayerStyle(pendingWallpaperUrl)}
           onAnimationEnd={completeWallpaperFade}
         />

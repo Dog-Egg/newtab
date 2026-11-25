@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
+import { RangeSlider } from "../../components/RangeSlider";
 import { useSettingsStore } from "../settings/store";
-import { SettingsRange } from "../settings/settings-range/SettingsRange";
 import {
   DEFAULT_LAUNCHER_NODE_SCALE,
   MAX_LAUNCHER_NODE_SCALE,
@@ -22,7 +22,7 @@ export function LauncherSizeSettings() {
           {t("settings.iconSize")}
         </label>
       </div>
-      <SettingsRange
+      <RangeSlider
         id="launcher-node-size"
         min={MIN_LAUNCHER_NODE_SCALE}
         max={MAX_LAUNCHER_NODE_SCALE}

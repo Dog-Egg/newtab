@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import "./styles.css";
+import styles from "./styles.module.css";
 
 function getRangePosition(value: number, min: number, max: number) {
   return `${((value - min) / (max - min)) * 100}%`;
@@ -12,12 +12,13 @@ function adjustRangeValue(
   min: number,
   max: number,
 ) {
-  const adjustedValue =
-    Math.round((value + direction * step * 10) / step) * step;
-  return Math.min(max, Math.max(min, Number(adjustedValue.toFixed(12))));
+  const nextStep = Math.round((value - min) / step) + direction * 10;
+  const lastStep = Math.floor(Number(((max - min) / step).toFixed(12)));
+  const clampedStep = Math.min(lastStep, Math.max(0, nextStep));
+  return Number((min + clampedStep * step).toFixed(12));
 }
 
-export function SettingsRange({
+export function RangeSlider({
   id,
   value,
   defaultValue,
@@ -48,7 +49,7 @@ export function SettingsRange({
     <div>
       <input
         id={id}
-        className="settings-range h-5 w-full cursor-pointer appearance-none bg-transparent outline-none"
+        className={`${styles.input} h-5 w-full cursor-pointer appearance-none bg-transparent outline-none`}
         type="range"
         min={min}
         max={max}
@@ -62,7 +63,7 @@ export function SettingsRange({
           className={`${labelButtonClass} left-0`}
           type="button"
           onClick={() => onChange(adjustRangeValue(value, -1, step, min, max))}
-          aria-label={t("settings.decrease", { label: minLabel })}
+          aria-label={t("common.decrease", { label: minLabel })}
         >
           {minLabel}
         </button>
@@ -71,7 +72,7 @@ export function SettingsRange({
           style={{ left: getRangePosition(defaultValue, min, max) }}
           type="button"
           onClick={() => onChange(defaultValue)}
-          aria-label={t("settings.resetDefault", { value: defaultValue })}
+          aria-label={t("common.resetDefault", { value: defaultValue })}
         >
           {t("common.default")}
         </button>
@@ -79,7 +80,7 @@ export function SettingsRange({
           className={`${labelButtonClass} right-0`}
           type="button"
           onClick={() => onChange(adjustRangeValue(value, 1, step, min, max))}
-          aria-label={t("settings.increase", { label: maxLabel })}
+          aria-label={t("common.increase", { label: maxLabel })}
         >
           {maxLabel}
         </button>

@@ -13,25 +13,27 @@ export function Settings() {
       label: t("settings.general"),
       icon: SlidersHorizontal,
       component: GeneralSettings,
+      scrollInPanel: true,
     },
     {
       id: "wallpaper",
       label: t("settings.wallpaper"),
       icon: Image,
       component: WallpaperSettings,
+      scrollInPanel: false,
     },
     {
       id: "about",
       label: t("settings.about"),
       icon: Info,
       component: AboutSettings,
+      scrollInPanel: true,
     },
   ] as const;
-  const [activeSection, setActiveSection] =
+  const [activeSectionId, setActiveSectionId] =
     useState<(typeof sections)[number]["id"]>("general");
-  const ActiveSection =
-    sections.find(({ id }) => id === activeSection)?.component ??
-    GeneralSettings;
+  const { component: ActiveSection, scrollInPanel } =
+    sections.find(({ id }) => id === activeSectionId) ?? sections[0];
 
   return (
     <div className="flex h-full min-h-0">
@@ -41,7 +43,7 @@ export function Settings() {
       >
         <div className="space-y-1.5">
           {sections.map(({ id, label, icon: Icon }) => {
-            const isActive = id === activeSection;
+            const isActive = id === activeSectionId;
 
             return (
               <button
@@ -56,7 +58,7 @@ export function Settings() {
                 aria-current={isActive ? "page" : undefined}
                 aria-label={label}
                 title={label}
-                onClick={() => setActiveSection(id)}
+                onClick={() => setActiveSectionId(id)}
               >
                 <Icon aria-hidden="true" className="size-[1.125rem] shrink-0" />
               </button>
@@ -65,7 +67,14 @@ export function Settings() {
         </div>
       </nav>
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div
+        key={activeSectionId}
+        className={clsx(
+          "flex min-h-0 min-w-0 flex-1 flex-col",
+          scrollInPanel &&
+            "overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5 sm:px-6 sm:pt-6",
+        )}
+      >
         <ActiveSection />
       </div>
     </div>
