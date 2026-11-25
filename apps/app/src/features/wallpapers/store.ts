@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { pickPopularWallpaper } from "./gallery/api";
 import {
   getHistoryEntry,
   recordWallpaper,
@@ -12,16 +13,23 @@ type ImageInput = "gallery" | "custom";
 type HistoryStep = -1 | 1;
 
 type WallpaperSelection =
-  | { input: ImageInput; url: string }
+  | { input: ImageInput | "random"; url: string }
   | { input: "history"; url: StoredWallpaper["url"]; index: number };
 
-type ImageApplication = WallpaperSelection & { status: "loading" | "error" };
+type ImageApplication =
+  | (WallpaperSelection & { status: "loading" | "error" })
+  | { input: "random"; status: "picking" | "empty" | "error" };
+
+export function isWallpaperChangePending(application: ImageApplication | null) {
+  return application?.status === "picking" || application?.status === "loading";
+}
 
 type WallpapersStore = {
   wallpaper: StoredWallpaper;
   history: WallpaperHistory;
   imageApplication: ImageApplication | null;
   applyImage: (url: string, input: ImageInput) => void;
+  applyRandomImage: () => Promise<void>;
   navigateHistory: (step: HistoryStep) => void;
   restoreDefaultWallpaper: () => void;
   updateWallpaper: (update: Partial<StoredWallpaper>) => void;
@@ -46,6 +54,7 @@ export function canNavigateHistory(state: WallpapersStore, step: HistoryStep) {
 
 async function createWallpapersStore() {
   const initialWallpaper = await readInitialWallpaper();
+  let randomRequest: AbortController | undefined;
   const store = create<WallpapersStore>()((_set, get) => ({
     wallpaper: initialWallpaper,
     history: { urls: [initialWallpaper.url], index: 0 },
@@ -62,6 +71,31 @@ async function createWallpapersStore() {
 
       selectWallpaper({ url, input });
     },
+    applyRandomImage: async () => {
+      const { wallpaper, imageApplication } = get();
+      if (isWallpaperChangePending(imageApplication)) return;
+
+      const request = new AbortController();
+      randomRequest = request;
+      const picking = { input: "random", status: "picking" } as const;
+      store.setState({ imageApplication: picking });
+
+      const url = await pickPopularWallpaper(
+        wallpaper.url ?? DEFAULT_WALLPAPER_URL,
+        request.signal,
+      ).catch(() => null);
+      if (get().imageApplication !== picking) return;
+
+      randomRequest = undefined;
+      if (url) selectWallpaper({ input: "random", url });
+      else
+        store.setState({
+          imageApplication: {
+            input: "random",
+            status: url === null ? "error" : "empty",
+          },
+        });
+    },
     navigateHistory: (step) => {
       const target = getNavigationTarget(get(), step);
       if (target) selectWallpaper({ ...target, input: "history" });
@@ -75,18 +109,21 @@ async function createWallpapersStore() {
       updateWallpaper(update, get().imageApplication),
   }));
 
+  store.subscribe(({ imageApplication }) => {
+    if (imageApplication?.status !== "picking") {
+      const request = randomRequest;
+      randomRequest = undefined;
+      request?.abort();
+    }
+  });
+
   const saveWallpaper = syncWallpaperStorage((wallpaper) => {
     const { history, imageApplication } = store.getState();
-    const nextHistory = recordWallpaper(history, wallpaper.url);
-
-    store.setState({
+    setWallpaper(
       wallpaper,
-      history: nextHistory,
-      imageApplication:
-        nextHistory !== history && imageApplication?.input === "history"
-          ? null
-          : imageApplication,
-    });
+      recordWallpaper(history, wallpaper.url),
+      imageApplication,
+    );
   });
 
   function selectWallpaper(selection: WallpaperSelection) {
@@ -146,7 +183,25 @@ async function createWallpapersStore() {
         url === undefined ? { overlayOpacity } : { url, overlayOpacity };
       saveWallpaper(wallpaper);
     }
-    store.setState({ wallpaper, history, imageApplication });
+    setWallpaper(wallpaper, history, imageApplication);
+  }
+
+  function setWallpaper(
+    wallpaper: StoredWallpaper,
+    history: WallpaperHistory,
+    imageApplication: ImageApplication | null,
+  ) {
+    const urlChanged = wallpaper.url !== store.getState().wallpaper.url;
+    store.setState({
+      wallpaper,
+      history,
+      imageApplication:
+        urlChanged &&
+        (imageApplication?.input === "history" ||
+          imageApplication?.input === "random")
+          ? null
+          : imageApplication,
+    });
   }
 
   return store;

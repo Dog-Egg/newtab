@@ -11,7 +11,13 @@ export const zhCN = {
     resetDefault: "恢复{{value}}的默认值",
     loading: "加载中",
   },
-  app: { title: "新标签页", openSettings: "打开设置" },
+  app: {
+    title: "新标签页",
+    openSettings: "打开设置",
+    randomWallpaper: "随机换壁纸",
+    randomWallpaperFailed: "切换壁纸失败，请重试。",
+    randomWallpaperEmpty: "暂时没有其他可选的热门壁纸。",
+  },
   search: {
     browserDefault: "输入关键词搜索",
     google: "使用 Google 搜索",

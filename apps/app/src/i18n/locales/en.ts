@@ -11,7 +11,13 @@ export const en = {
     resetDefault: "Reset to the default value of {{value}}",
     loading: "Loading",
   },
-  app: { title: "New Tab", openSettings: "Open settings" },
+  app: {
+    title: "New Tab",
+    openSettings: "Open settings",
+    randomWallpaper: "Random wallpaper",
+    randomWallpaperFailed: "Could not switch wallpaper. Please try again.",
+    randomWallpaperEmpty: "No other popular wallpaper is available right now.",
+  },
   search: {
     browserDefault: "Enter search keywords",
     google: "Search with Google",

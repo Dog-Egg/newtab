@@ -4,14 +4,21 @@ import clsx from "clsx";
 import { Settings as SettingsIcon } from "lucide-react";
 import { Launcher } from "./features/launcher/Launcher";
 import { SearchEngineBox } from "./features/search";
+import { hasWallpaperGallery } from "./features/wallpapers/gallery/api";
+import { RandomWallpaperButton } from "./features/wallpapers/RandomWallpaperButton";
 import { WallpaperBackground } from "./features/wallpapers/WallpaperBackground";
 import { MainDialogPortal } from "./components/Dialog";
 import { Drawer } from "./components/Drawer";
+import { IconButton } from "./components/IconButton";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { useTranslation } from "react-i18next";
 import { useBookmarkLifecycle } from "./features/launcher/use-bookmark-lifecycle";
 import { BookmarkDock } from "./features/dock/BookmarkDock";
 import { useBookmarkNodeScale } from "./features/launcher/use-bookmark-node-scale";
+
+const toastOffset = hasWallpaperGallery
+  ? { bottom: "calc(var(--corner-inset) + 3.5rem)" }
+  : undefined;
 
 export function App() {
   const isLoaded = useBookmarkLifecycle();
@@ -33,12 +40,14 @@ export function App() {
   if (!isLoaded) return null;
 
   return (
-    <div className="relative flex min-h-screen min-w-80 overflow-hidden font-sans text-white">
+    <div className="relative flex min-h-dvh min-w-80 overflow-hidden font-sans text-white">
       <WallpaperBackground />
 
-      <main className="relative min-h-screen min-w-0 flex-1 overflow-hidden">
+      <main className="relative min-h-dvh min-w-0 flex-1 overflow-hidden [--corner-inset:1rem] sm:[--corner-inset:1.5rem]">
         <Toaster
           position="bottom-right"
+          offset={toastOffset}
+          mobileOffset={toastOffset}
           toastOptions={{
             classNames: {
               toast:
@@ -49,33 +58,44 @@ export function App() {
           }}
         />
 
-        {/* settings button */}
-        <button
+        <IconButton
           ref={settingsButtonRef}
           className={clsx(
-            "absolute right-4 top-4 z-50 grid size-11 place-items-center rounded-full text-white/80 outline-none transition-opacity hover:text-white focus-visible:ring-2 focus-visible:ring-white/70 sm:right-8 sm:top-6",
+            "absolute right-[var(--corner-inset)] top-[var(--corner-inset)] z-50",
             isSettingsOpen && "opacity-0",
           )}
-          type="button"
           onClick={() => {
             setHasOpenedSettings(true);
             setIsSettingsOpen((isOpen) => !isOpen);
           }}
-          aria-label={t("app.openSettings")}
+          label={t("app.openSettings")}
           aria-expanded={isSettingsOpen}
         >
-          <SettingsIcon aria-hidden="true" className="size-5" />
-        </button>
+          <SettingsIcon />
+        </IconButton>
 
         <div
           ref={contentRef}
-          className="flex h-screen min-h-0 flex-col pt-16 sm:pt-[clamp(4rem,14vh,12rem)] 2xl:pt-[clamp(4rem,18vh,12rem)]"
+          className="flex h-dvh min-h-0 flex-col pt-16 sm:pt-[clamp(4rem,14vh,12rem)] 2xl:pt-[clamp(4rem,18vh,12rem)]"
         >
           <div className="relative z-20 shrink-0 px-6 sm:px-10">
             <SearchEngineBox />
           </div>
           <Launcher />
-          <BookmarkDock />
+          <div
+            className={clsx(
+              "shrink-0",
+              hasWallpaperGallery &&
+                "grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-end px-[var(--corner-inset)]",
+            )}
+          >
+            <div className="col-start-2 row-start-1">
+              <BookmarkDock />
+            </div>
+            {hasWallpaperGallery && (
+              <RandomWallpaperButton className="col-start-3 row-start-1 mb-[var(--corner-inset)]" />
+            )}
+          </div>
         </div>
 
         <MainDialogPortal />

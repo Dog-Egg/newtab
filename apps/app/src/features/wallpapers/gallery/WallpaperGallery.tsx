@@ -45,7 +45,7 @@ export function WallpaperGallery({
     const controller = new AbortController();
 
     void fetchWallpapers(page, controller.signal).then(
-      ({ wallpapers: nextWallpapers, hasNextPage }) => {
+      ({ wallpapers: nextWallpapers, lastPage }) => {
         if (controller.signal.aborted) return;
 
         setGallery((current) => {
@@ -57,7 +57,7 @@ export function WallpaperGallery({
           }
           return {
             page: page + 1,
-            status: hasNextPage ? "idle" : "done",
+            status: page < lastPage ? "idle" : "done",
             wallpapers: [...byId.values()],
           };
         });

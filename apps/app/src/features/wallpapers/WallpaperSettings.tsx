@@ -4,17 +4,20 @@ import { ArrowLeft, ArrowRight, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { RangeSlider } from "../../components/RangeSlider";
 import { CustomWallpaperUrl } from "./CustomWallpaperUrl";
+import { hasWallpaperGallery } from "./gallery/api";
 import { WallpaperGallery } from "./gallery/WallpaperGallery";
 import {
   DEFAULT_OVERLAY_OPACITY,
   MAX_OVERLAY_OPACITY,
   MIN_OVERLAY_OPACITY,
 } from "./schema";
-import { canNavigateHistory, useWallpapersStore } from "./store";
+import {
+  canNavigateHistory,
+  isWallpaperChangePending,
+  useWallpapersStore,
+} from "./store";
 import styles from "./WallpaperSettings.module.css";
 
-const showWallpaperGallery =
-  import.meta.env.DEV || import.meta.env.MODE === "extension";
 const iconButtonClass =
   "grid size-8 place-items-center rounded-md text-glass-content outline-none transition enabled:hover:bg-glass-hover enabled:hover:text-glass-strong focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-40 motion-reduce:transition-none";
 
@@ -82,7 +85,7 @@ export function WallpaperSettings() {
               type="button"
               aria-label={t("settings.restoreDefault")}
               title={t("settings.restoreDefault")}
-              disabled={isDefault && application?.status !== "loading"}
+              disabled={isDefault && !isWallpaperChangePending(application)}
               onClick={restoreDefaultWallpaper}
             >
               <RotateCcw className="size-4" aria-hidden="true" />
@@ -133,7 +136,7 @@ export function WallpaperSettings() {
         </div>
       </div>
 
-      {showWallpaperGallery && (
+      {hasWallpaperGallery && (
         <div
           ref={setScrollRoot}
           className={clsx(
